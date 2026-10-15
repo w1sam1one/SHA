@@ -21,6 +21,8 @@ String shortHash(IdentityHash hash) {
   return '${groups[0]} ${groups[1]} ··· ${groups[groups.length - 2]} ${groups.last}';
 }
 
-/// `482 913`
-String formatVerificationCode(String code) =>
-    '${code.substring(0, 3)} ${code.substring(3)}';
+/// 20-digit verification code as two lines of two five-digit groups.
+List<String> verificationCodeLines(String code) => [
+  '${code.substring(0, 5)} ${code.substring(5, 10)}',
+  '${code.substring(10, 15)} ${code.substring(15, 20)}',
+];

@@ -4,66 +4,66 @@ import 'package:cryptography/cryptography.dart';
 
 import 'types.dart';
 
-/// AES-256-GCM with a sealed-envelope format:
+/// AES-256-GCM producing `nonce (12) || ciphertext || tag (16)`.
 ///
-///     version (1 byte) || nonce (12 bytes) || ciphertext || GCM tag (16 bytes)
-///
-/// A fresh 96-bit nonce is drawn from a CSPRNG for every [seal] call. There is
-/// deliberately no way for a caller to supply a nonce, so a nonce can never be
-/// reused by mistake.
-///
-/// Random 96-bit nonces stay safe for up to 2^32 messages per key (NIST
-/// SP 800-38D §8.3); keys must be rotated well before that.
+/// A fresh 96-bit nonce is drawn from the OS CSPRNG (`Random.secure`) on every
+/// [encrypt] call. There is deliberately no way to pass a nonce in, so one can
+/// never be reused by mistake. Random 96-bit nonces are safe for up to 2^32
+/// messages per key (NIST SP 800-38D §8.3); every direction of every
+/// conversation has its own key.
 final class Aes256Gcm {
   Aes256Gcm();
 
-  static const int envelopeVersion = 1;
   static const int nonceLength = 12;
   static const int tagLength = 16;
-  static const int overhead = 1 + nonceLength + tagLength;
+  static const int overhead = nonceLength + tagLength;
 
   final AesGcm _algorithm = AesGcm.with256bits(nonceLength: nonceLength);
 
-  /// Encrypts [plaintext] and returns the envelope. [associatedData] is
-  /// authenticated but not encrypted; the same bytes must be given to [open].
-  Future<Uint8List> seal(
+  Future<Uint8List> encrypt(
     SecretKey key,
     List<int> plaintext, {
     List<int> associatedData = const [],
   }) async {
-    final nonce = _algorithm.newNonce();
     final box = await _algorithm.encrypt(
       plaintext,
       secretKey: key,
-      nonce: nonce,
+      nonce: _algorithm.newNonce(),
       aad: associatedData,
     );
-    return Uint8List.fromList([envelopeVersion, ...box.concatenation()]);
+    return Uint8List.fromList(box.concatenation());
   }
 
-  /// Verifies and decrypts an envelope produced by [seal]. Throws
-  /// [CryptoException] if the envelope, key or associated data do not match.
-  Future<List<int>> open(
+  /// Throws [CryptoException] unless key, data and associated data match.
+  Future<Uint8List> decrypt(
     SecretKey key,
-    Uint8List envelope, {
+    List<int> data, {
     List<int> associatedData = const [],
   }) async {
-    if (envelope.length < overhead) {
-      throw const CryptoException('Envelope too short');
-    }
-    if (envelope[0] != envelopeVersion) {
-      throw const CryptoException('Unsupported envelope version');
+    if (data.length < overhead) {
+      throw const CryptoException(
+        'Ciphertext too short',
+        CryptoErrorKind.corrupt,
+      );
     }
     final box = SecretBox.fromConcatenation(
-      Uint8List.sublistView(envelope, 1),
+      data,
       nonceLength: nonceLength,
       macLength: tagLength,
       copy: true,
     );
     try {
-      return await _algorithm.decrypt(box, secretKey: key, aad: associatedData);
+      final clear = await _algorithm.decrypt(
+        box,
+        secretKey: key,
+        aad: associatedData,
+      );
+      return clear is Uint8List ? clear : Uint8List.fromList(clear);
     } on SecretBoxAuthenticationError {
-      throw const CryptoException('Message authentication failed');
+      throw const CryptoException(
+        'Message authentication failed',
+        CryptoErrorKind.corrupt,
+      );
     }
   }
 }

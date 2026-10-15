@@ -21,6 +21,7 @@ class ContactCodeException implements Exception {
 abstract final class ContactCode {
   static const String scheme = 'shaid';
   static const int version = 1;
+  static const int maxLength = 160;
 
   static String encode(PublicIdentity identity) {
     final key = base64Url.encode(identity.publicKey).replaceAll('=', '');
@@ -28,9 +29,10 @@ abstract final class ContactCode {
   }
 
   /// Parses and verifies a scanned code.
-  static Future<PublicIdentity> parse(String raw, CryptoService crypto) async {
-    final parts = raw.trim().split(':');
-    if (parts.length != 4 || parts[0] != scheme) {
+  static PublicIdentity parse(String raw) {
+    final text = raw.trim();
+    final parts = text.split(':');
+    if (text.length > maxLength || parts.length != 4 || parts[0] != scheme) {
       throw const ContactCodeException('Det här är inte en SHA-kod.');
     }
     if (parts[1] != '$version') {
@@ -39,20 +41,16 @@ abstract final class ContactCode {
       );
     }
     final IdentityHash claimed;
-    final List<int> publicKey;
+    final PublicIdentity identity;
     try {
       claimed = IdentityHash.fromHex(parts[2]);
-      publicKey = base64Url.decode(base64Url.normalize(parts[3]));
+      identity = PublicIdentity(
+        base64Url.decode(base64Url.normalize(parts[3])),
+      );
     } on FormatException {
       throw const ContactCodeException('Koden är skadad.');
     } on CryptoException {
       throw const ContactCodeException('Koden är skadad.');
-    }
-    final PublicIdentity identity;
-    try {
-      identity = await crypto.identityFromPublicKey(publicKey);
-    } on CryptoException {
-      throw const ContactCodeException('Koden innehåller en ogiltig nyckel.');
     }
     if (identity.hash != claimed) {
       throw const ContactCodeException(

@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../app/theme.dart';
+import '../../core/errors.dart';
 import '../../core/providers.dart';
 import '../../crypto/crypto.dart';
 import '../contacts/contacts_store.dart';
@@ -59,7 +61,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       final crypto = ref.read(cryptoServiceProvider);
       final PublicIdentity peer;
       try {
-        peer = await ContactCode.parse(raw, crypto);
+        peer = ContactCode.parse(raw);
       } on ContactCodeException catch (e) {
         _showError(e.message);
         return;
@@ -71,6 +73,18 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       final existing = ref.read(contactsProvider.notifier).byId(peer.hash.hex);
       if (existing != null) {
         _showError('${existing.name} finns redan bland dina kontakter.');
+        return;
+      }
+      // Derive once to reject invalid (e.g. low-order) keys before the user
+      // is asked to trust them; the keys are destroyed straight away.
+      try {
+        crypto.forget(await crypto.conversationKeys(peer));
+      } on CryptoException catch (e) {
+        _showError(
+          e.kind == CryptoErrorKind.invalidInput
+              ? 'Koden innehåller en ogiltig nyckel.'
+              : describeError(e),
+        );
         return;
       }
       final code = await crypto.verificationCode(peer);
@@ -101,6 +115,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   }
 
   Future<void> _enterManually() async {
+    assert(kDebugMode, 'Manual entry is a development aid only');
     final controller = TextEditingController();
     final raw = await showDialog<String>(
       context: context,
@@ -109,6 +124,9 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         content: TextField(
           controller: controller,
           autofocus: true,
+          enableIMEPersonalizedLearning: false,
+          autocorrect: false,
+          enableSuggestions: false,
           minLines: 2,
           maxLines: 4,
           decoration: const InputDecoration(hintText: 'shaid:1:…'),
@@ -205,12 +223,16 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                           color: ShaColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      TextButton.icon(
-                        onPressed: _busy ? null : _enterManually,
-                        icon: const Icon(Icons.keyboard_rounded),
-                        label: const Text('Ange kod manuellt'),
-                      ),
+                      // Only in debug builds (emulators without a camera):
+                      // SHA contacts are added in person, by scanning.
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 12),
+                        TextButton.icon(
+                          onPressed: _busy ? null : _enterManually,
+                          icon: const Icon(Icons.keyboard_rounded),
+                          label: const Text('Ange kod manuellt (debug)'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -255,9 +277,8 @@ class _CameraError extends StatelessWidget {
   Widget build(BuildContext context) {
     final message = error.errorCode == MobileScannerErrorCode.permissionDenied
         ? 'SHA behöver tillgång till kameran för att skanna QR-koder. '
-              'Du kan ge behörighet i telefonens inställningar, eller ange '
-              'koden manuellt.'
-        : 'Kameran kunde inte startas. Du kan ange koden manuellt i stället.';
+              'Du kan ge behörighet i telefonens inställningar.'
+        : 'Kameran kunde inte startas.';
     return ColoredBox(
       color: ShaColors.background,
       child: Center(

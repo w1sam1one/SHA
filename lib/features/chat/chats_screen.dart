@@ -17,11 +17,15 @@ class ChatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contacts = ref.watch(contactsProvider);
     final messages = ref.watch(messageStoreProvider);
-    final threads = [
-      for (final c in contacts)
-        if (messages[c.id]?.isNotEmpty ?? false)
-          (contact: c, messages: messages[c.id]!),
-    ]..sort((a, b) => b.messages.last.sentAt.compareTo(a.messages.last.sentAt));
+    final threads =
+        [
+          for (final c in contacts)
+            if (messages[c.id]?.isNotEmpty ?? false)
+              (contact: c, messages: messages[c.id]!),
+        ]..sort(
+          (a, b) =>
+              b.messages.last.storedAt.compareTo(a.messages.last.storedAt),
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +69,7 @@ class ChatsScreen extends ConsumerWidget {
                       ],
                     ),
                     trailing: Text(
-                      formatTime(t.messages.last.sentAt),
+                      formatTime(t.messages.last.storedAt),
                       style: const TextStyle(
                         fontSize: 12,
                         color: ShaColors.textMuted,

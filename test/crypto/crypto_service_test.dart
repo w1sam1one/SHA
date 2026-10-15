@@ -4,59 +4,75 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sha/crypto/crypto.dart';
 
-import '../support/in_memory_key_storage.dart';
+import '../support/in_memory_vault.dart';
 
 void main() {
-  group('identity', () {
-    test(
-      'first launch has no identity; create stores only the private key',
-      () async {
-        final storage = InMemoryKeyStorage();
-        final crypto = ShaCryptoService(storage: storage);
-        expect(await crypto.loadIdentity(), isNull);
+  final now = DateTime.utc(2026, 10, 15, 12);
 
-        final identity = await crypto.createIdentity();
-        expect(storage.values.keys, [ShaCryptoService.identityKeyName]);
-        expect(storage.values.values.single, hasLength(32));
-        expect(identity.publicKey, hasLength(32));
-        expect(
-          identity.hash.bytes,
-          await crypto.sha256(identity.publicKey),
-          reason: 'identity hash is SHA-256 of the public key',
-        );
+  group('identity', () {
+    test('create stores the private key only in the vault', () async {
+      final vault = InMemoryVault();
+      final crypto = ShaCryptoService(vault: vault);
+      expect(await crypto.loadIdentity(), isNull);
+
+      final identity = await crypto.createIdentity();
+      expect(vault.values.keys, {
+        ShaCryptoService.privateKeyName,
+        ShaCryptoService.publicKeyName,
+      });
+      expect(vault.values[ShaCryptoService.privateKeyName], hasLength(32));
+      expect(vault.values[ShaCryptoService.publicKeyName], identity.publicKey);
+      expect(identity.hash.bytes, await crypto.sha256(identity.publicKey));
+    });
+
+    test('survives a restart and never overwrites', () async {
+      final vault = InMemoryVault();
+      final created = await ShaCryptoService(vault: vault).createIdentity();
+      final again = ShaCryptoService(vault: vault);
+      expect(await again.loadIdentity(), created);
+      expect(() => again.createIdentity(), throwsA(isA<CryptoException>()));
+    });
+
+    test(
+      'recovers the public key if only the private key was written',
+      () async {
+        final vault = InMemoryVault();
+        final created = await ShaCryptoService(vault: vault).createIdentity();
+        vault.values.remove(ShaCryptoService.publicKeyName);
+        expect(await ShaCryptoService(vault: vault).loadIdentity(), created);
       },
     );
 
-    test('identity survives a restart', () async {
-      final storage = InMemoryKeyStorage();
-      final created = await ShaCryptoService(storage: storage).createIdentity();
-      final loaded = await ShaCryptoService(storage: storage).loadIdentity();
-      expect(loaded, created);
-      expect(loaded!.publicKey, created.publicKey);
-    });
-
-    test('never overwrites an existing identity', () async {
-      final storage = InMemoryKeyStorage();
-      await ShaCryptoService(storage: storage).createIdentity();
+    test('identity keys use the platform random source', () async {
+      Uint8List broken(int n) => Uint8List(n);
+      final crypto = ShaCryptoService(vault: InMemoryVault(random: broken));
       expect(
-        () => ShaCryptoService(storage: storage).createIdentity(),
-        throwsA(isA<CryptoException>()),
+        () => crypto.createIdentity(),
+        throwsA(
+          isA<CryptoException>().having(
+            (e) => e.kind,
+            'kind',
+            CryptoErrorKind.entropy,
+          ),
+        ),
       );
     });
 
-    test('identityFromPublicKey validates length', () async {
-      final crypto = ShaCryptoService(storage: InMemoryKeyStorage());
+    test('PublicIdentity always matches its key', () {
       expect(
-        () => crypto.identityFromPublicKey(List.filled(31, 1)),
+        () => PublicIdentity(List.filled(31, 1)),
         throwsA(isA<CryptoException>()),
       );
+      final digest = PublicIdentity(
+        utf8.encode('abcdefghijklmnopqrstuvwxyz012345'),
+      );
+      expect(digest.hash.hex, hasLength(64));
     });
 
     test('SHA-256 matches the FIPS 180-2 test vector', () async {
-      final crypto = ShaCryptoService(storage: InMemoryKeyStorage());
-      final digest = await crypto.sha256(utf8.encode('abc'));
+      final crypto = ShaCryptoService(vault: InMemoryVault());
       expect(
-        IdentityHash(digest).hex,
+        IdentityHash(await crypto.sha256(utf8.encode('abc'))).hex,
         'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
       );
     });
@@ -67,88 +83,164 @@ void main() {
     late ShaCryptoService bob;
     late PublicIdentity aliceId;
     late PublicIdentity bobId;
+    late ConversationKeys aliceKeys;
+    late ConversationKeys bobKeys;
 
     setUp(() async {
-      alice = ShaCryptoService(storage: InMemoryKeyStorage());
-      bob = ShaCryptoService(storage: InMemoryKeyStorage());
+      alice = ShaCryptoService(vault: InMemoryVault());
+      bob = ShaCryptoService(vault: InMemoryVault());
       aliceId = await alice.createIdentity();
       bobId = await bob.createIdentity();
+      aliceKeys = await alice.conversationKeys(bobId);
+      bobKeys = await bob.conversationKeys(aliceId);
     });
 
-    test('derive the same key: Alice encrypts, Bob decrypts', () async {
-      final aliceKey = await alice.conversationKey(bobId);
-      final bobKey = await bob.conversationKey(aliceId);
-      final ad = utf8.encode('header');
-      final envelope = await alice.encrypt(
-        aliceKey,
-        'Ses i morgon?',
-        associatedData: ad,
+    test('Alice seals, Bob opens, Alice can re-read her own message', () async {
+      final packet = await alice.seal(
+        aliceKeys,
+        utf8.encode('Ses i morgon?'),
+        now: now,
       );
       expect(
-        await bob.decrypt(bobKey, envelope, associatedData: ad),
+        utf8.decode(await bob.open(bobKeys, packet, MessageDirection.incoming)),
+        'Ses i morgon?',
+      );
+      expect(
+        utf8.decode(
+          await alice.open(aliceKeys, packet, MessageDirection.outgoing),
+        ),
         'Ses i morgon?',
       );
     });
 
-    test('see the same verification code', () async {
-      final a = await alice.verificationCode(bobId);
-      final b = await bob.verificationCode(aliceId);
-      expect(a, b);
-      expect(a, matches(RegExp(r'^\d{6}$')));
+    test('a packet reflected back to its sender is rejected', () async {
+      final packet = await alice.seal(aliceKeys, utf8.encode('hej'), now: now);
+      expect(
+        () => alice.open(aliceKeys, packet, MessageDirection.incoming),
+        throwsA(isA<CryptoException>()),
+      );
+    });
+
+    test('packet reveals neither identity nor length', () async {
+      final short = await alice.seal(aliceKeys, utf8.encode('ja'), now: now);
+      final longer = await alice.seal(
+        aliceKeys,
+        List.filled(180, 65),
+        now: now,
+      );
+      expect(short.length, longer.length);
+      expect(WireFormat.packetSizes, contains(short.length));
+      final hex = short.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+      for (final secretish in [aliceId.hash.hex, bobId.hash.hex]) {
+        expect(hex, isNot(contains(secretish.substring(0, 16))));
+      }
+    });
+
+    test(
+      'mailboxes match across the pair and rotate per day and direction',
+      () async {
+        final epoch = WireFormat.epochOf(now);
+        final aliceOut = await alice.mailboxId(
+          aliceKeys,
+          MessageDirection.outgoing,
+          epoch,
+        );
+        final bobIn = await bob.mailboxId(
+          bobKeys,
+          MessageDirection.incoming,
+          epoch,
+        );
+        final bobOut = await bob.mailboxId(
+          bobKeys,
+          MessageDirection.outgoing,
+          epoch,
+        );
+        final aliceOutTomorrow = await alice.mailboxId(
+          aliceKeys,
+          MessageDirection.outgoing,
+          epoch + 1,
+        );
+        expect(aliceOut, hasLength(WireFormat.mailboxIdLength));
+        expect(aliceOut, bobIn);
+        expect(aliceOut, isNot(equals(bobOut)));
+        expect(aliceOut, isNot(equals(aliceOutTomorrow)));
+
+        final packet = await alice.seal(aliceKeys, [1], now: now);
+        expect(WireFormat.mailboxIdOf(packet), aliceOut);
+      },
+    );
+
+    test('changing the mailbox id breaks authentication', () async {
+      final packet = await alice.seal(aliceKeys, [1, 2, 3], now: now);
+      packet[1] ^= 0x01;
+      expect(
+        () => bob.open(bobKeys, packet, MessageDirection.incoming),
+        throwsA(isA<CryptoException>()),
+      );
     });
 
     test('a third party cannot decrypt', () async {
-      final eve = ShaCryptoService(storage: InMemoryKeyStorage());
+      final eve = ShaCryptoService(vault: InMemoryVault());
       await eve.createIdentity();
-      final eveKey = await eve.conversationKey(bobId);
-      final envelope = await alice.encrypt(
-        await alice.conversationKey(bobId),
-        'hemligt',
+      final eveKeys = await eve.conversationKeys(bobId);
+      final packet = await alice.seal(
+        aliceKeys,
+        utf8.encode('hemligt'),
+        now: now,
       );
       expect(
-        () => eve.decrypt(eveKey, envelope),
+        () => eve.open(eveKeys, packet, MessageDirection.incoming),
         throwsA(isA<CryptoException>()),
       );
     });
 
-    test('rejects key handles not created by the crypto module', () async {
-      final forged = _ForgedKey(bobId.hash);
-      expect(() => alice.encrypt(forged, 'x'), throwsA(isA<CryptoException>()));
+    test('see the same 20-digit verification code', () async {
+      final code = await alice.verificationCode(bobId);
+      expect(code, await bob.verificationCode(aliceId));
+      expect(code, matches(RegExp(r'^\d{20}$')));
     });
 
-    test('rejects a low-order peer key', () async {
-      final zero = await alice.identityFromPublicKey(Uint8List(32));
+    test('forgotten keys cannot be used', () async {
+      alice.forget(aliceKeys);
+      expect(() => alice.seal(aliceKeys, [1], now: now), throwsA(anything));
+    });
+
+    test('rejects forged handles, low-order keys and yourself', () async {
       expect(
-        () => alice.conversationKey(zero),
+        () => alice.seal(_ForgedKeys(bobId.hash), [1], now: now),
         throwsA(isA<CryptoException>()),
       );
-    });
-
-    test('cannot derive a key with yourself', () async {
       expect(
-        () => alice.conversationKey(aliceId),
+        () => alice.conversationKeys(PublicIdentity(Uint8List(32))),
+        throwsA(isA<CryptoException>()),
+      );
+      expect(
+        () => alice.conversationKeys(aliceId),
         throwsA(isA<CryptoException>()),
       );
     });
   });
 
   test('string forms never contain secret material', () async {
-    final storage = InMemoryKeyStorage();
-    final crypto = ShaCryptoService(storage: storage);
+    final vault = InMemoryVault();
+    final crypto = ShaCryptoService(vault: vault);
     await crypto.createIdentity();
-    final peer = ShaCryptoService(storage: InMemoryKeyStorage());
-    final key = await crypto.conversationKey(await peer.createIdentity());
-    final privateHex = storage.values.values.single
+    final peer = ShaCryptoService(vault: InMemoryVault());
+    final keys = await crypto.conversationKeys(await peer.createIdentity());
+    final privateHex = vault.values[ShaCryptoService.privateKeyName]!
         .map((b) => b.toRadixString(16).padLeft(2, '0'))
         .join();
-    expect(key.toString(), isNot(contains(privateHex)));
-    expect(key.toString(), startsWith('ConversationKey(peer: '));
-    expect(const CryptoException('x').toString(), 'CryptoException: x');
+    expect(keys.toString(), isNot(contains(privateHex)));
+    expect(keys.toString(), startsWith('ConversationKeys(peer: '));
+    expect(
+      const CryptoException('x', CryptoErrorKind.corrupt).toString(),
+      'CryptoException(corrupt): x',
+    );
   });
 }
 
-class _ForgedKey implements ConversationKey {
-  _ForgedKey(this.peer);
+class _ForgedKeys implements ConversationKeys {
+  _ForgedKeys(this.peer);
 
   @override
   final IdentityHash peer;

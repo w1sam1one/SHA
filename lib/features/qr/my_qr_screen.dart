@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,18 +21,21 @@ class MyQrScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Min QR'),
+        // Copying puts your public key on the clipboard, readable by other
+        // apps; only allowed in debug builds for emulator testing.
         actions: [
-          IconButton(
-            tooltip: 'Kopiera koden som text',
-            icon: const Icon(Icons.copy_rounded),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: code));
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Koden kopierad')));
-            },
-          ),
+          if (kDebugMode)
+            IconButton(
+              tooltip: 'Kopiera koden som text',
+              icon: const Icon(Icons.copy_rounded),
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: code));
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Koden kopierad')));
+              },
+            ),
         ],
       ),
       body: ListView(

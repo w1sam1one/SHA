@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/providers.dart';
+import '../../crypto/crypto.dart';
 import '../../ui/hash_format.dart';
 import '../../ui/identicon.dart';
 import 'identity_controller.dart';
@@ -69,9 +72,12 @@ class IdentityScreen extends ConsumerWidget {
                     hex: identity.hash.hex,
                   ),
                   const SizedBox(height: 22),
-                  const _Point(
+                  _Point(
                     icon: Icons.memory_rounded,
-                    text: 'Skyddad av telefonens Android Keystore',
+                    text: switch (ref.watch(keyProtectionProvider)) {
+                      AsyncData(:final value) => describeProtection(value),
+                      _ => 'Kontrollerar telefonens säkra lagring …',
+                    },
                   ),
                   const _Point(
                     icon: Icons.phonelink_erase_rounded,
@@ -191,18 +197,19 @@ class _HashCard extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Kopiera identitetshash',
-                color: ShaColors.textSecondary,
-                icon: const Icon(Icons.copy_rounded, size: 20),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: hex));
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Identitetshash kopierad')),
-                  );
-                },
-              ),
+              if (kDebugMode)
+                IconButton(
+                  tooltip: 'Kopiera identitetshash',
+                  color: ShaColors.textSecondary,
+                  icon: const Icon(Icons.copy_rounded, size: 20),
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: hex));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Identitetshash kopierad')),
+                    );
+                  },
+                ),
             ],
           ),
           for (final line in lines)
@@ -255,4 +262,19 @@ class _Point extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Honest description of where the identity key is protected.
+String describeProtection(KeyProtection p) {
+  final where = switch (p.level) {
+    KeyProtectionLevel.strongBox =>
+      'Nyckeln skyddas av ett separat säkerhetschip (StrongBox)',
+    KeyProtectionLevel.trustedEnvironment =>
+      'Nyckeln skyddas i telefonens isolerade säkerhetsmiljö (TEE)',
+    KeyProtectionLevel.secureHardware =>
+      'Nyckeln skyddas i telefonens säkerhetshårdvara',
+    KeyProtectionLevel.software || KeyProtectionLevel.unknown =>
+      'Varning: telefonen saknar säkerhetshårdvara för nyckeln',
+  };
+  return p.deviceSecure ? where : '$where – men skärmlås saknas';
 }

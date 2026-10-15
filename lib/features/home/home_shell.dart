@@ -1,26 +1,79 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/theme.dart';
+import '../../core/providers.dart';
 
 import '../chat/chats_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../qr/my_qr_screen.dart';
 
 /// Bottom navigation: Chattar · Kontakter · Min QR.
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 1;
 
   @override
   Widget build(BuildContext context) {
+    final protection = ref.watch(keyProtectionProvider).value;
+    final warning = protection == null
+        ? null
+        : !protection.deviceSecure
+        ? 'Telefonen har inget skärmlås. Utan skärmlås kan den som har '
+              'telefonen i handen läsa dina meddelanden. Ställ in PIN-kod '
+              'eller lösenord.'
+        : !protection.isHardwareBacked
+        ? 'Telefonen saknar säkerhetshårdvara för nycklar. Din nyckel '
+              'skyddas bara av mjukvara.'
+        : null;
     return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: const [ChatsScreen(), ContactsScreen(), MyQrScreen()],
+      body: Column(
+        children: [
+          if (warning != null)
+            SafeArea(
+              bottom: false,
+              child: Container(
+                width: double.infinity,
+                color: const Color(0xFF3B2D14),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: ShaColors.warning,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        warning,
+                        style: const TextStyle(
+                          color: ShaColors.warning,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: warning != null,
+              child: IndexedStack(
+                index: _index,
+                children: const [ChatsScreen(), ContactsScreen(), MyQrScreen()],
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

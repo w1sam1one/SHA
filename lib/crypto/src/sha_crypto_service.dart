@@ -2,106 +2,113 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:cryptography/cryptography.dart';
-
 import 'aes_gcm.dart';
 import 'crypto_service.dart';
+import 'entropy.dart';
 import 'hashing.dart';
 import 'key_agreement.dart';
-import 'secure_key_storage.dart';
+import 'key_vault.dart';
+import 'padding.dart';
 import 'types.dart';
+import 'wipe.dart';
+import 'wire_format.dart';
 
 /// Default [CryptoService], built only on the `cryptography` package.
 final class ShaCryptoService implements CryptoService {
-  ShaCryptoService({required this._storage});
+  ShaCryptoService({required KeyVault vault, EntropySource? localEntropy})
+    : _vault = vault,
+      _entropy = MixedEntropy(platform: vault, local: localEntropy);
 
-  /// Storage slot for the identity's X25519 private key.
-  static const String identityKeyName = 'sha.identity.x25519.v1';
+  static const String privateKeyName = 'identity.x25519.private.v2';
+  static const String publicKeyName = 'identity.x25519.public.v2';
 
-  static final List<int> _verifyLabel = utf8.encode('SHA/v1/verification-code');
+  static final List<int> _verifyLabel = utf8.encode('SHA/v2/verification-code');
+  static final List<int> _mailboxLabel = utf8.encode('SHA/v2/mailbox');
 
-  final SecureKeyStorage _storage;
+  final KeyVault _vault;
+  final MixedEntropy _entropy;
   final Sha256Hasher _hasher = Sha256Hasher();
   final Aes256Gcm _aead = Aes256Gcm();
   final X25519KeyAgreement _agreement = X25519KeyAgreement();
 
-  SimpleKeyPair? _keyPair;
   PublicIdentity? _identity;
   Future<PublicIdentity?>? _loading;
+  Future<PublicIdentity>? _creating;
 
   @override
-  Future<PublicIdentity?> loadIdentity() =>
-      _identity != null ? Future.value(_identity) : (_loading ??= _load());
+  Future<PublicIdentity?> loadIdentity() async =>
+      _identity ??
+      await (_loading ??= _load().whenComplete(() => _loading = null));
 
   Future<PublicIdentity?> _load() async {
+    final publicKey = await _vault.read(publicKeyName);
+    if (publicKey != null) {
+      return _identity = PublicIdentity(publicKey);
+    }
+    // Recover if a previous creation stopped between the two writes.
+    final privateKey = await _vault.read(privateKeyName);
+    if (privateKey == null) return null;
     try {
-      final stored = await _storage.read(identityKeyName);
-      if (stored == null) return null;
-      try {
-        await _adopt(
-          await _agreement.keyPairFromPrivateKey(Uint8List.fromList(stored)),
-        );
-      } finally {
-        // Best effort: Dart cannot guarantee no other copy exists.
-        stored.fillRange(0, stored.length, 0);
-      }
-      return _identity;
+      final recovered = await _agreement.publicKeyOf(privateKey);
+      await _vault.write(publicKeyName, recovered);
+      return _identity = PublicIdentity(recovered);
     } finally {
-      _loading = null;
+      wipe(privateKey);
     }
   }
 
   @override
-  Future<PublicIdentity> createIdentity() async {
+  Future<PublicIdentity> createIdentity() =>
+      _creating ??= _create().whenComplete(() => _creating = null);
+
+  Future<PublicIdentity> _create() async {
     if (await loadIdentity() != null) {
       throw const CryptoException('An identity already exists');
     }
-    final keyPair = await _agreement.newKeyPair();
-    final privateKey = Uint8List.fromList(
-      await keyPair.extractPrivateKeyBytes(),
-    );
+    final privateKey = await _entropy.bytes(32, purpose: 'identity-x25519');
     try {
-      await _storage.write(identityKeyName, privateKey);
+      final publicKey = await _agreement.publicKeyOf(privateKey);
+      await _vault.write(privateKeyName, privateKey);
+      await _vault.write(publicKeyName, publicKey);
+      return _identity = PublicIdentity(publicKey);
     } finally {
-      privateKey.fillRange(0, privateKey.length, 0);
+      wipe(privateKey);
     }
-    await _adopt(keyPair);
-    return _identity!;
-  }
-
-  Future<void> _adopt(SimpleKeyPair keyPair) async {
-    final publicKey = await keyPair.extractPublicKey();
-    _identity = await identityFromPublicKey(publicKey.bytes);
-    _keyPair = keyPair;
   }
 
   @override
-  Future<PublicIdentity> identityFromPublicKey(List<int> publicKey) async {
-    if (publicKey.length != publicKeyLength) {
-      throw const CryptoException('Public key must be 32 bytes');
-    }
-    return PublicIdentity.internal(
-      publicKey: publicKey,
-      hash: IdentityHash(await _hasher.hash(publicKey)),
-    );
-  }
+  Future<KeyProtection> keyProtection() => _vault.protection();
 
   @override
   Future<Uint8List> sha256(List<int> data) => _hasher.hash(data);
 
   @override
-  Future<ConversationKey> conversationKey(PublicIdentity peer) async {
+  Future<ConversationKeys> conversationKeys(PublicIdentity peer) async {
     final own = await _requireIdentity();
     if (own == peer) {
-      throw const CryptoException('Cannot derive a key with yourself');
+      throw const CryptoException('Cannot derive keys with yourself');
     }
-    final secret = await _agreement.deriveSharedKey(
-      ownKeyPair: _keyPair!,
-      ownPublicKey: own.publicKey,
-      peerPublicKey: peer.publicKey,
-    );
-    return _ConversationKey(peer.hash, secret);
+    final privateKey = await _vault.read(privateKeyName);
+    if (privateKey == null) {
+      throw const CryptoException(
+        'Private key missing',
+        CryptoErrorKind.keyInvalidated,
+      );
+    }
+    try {
+      final secrets = await _agreement.derive(
+        ownPrivateKey: privateKey,
+        ownPublicKey: own.publicKey,
+        peerPublicKey: peer.publicKey,
+      );
+      return _ConversationKeys(peer.hash, secrets);
+    } finally {
+      wipe(privateKey);
+    }
   }
+
+  @override
+  void forget(ConversationKeys keys) => _secretsOf(keys).destroy();
 
   @override
   Future<String> verificationCode(PublicIdentity peer) async {
@@ -110,36 +117,87 @@ final class ShaCryptoService implements CryptoService {
       ..._verifyLabel,
       ...X25519KeyAgreement.sortedConcat(own.publicKey, peer.publicKey),
     ]);
-    final value = ByteData.sublistView(digest, 0, 4).getUint32(0) % 1000000;
-    return value.toString().padLeft(6, '0');
+    // Four groups of five digits, each from 5 bytes (as in Signal's safety
+    // numbers); the modulo bias is below 2^-20 per group.
+    final buffer = StringBuffer();
+    for (var g = 0; g < 4; g++) {
+      var value = 0;
+      for (var i = 0; i < 5; i++) {
+        value = value * 256 + digest[g * 5 + i];
+      }
+      buffer.write((value % 100000).toString().padLeft(5, '0'));
+    }
+    return buffer.toString();
   }
 
   @override
-  Future<Uint8List> encrypt(
-    ConversationKey key,
-    String plaintext, {
-    List<int> associatedData = const [],
-  }) => _aead.seal(
-    _secretOf(key),
-    utf8.encode(plaintext),
-    associatedData: associatedData,
-  );
+  Future<Uint8List> mailboxId(
+    ConversationKeys keys,
+    MessageDirection direction,
+    int epoch,
+  ) async {
+    final secrets = _secretsOf(keys);
+    final key = direction == MessageDirection.outgoing
+        ? secrets.sendMailboxKey
+        : secrets.receiveMailboxKey;
+    final epochBytes = ByteData(8)..setUint64(0, epoch);
+    final mac = await _hasher.hmac(key, [
+      ..._mailboxLabel,
+      ...epochBytes.buffer.asUint8List(),
+    ]);
+    return Uint8List.fromList(mac.sublist(0, WireFormat.mailboxIdLength));
+  }
 
   @override
-  Future<String> decrypt(
-    ConversationKey key,
-    Uint8List envelope, {
-    List<int> associatedData = const [],
+  Future<Uint8List> seal(
+    ConversationKeys keys,
+    List<int> payload, {
+    required DateTime now,
   }) async {
-    final clear = await _aead.open(
-      _secretOf(key),
-      envelope,
-      associatedData: associatedData,
+    final secrets = _secretsOf(keys);
+    final header = Uint8List(WireFormat.headerLength)
+      ..[0] = WireFormat.version
+      ..setRange(
+        1,
+        WireFormat.headerLength,
+        await mailboxId(
+          keys,
+          MessageDirection.outgoing,
+          WireFormat.epochOf(now),
+        ),
+      );
+    final padded = MessagePadding.pad(payload);
+    try {
+      final body = await _aead.encrypt(
+        secrets.sendKey,
+        padded,
+        associatedData: header,
+      );
+      return Uint8List.fromList([...header, ...body]);
+    } finally {
+      wipe(padded);
+    }
+  }
+
+  @override
+  Future<Uint8List> open(
+    ConversationKeys keys,
+    Uint8List packet,
+    MessageDirection direction,
+  ) async {
+    final secrets = _secretsOf(keys);
+    WireFormat.checkHeader(packet);
+    final clear = await _aead.decrypt(
+      direction == MessageDirection.outgoing
+          ? secrets.sendKey
+          : secrets.receiveKey,
+      Uint8List.sublistView(packet, WireFormat.headerLength),
+      associatedData: Uint8List.sublistView(packet, 0, WireFormat.headerLength),
     );
     try {
-      return utf8.decode(clear);
-    } on FormatException {
-      throw const CryptoException('Decrypted message is not valid UTF-8');
+      return MessagePadding.unpad(clear);
+    } finally {
+      wipe(clear);
     }
   }
 
@@ -151,22 +209,22 @@ final class ShaCryptoService implements CryptoService {
     return identity;
   }
 
-  SecretKey _secretOf(ConversationKey key) {
-    if (key is! _ConversationKey) {
-      throw const CryptoException('Unknown conversation key');
+  SessionSecrets _secretsOf(ConversationKeys keys) {
+    if (keys is! _ConversationKeys) {
+      throw const CryptoException('Unknown conversation keys');
     }
-    return key._secret;
+    return keys._secrets;
   }
 }
 
-final class _ConversationKey implements ConversationKey {
-  _ConversationKey(this.peer, this._secret);
+final class _ConversationKeys implements ConversationKeys {
+  _ConversationKeys(this.peer, this._secrets);
 
   @override
   final IdentityHash peer;
 
-  final SecretKey _secret;
+  final SessionSecrets _secrets;
 
   @override
-  String toString() => 'ConversationKey(peer: ${peer.hex})';
+  String toString() => 'ConversationKeys(peer: ${peer.hex})';
 }

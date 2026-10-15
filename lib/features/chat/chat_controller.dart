@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../contacts/contacts_store.dart';
-import '../onboarding/identity_controller.dart';
 import 'message_store.dart';
 import 'messaging_service.dart';
 
@@ -22,14 +21,12 @@ class ChatController extends AsyncNotifier<List<ChatMessage>> {
   Future<List<ChatMessage>> build() async {
     ref.watch(contactsProvider);
     final messaging = ref.watch(messagingServiceProvider);
-    final own = ref.watch(ownIdentityProvider);
     final contact = _contact;
     final stored = ref
         .read(messageStoreProvider.notifier)
         .forContact(contactId);
     return Future.wait([
-      for (final m in stored)
-        messaging.open(own: own, contact: contact, message: m),
+      for (final m in stored) messaging.open(contact: contact, message: m),
     ]);
   }
 
@@ -39,20 +36,16 @@ class ChatController extends AsyncNotifier<List<ChatMessage>> {
     final store = ref.read(messageStoreProvider.notifier);
     final sealed = await ref
         .read(messagingServiceProvider)
-        .seal(
-          own: ref.read(ownIdentityProvider),
-          contact: _contact,
-          text: trimmed,
-        );
+        .seal(contact: _contact, text: trimmed);
+    // Here the packet would be handed to the relay pool.
     store.add(sealed);
     if (!ref.mounted) return;
-    final current = state.value ?? const [];
     state = AsyncData([
-      ...current,
+      ...state.value ?? const [],
       ChatMessage(
         id: sealed.id,
         outgoing: true,
-        sentAt: sealed.sentAt,
+        sentAt: sealed.storedAt,
         text: trimmed,
       ),
     ]);
