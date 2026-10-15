@@ -1,0 +1,17 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # No console output: secrets, plaintext and nonces must never reach logs.
+    avoid_print: true
+    prefer_final_fields: true
+    prefer_const_constructors: true
+    unawaited_futures: true
