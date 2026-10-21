@@ -33,6 +33,31 @@ void main() {
     }
   });
 
+  test('reset calls the native "reset" method and maps its errors', () async {
+    final calls = <String>[];
+    respond((call) {
+      calls.add(call.method);
+      return null;
+    });
+    await vault.reset();
+    expect(calls, ['reset']);
+
+    for (final (code, kind) in [
+      ('UNAVAILABLE', CryptoErrorKind.unavailable),
+      ('LOCKED', CryptoErrorKind.deviceLocked),
+    ]) {
+      respond((_) => throw PlatformException(code: code, message: 'secret?'));
+      await expectLater(
+        vault.reset(),
+        throwsA(
+          isA<CryptoException>()
+              .having((e) => e.kind, 'kind', kind)
+              .having((e) => e.toString(), 'text', isNot(contains('secret'))),
+        ),
+      );
+    }
+  });
+
   test('rejects unsafe entry names before reaching native code', () async {
     var called = false;
     respond((_) => called = true);

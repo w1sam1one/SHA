@@ -43,6 +43,36 @@ void main() {
       },
     );
 
+    test('reset deletes the identity; a new one is unrelated', () async {
+      final vault = InMemoryVault();
+      final crypto = ShaCryptoService(vault: vault);
+      final old = await crypto.createIdentity();
+
+      await crypto.resetIdentity();
+      expect(vault.values, isEmpty);
+      expect(await crypto.loadIdentity(), isNull);
+
+      final fresh = await crypto.createIdentity();
+      expect(fresh.publicKey, isNot(equals(old.publicKey)));
+      expect(await ShaCryptoService(vault: vault).loadIdentity(), fresh);
+    });
+
+    test('reset on an empty vault does nothing and does not throw', () async {
+      final crypto = ShaCryptoService(vault: InMemoryVault());
+      await crypto.resetIdentity();
+      expect(await crypto.loadIdentity(), isNull);
+    });
+
+    test('reset waits for an in-flight create and then removes it', () async {
+      final vault = InMemoryVault();
+      final crypto = ShaCryptoService(vault: vault);
+      final creating = crypto.createIdentity();
+      await crypto.resetIdentity();
+      await creating;
+      expect(vault.values, isEmpty);
+      expect(await crypto.loadIdentity(), isNull);
+    });
+
     test('identity keys use the platform random source', () async {
       Uint8List broken(int n) => Uint8List(n);
       final crypto = ShaCryptoService(vault: InMemoryVault(random: broken));

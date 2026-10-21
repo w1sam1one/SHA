@@ -91,6 +91,25 @@ class KeystoreVault(context: Context) {
         AtomicFile(fileFor(name)).delete()
     }
 
+    /**
+     * Deletes every stored blob (including AtomicFile's temporary/backup
+     * files), then the wrapping key. The directory itself is kept. Safe to
+     * call when nothing exists.
+     */
+    fun reset() {
+        dir.listFiles()?.forEach { file ->
+            if (file.isFile && !file.delete() && file.exists()) {
+                throw VaultException(VaultException.UNAVAILABLE)
+            }
+        }
+        try {
+            val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+            if (keyStore.containsAlias(KEY_ALIAS)) keyStore.deleteEntry(KEY_ALIAS)
+        } catch (_: Exception) {
+            throw VaultException(VaultException.UNAVAILABLE)
+        }
+    }
+
     /** Bytes from the platform CSPRNG (Conscrypt/BoringSSL, kernel-seeded). */
     fun randomBytes(length: Int): ByteArray {
         require(length in 1..1024)

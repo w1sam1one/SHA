@@ -34,6 +34,9 @@ class InMemoryVault implements KeyVault {
   Future<void> delete(String name) async => values.remove(name);
 
   @override
+  Future<void> reset() async => values.clear();
+
+  @override
   Future<Uint8List> randomBytes(int length) async =>
       _random?.call(length) ??
       Uint8List.fromList(List.generate(length, (_) => _secure.nextInt(256)));

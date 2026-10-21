@@ -77,6 +77,23 @@ final class ShaCryptoService implements CryptoService {
   }
 
   @override
+  Future<void> resetIdentity() async {
+    // Let in-flight loads and creates finish first (including any started
+    // while waiting), so none can write the old identity back after the
+    // vault has been cleared. Their errors are irrelevant here: the point is
+    // to discard whatever they were doing.
+    while (_creating != null || _loading != null) {
+      try {
+        await (_creating ?? _loading);
+      } catch (_) {}
+    }
+    await _vault.reset();
+    _identity = null;
+    _loading = null;
+    _creating = null;
+  }
+
+  @override
   Future<KeyProtection> keyProtection() => _vault.protection();
 
   @override

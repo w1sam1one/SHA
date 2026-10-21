@@ -39,6 +39,11 @@ class KeystoreChannel(context: Context) : MethodChannel.MethodCallHandler {
                         null
                     }
                     "delete" -> vault.delete(call.requireName())
+                    "reset" -> {
+                        vault.reset()
+                        // Unit cannot be encoded by the codec; reply with null.
+                        null
+                    }
                     "randomBytes" -> vault.randomBytes(
                         call.argument<Int>("length") ?: throw VaultException(VaultException.INVALID),
                     )
