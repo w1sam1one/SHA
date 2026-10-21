@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../core/errors.dart';
 import '../../ui/avatar.dart';
 import '../../ui/time_format.dart';
+import '../../ui/trust_display.dart';
 import '../contacts/contacts_store.dart';
 import 'chat_controller.dart';
 import 'messaging_service.dart';
@@ -80,7 +81,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               name: contact.name,
               hash: contact.identity.hash,
               size: 40,
-              verified: true,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -95,23 +95,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.verified_user_outlined,
-                        size: 14,
-                        color: ShaColors.success,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Verifierad kontakt',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: ShaColors.success,
-                        ),
-                      ),
-                    ],
+                  VerifiedInPerson(
+                    verifiedAt: contact.verifiedAt,
+                    fontSize: 12.5,
                   ),
                 ],
               ),

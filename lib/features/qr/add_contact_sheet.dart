@@ -113,6 +113,13 @@ class _AddContactSheetState extends State<_AddContactSheet> {
             decoration: const InputDecoration(
               labelText: 'Namn på kontakten',
               border: OutlineInputBorder(),
+              // The theme outline is too faint (1.8:1) on the sheet.
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: ShaColors.fieldBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: ShaColors.primary, width: 2),
+              ),
             ),
           ),
           const SizedBox(height: 18),

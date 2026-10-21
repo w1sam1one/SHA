@@ -19,6 +19,14 @@ abstract final class ShaColors {
   static const onSuccess = Color(0xFF0D2B18);
   static const warning = Color(0xFFEFC27B);
 
+  /// Background for device-protection warnings (with [warning] text).
+  static const warningContainer = Color(0xFF3B2D14);
+
+  /// Border of outlined text fields and buttons: 5.4–5.8:1 on background and
+  /// navBar, 5.1:1 on surface, 4.5:1 on surfaceHigh (the theme [outline] is
+  /// only 1.5–1.9:1).
+  static const fieldBorder = Color(0xFF889197);
+
   /// Destructive, irreversible actions only.
   static const danger = Color(0xFFF2B8B5);
   static const dangerContainer = Color(0xFF3B1A19);
@@ -109,7 +117,7 @@ ThemeData buildShaTheme() {
         minimumSize: const Size.fromHeight(48),
         shape: const StadiumBorder(),
         foregroundColor: ShaColors.text,
-        side: const BorderSide(color: Color(0xFF889197)),
+        side: const BorderSide(color: ShaColors.fieldBorder),
         textStyle: const TextStyle(
           fontFamily: ShaFonts.sans,
           fontSize: 15,

@@ -52,7 +52,6 @@ class ChatsScreen extends ConsumerWidget {
                     leading: ContactAvatar(
                       name: t.contact.name,
                       hash: t.contact.identity.hash,
-                      verified: true,
                     ),
                     title: Text(
                       t.contact.name,

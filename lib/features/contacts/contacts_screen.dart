@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../ui/avatar.dart';
-import '../../ui/time_format.dart';
+import '../../ui/trust_display.dart';
 import '../chat/chat_screen.dart';
 import '../qr/scan_screen.dart';
 import 'contacts_store.dart';
@@ -62,7 +62,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
                         child: Text(
-                          'Verifierade · ${contacts.length}',
+                          verifiedSectionTitle(contacts.length),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -79,7 +79,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
                           leading: ContactAvatar(
                             name: contact.name,
                             hash: contact.identity.hash,
-                            verified: true,
                           ),
                           title: Text(
                             contact.name,
@@ -88,26 +87,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          subtitle: Text.rich(
-                            TextSpan(
-                              children: [
-                                const TextSpan(
-                                  text: 'Verifierad',
-                                  style: TextStyle(
-                                    color: ShaColors.success,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text:
-                                      ' · möttes ${formatDay(contact.verifiedAt)}',
-                                ),
-                              ],
-                            ),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFFA7B0B6),
-                            ),
+                          subtitle: VerifiedInPerson(
+                            verifiedAt: contact.verifiedAt,
                           ),
                           onTap: () => ChatScreen.open(context, contact.id),
                         ),
