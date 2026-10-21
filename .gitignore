@@ -46,3 +46,8 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Signing keys (e.g. the Play upload keystore) anywhere in the repo.
+# android/key.properties is already ignored by android/.gitignore.
+*.jks
+*.keystore
