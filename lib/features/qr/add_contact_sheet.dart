@@ -165,6 +165,12 @@ class _AddContactSheetState extends State<_AddContactSheet> {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          Text(
+            'Be ${name.isEmpty ? 'den andra' : name} också skanna din QR-kod, '
+            'annars kan ni inte skriva till varandra.',
+            style: const TextStyle(fontSize: 13.5, color: ShaColors.text),
+          ),
           const SizedBox(height: 20),
           Row(
             children: [

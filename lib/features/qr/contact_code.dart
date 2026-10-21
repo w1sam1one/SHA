@@ -22,6 +22,7 @@ abstract final class ContactCode {
   static const String scheme = 'shaid';
   static const int version = 1;
   static const int maxLength = 160;
+  static const String _damaged = 'Koden verkar vara skadad. Skanna igen.';
 
   static String encode(PublicIdentity identity) {
     final key = base64Url.encode(identity.publicKey).replaceAll('=', '');
@@ -48,14 +49,12 @@ abstract final class ContactCode {
         base64Url.decode(base64Url.normalize(parts[3])),
       );
     } on FormatException {
-      throw const ContactCodeException('Koden är skadad.');
+      throw const ContactCodeException(_damaged);
     } on CryptoException {
-      throw const ContactCodeException('Koden är skadad.');
+      throw const ContactCodeException(_damaged);
     }
     if (identity.hash != claimed) {
-      throw const ContactCodeException(
-        'Kodens hash stämmer inte med nyckeln. Skanna igen.',
-      );
+      throw const ContactCodeException(_damaged);
     }
     return identity;
   }
