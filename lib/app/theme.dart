@@ -18,6 +18,10 @@ abstract final class ShaColors {
   static const success = Color(0xFF86D6A0);
   static const onSuccess = Color(0xFF0D2B18);
   static const warning = Color(0xFFEFC27B);
+
+  /// Destructive, irreversible actions only.
+  static const danger = Color(0xFFF2B8B5);
+  static const dangerContainer = Color(0xFF3B1A19);
   static const qrBackground = Color(0xFFF4F6F7);
   static const bubbleOutgoingText = Color(0xFFE6F0FC);
   static const bubbleOutgoingMeta = Color(0xFFA9C7E6);
@@ -45,7 +49,7 @@ ThemeData buildShaTheme() {
     onSecondaryContainer: ShaColors.onPrimaryContainer,
     outline: ShaColors.outline,
     outlineVariant: ShaColors.divider,
-    error: Color(0xFFF2B8B5),
+    error: ShaColors.danger,
   );
   final base = ThemeData(
     useMaterial3: true,
