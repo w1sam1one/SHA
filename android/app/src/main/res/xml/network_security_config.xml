@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No plain-text traffic and only system CAs (no user-installed CAs that
+     could be used to intercept relay traffic). Relay hosts should add
+     certificate pins here when they exist. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

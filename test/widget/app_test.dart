@@ -4,14 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sha/app/app.dart';
 import 'package:sha/core/providers.dart';
 
-import '../support/in_memory_key_storage.dart';
+import '../support/in_memory_vault.dart';
 
 void main() {
   testWidgets('first launch creates an identity and shows it', (tester) async {
-    final storage = InMemoryKeyStorage();
+    final storage = InMemoryVault();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [secureKeyStorageProvider.overrideWithValue(storage)],
+        overrides: [keyVaultProvider.overrideWithValue(storage)],
         child: const ShaApp(),
       ),
     );
@@ -21,7 +21,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Din identitet är skapad'), findsOneWidget);
-    expect(storage.values, hasLength(1));
+    expect(storage.values, hasLength(2));
 
     await tester.tap(find.text('Fortsätt'));
     await tester.pumpAndSettle();

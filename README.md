@@ -16,14 +16,17 @@ flutter analyze
 flutter run           # Android-enhet eller emulator (API 24+)
 ```
 
-Utan kamera (t.ex. emulator): tryck kopiera-ikonen på **Min QR** på den ena
-enheten och använd **Ange kod manuellt** på skannerskärmen på den andra.
+Utan kamera (t.ex. emulator), i **debug-bygge**: tryck kopiera-ikonen på
+**Min QR** på den ena enheten och använd **Ange kod manuellt** på
+skannerskärmen på den andra. I release finns inte dessa – kontakter läggs bara
+till genom att man träffas och skannar.
 
 ## Struktur
 
 ```
 lib/
 ├── crypto/            All kryptografi – se lib/crypto/README.md
+│                      (+ android/.../kotlin/se/sha/sha/keystore/)
 ├── core/              Riverpod-providers för krypto och lagring, id-generator
 ├── app/               MaterialApp, tema (färger och typsnitt från designen)
 ├── features/
@@ -36,8 +39,10 @@ lib/
 ```
 
 Appen pratar bara med kryptot via `CryptoService` (`lib/crypto/crypto.dart`).
-Meddelanden lagras endast som AES-256-GCM-kuvert; klartext finns bara i minnet
-medan en chatt är öppen (`chatProvider` är `autoDispose`).
+Meddelanden lagras endast som färdiga relä-paket (AES-256-GCM); klartext finns
+bara i minnet medan en chatt är öppen (`chatProvider` är `autoDispose`).
+
+Säkerhetsgranskning, hotmodell och nästa steg: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
 
 ## QR-format
 
@@ -46,12 +51,26 @@ shaid:1:<identitetshash, 64 hex>:<X25519 publik nyckel, base64url>
 ```
 
 Allt i koden är publikt. Skannern kontrollerar att hashen är SHA-256 av nyckeln,
-avvisar din egen kod och visar en gemensam sexsiffrig kontrollkod som båda ska
-jämföra innan kontakten läggs till.
+avvisar din egen kod och ogiltiga nycklar, och visar en gemensam 20-siffrig
+kontrollkod som båda ska jämföra innan kontakten läggs till.
+
+## Relä-paket
+
+Meddelanden skickas (i nästa steg) till en pool av relä-servrar. Ett paket är
+`version || brevlåde-id || nonce || chiffertext || tagg`. Brevlåde-id:t är en
+pseudonym som byts varje dygn och skiljer sig per konversation och riktning;
+reläet ser aldrig vem som skickar till vem. Paketen fylls ut till fem fasta
+storlekar. Detaljer i `lib/crypto/README.md`.
 
 ## Android-härdning
 
-- Privat nyckel i Android Keystore-skyddad lagring (`flutter_secure_storage`).
+- Privat nyckel krypterad av en icke-exporterbar Keystore-nyckel (StrongBox om
+  telefonen har det, annars TEE) som bara fungerar när telefonen är upplåst.
+  Filerna ligger i `noBackupFilesDir`, som andra appar inte kan läsa.
+- Appen visar var nyckeln skyddas och varnar om skärmlås eller
+  säkerhetshårdvara saknas.
+- Tangentbordet ombeds att inte lära sig av det du skriver (inkognitoläge).
+- `network_security_config.xml`: ingen okrypterad trafik, bara systemets CA:er.
 - `allowBackup="false"` och `data_extraction_rules.xml` – ingen moln-backup
   eller enhetsöverföring.
 - `FLAG_SECURE` – inga skärmdumpar eller förhandsvisning i "senaste appar".
@@ -62,6 +81,7 @@ jämföra innan kontakten läggs till.
 ## Nästa steg
 
 - Transport/backend och mottagna meddelanden.
-- Ratchet för forward secrecy och nyckelrotation.
+- Double Ratchet (libsignal) för forward secrecy.
+- Tor/mixnät och täcktrafik mot reläerna.
 - Persistent, krypterad lagring av kontakter och meddelanden.
-- Nyckelavtal helt inne i Keystore/StrongBox via plattformskanal.
+- App-lås med biometri/PIN.

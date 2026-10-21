@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/errors.dart';
 import '../features/home/home_shell.dart';
 import '../features/onboarding/identity_controller.dart';
 import '../features/onboarding/identity_screen.dart';
@@ -29,7 +30,7 @@ class _Root extends ConsumerWidget {
     return switch (ref.watch(identityProvider)) {
       AsyncData(:final value) =>
         value.firstLaunch ? const IdentityScreen() : const HomeShell(),
-      AsyncError() => Scaffold(
+      AsyncError(:final error) => Scaffold(
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -38,10 +39,7 @@ class _Root extends ConsumerWidget {
               children: [
                 const Icon(Icons.gpp_bad_outlined, size: 48),
                 const SizedBox(height: 16),
-                const Text(
-                  'Din identitet kunde inte läsas från telefonens säkra lagring.',
-                  textAlign: TextAlign.center,
-                ),
+                Text(describeError(error), textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => ref.invalidate(identityProvider),

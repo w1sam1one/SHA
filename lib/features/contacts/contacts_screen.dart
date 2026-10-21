@@ -38,14 +38,19 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SearchBar(
-              hintText: 'Sök bland kontakter',
-              leading: const Icon(Icons.search_rounded),
-              elevation: const WidgetStatePropertyAll(0),
-              backgroundColor: const WidgetStatePropertyAll(
-                ShaColors.surfaceHigh,
-              ),
+            child: TextField(
+              enableIMEPersonalizedLearning: false,
               onChanged: (value) => setState(() => _query = value),
+              decoration: InputDecoration(
+                hintText: 'Sök bland kontakter',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: ShaColors.surfaceHigh,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(26),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
           ),
           Expanded(

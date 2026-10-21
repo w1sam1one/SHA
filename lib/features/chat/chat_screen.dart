@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../core/errors.dart';
 import '../../ui/avatar.dart';
 import '../../ui/time_format.dart';
 import '../contacts/contacts_store.dart';
@@ -41,10 +42,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       await ref.read(chatProvider(widget.contactId).notifier).send(text);
       _input.clear();
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Meddelandet kunde inte krypteras.')),
+          SnackBar(
+            content: Text(
+              e is MessageTooLongException
+                  ? 'Meddelandet är för långt.'
+                  : describeError(e),
+            ),
+          ),
         );
       }
     } finally {
@@ -117,8 +124,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: messages.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Center(
-                child: Text('Konversationen kunde inte öppnas.'),
+              error: (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(describeError(error), textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () =>
+                            ref.invalidate(chatProvider(widget.contactId)),
+                        child: const Text('Försök igen'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               data: (list) => ListView(
                 reverse: true,
@@ -142,6 +163,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       controller: _input,
                       minLines: 1,
                       maxLines: 5,
+                      maxLength: MessagingService.maxTextLength,
+                      buildCounter: _hideCounter,
+                      // Ask the keyboard not to learn from what is typed.
+                      enableIMEPersonalizedLearning: false,
                       textCapitalization: TextCapitalization.sentences,
                       onSubmitted: (_) => _send(),
                       decoration: InputDecoration(
@@ -181,6 +206,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 }
+
+Widget? _hideCounter(
+  BuildContext context, {
+  required int currentLength,
+  required int? maxLength,
+  required bool isFocused,
+}) => null;
 
 class _E2eNotice extends StatelessWidget {
   const _E2eNotice({required this.name});

@@ -107,6 +107,8 @@ class _AddContactSheetState extends State<_AddContactSheet> {
           TextField(
             controller: _name,
             autofocus: true,
+            maxLength: 64,
+            enableIMEPersonalizedLearning: false,
             textCapitalization: TextCapitalization.words,
             decoration: const InputDecoration(
               labelText: 'Namn på kontakten',
@@ -133,19 +135,21 @@ class _AddContactSheetState extends State<_AddContactSheet> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  formatVerificationCode(widget.code),
-                  style: const TextStyle(
-                    fontFamily: ShaFonts.mono,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 4,
+                for (final line in verificationCodeLines(widget.code))
+                  Text(
+                    line,
+                    style: const TextStyle(
+                      fontFamily: ShaFonts.mono,
+                      fontSize: 26,
+                      height: 36 / 26,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 3,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 4),
                 Text(
                   'Kontrollera att ${name.isEmpty ? 'den andras' : _genitive(name)} '
-                  'telefon visar samma kod.',
+                  'telefon visar exakt samma 20 siffror.',
                   style: const TextStyle(
                     fontSize: 13.5,
                     color: ShaColors.textSecondary,
