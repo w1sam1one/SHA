@@ -40,7 +40,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               bottom: false,
               child: Container(
                 width: double.infinity,
-                color: const Color(0xFF3B2D14),
+                color: ShaColors.warningContainer,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

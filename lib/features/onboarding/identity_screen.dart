@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../crypto/crypto.dart';
 import '../../ui/hash_format.dart';
 import '../../ui/identicon.dart';
+import '../../ui/technical_info_sheet.dart';
 import 'identity_controller.dart';
 
 /// Shown once, right after the identity has been generated.
@@ -87,6 +88,13 @@ class IdentityScreen extends ConsumerWidget {
                     icon: Icons.people_alt_outlined,
                     text: 'Kontakter läggs bara till när ni ses på riktigt',
                   ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => showTechnicalInfoSheet(context),
+                      child: const Text('Teknisk information'),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -105,7 +113,7 @@ class IdentityScreen extends ConsumerWidget {
                   ),
                   TextButton(
                     onPressed: () => _explainHash(context),
-                    child: const Text('Vad är en identitetshash?'),
+                    child: const Text('Vad är min identitet?'),
                   ),
                 ],
               ),
@@ -133,10 +141,10 @@ class IdentityScreen extends ConsumerWidget {
       builder: (context) => const Padding(
         padding: EdgeInsets.fromLTRB(24, 0, 24, 32),
         child: Text(
-          'Identitetshashen är ett SHA-256-fingeravtryck av din offentliga '
-          'nyckel. Den är inte hemlig – den är din adress i SHA och det som '
-          'din QR-kod visar. När ni ses jämför ni koderna, så att ni vet att '
-          'nyckeln verkligen tillhör rätt person.',
+          'Din identitet är ett unikt fingeravtryck av din nyckel. Det är '
+          'inte hemligt – det är din adress i SHA och det som din QR-kod '
+          'visar. När ni ses jämför ni koderna, så att ni vet att nyckeln '
+          'tillhör rätt person.',
           style: TextStyle(fontSize: 15, height: 1.5),
         ),
       ),
@@ -188,7 +196,7 @@ class _HashCard extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'DIN IDENTITETSHASH',
+                  'DIN IDENTITET',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -268,9 +276,9 @@ class _Point extends StatelessWidget {
 String describeProtection(KeyProtection p) {
   final where = switch (p.level) {
     KeyProtectionLevel.strongBox =>
-      'Nyckeln skyddas av ett separat säkerhetschip (StrongBox)',
+      'Nyckeln skyddas av ett separat säkerhetschip',
     KeyProtectionLevel.trustedEnvironment =>
-      'Nyckeln skyddas i telefonens isolerade säkerhetsmiljö (TEE)',
+      'Nyckeln skyddas i telefonens isolerade säkerhetsmiljö',
     KeyProtectionLevel.secureHardware =>
       'Nyckeln skyddas i telefonens säkerhetshårdvara',
     KeyProtectionLevel.software || KeyProtectionLevel.unknown =>

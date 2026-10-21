@@ -22,7 +22,7 @@ class Identicon extends StatelessWidget {
     }
 
     return Semantics(
-      label: 'Identitetsbild skapad från hashen',
+      label: 'Bild som är unik för identiteten',
       child: SizedBox.square(
         dimension: size,
         child: Column(

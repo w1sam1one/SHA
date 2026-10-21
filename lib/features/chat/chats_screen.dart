@@ -36,8 +36,8 @@ class ChatsScreen extends ConsumerWidget {
               child: Padding(
                 padding: EdgeInsets.all(40),
                 child: Text(
-                  'Inga chattar än. Öppna en kontakt för att skriva det första '
-                  'krypterade meddelandet.',
+                  'Inga chattar än. Öppna en kontakt för att skriva ditt första '
+                  'meddelande.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: ShaColors.textSecondary),
                 ),
@@ -52,7 +52,6 @@ class ChatsScreen extends ConsumerWidget {
                     leading: ContactAvatar(
                       name: t.contact.name,
                       hash: t.contact.identity.hash,
-                      verified: true,
                     ),
                     title: Text(
                       t.contact.name,
@@ -61,12 +60,10 @@ class ChatsScreen extends ConsumerWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    subtitle: Row(
-                      children: [
-                        const Icon(Icons.lock_outline_rounded, size: 14),
-                        const SizedBox(width: 4),
-                        Text('${t.messages.length} krypterade meddelanden'),
-                      ],
+                    subtitle: Text(
+                      t.messages.length == 1
+                          ? '1 meddelande'
+                          : '${t.messages.length} meddelanden',
                     ),
                     trailing: Text(
                       formatTime(t.messages.last.storedAt),

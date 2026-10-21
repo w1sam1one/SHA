@@ -135,8 +135,9 @@ class MyQrScreen extends ConsumerWidget {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Koden innehåller bara din offentliga nyckel och dess '
-                    'SHA-256-hash. Den hemliga nyckeln stannar alltid i telefonen.',
+                    'Koden är inte hemlig. Den innehåller bara din offentliga '
+                    'nyckel och kan visas för den du träffar. Din hemliga nyckel '
+                    'lämnar aldrig telefonen.',
                     style: TextStyle(
                       fontSize: 13.5,
                       height: 20 / 13.5,

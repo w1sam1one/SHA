@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/errors.dart';
+import '../../core/providers.dart';
 import '../../ui/avatar.dart';
+import '../../ui/technical_info_sheet.dart';
 import '../../ui/time_format.dart';
+import '../../ui/trust_display.dart';
 import '../contacts/contacts_store.dart';
 import 'chat_controller.dart';
 import 'messaging_service.dart';
@@ -70,6 +73,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return const Scaffold(body: Center(child: Text('Kontakten finns inte.')));
     }
     final messages = ref.watch(chatProvider(widget.contactId));
+    final transportAvailable = ref.watch(transportAvailableProvider);
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -80,7 +84,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               name: contact.name,
               hash: contact.identity.hash,
               size: 40,
-              verified: true,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -95,23 +98,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.verified_user_outlined,
-                        size: 14,
-                        color: ShaColors.success,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Verifierad kontakt',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: ShaColors.success,
-                        ),
-                      ),
-                    ],
+                  VerifiedInPerson(
+                    verifiedAt: contact.verifiedAt,
+                    fontSize: 12.5,
                   ),
                 ],
               ),
@@ -152,6 +141,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           ),
+          if (!transportAvailable) _PreviewNotice(name: contact.name),
           SafeArea(
             top: false,
             child: Padding(
@@ -170,17 +160,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       textCapitalization: TextCapitalization.sentences,
                       onSubmitted: (_) => _send(),
                       decoration: InputDecoration(
-                        hintText: 'Krypterat meddelande',
+                        hintText: 'Skriv ett meddelande',
                         filled: true,
                         fillColor: ShaColors.surfaceHigh,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 14,
-                        ),
-                        suffixIcon: const Icon(
-                          Icons.lock_outline_rounded,
-                          size: 16,
-                          color: Color(0xFF8F989E),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(26),
@@ -214,6 +199,48 @@ Widget? _hideCounter(
   required bool isFocused,
 }) => null;
 
+/// Says plainly that nothing is sent yet. Neutral (not a warning): it is the
+/// state of the app, not a problem with the phone.
+class _PreviewNotice extends StatelessWidget {
+  const _PreviewNotice({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: ShaColors.surface,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 18,
+              color: ShaColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Förhandsversion: meddelanden skickas inte till $name än och '
+              'finns bara kvar tills du stänger appen.',
+              style: const TextStyle(
+                fontSize: 13,
+                height: 18 / 13,
+                color: ShaColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _E2eNotice extends StatelessWidget {
   const _E2eNotice({required this.name});
 
@@ -242,14 +269,26 @@ class _E2eNotice extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                'Meddelanden krypteras med AES-256-GCM. '
-                'Bara du och $name har nyckeln.',
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  height: 18 / 12.5,
-                  color: ShaColors.textSecondary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Meddelanden är krypterade. Bara du och $name kan läsa dem.',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      height: 18 / 12.5,
+                      color: ShaColors.textSecondary,
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    onPressed: () => showTechnicalInfoSheet(context),
+                    child: const Text('Teknisk information'),
+                  ),
+                ],
               ),
             ),
           ],

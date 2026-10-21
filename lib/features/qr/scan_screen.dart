@@ -11,6 +11,7 @@ import '../contacts/contacts_store.dart';
 import '../onboarding/identity_controller.dart';
 import 'add_contact_sheet.dart';
 import 'contact_code.dart';
+import 'my_qr_screen.dart';
 
 /// Scans another person's SHA QR code and adds them as a contact.
 class ScanScreen extends ConsumerStatefulWidget {
@@ -97,9 +98,22 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       if (contact == null || !mounted) return;
       ref.read(contactsProvider.notifier).add(contact);
       final messenger = ScaffoldMessenger.of(context);
-      Navigator.of(context).pop();
+      final screenReader = MediaQuery.accessibleNavigationOf(context);
+      final navigator = Navigator.of(context)..pop();
       messenger.showSnackBar(
-        SnackBar(content: Text('${contact.name} är tillagd och verifierad')),
+        SnackBar(
+          content: Text('${contact.name} är tillagd.'),
+          duration: const Duration(seconds: 8),
+          // A snackbar with an action would otherwise never time out. Keep
+          // that only for screen-reader users, so they can reach the action.
+          persist: screenReader,
+          action: SnackBarAction(
+            label: 'Visa min QR',
+            onPressed: () => navigator.push(
+              MaterialPageRoute<void>(builder: (_) => const MyQrScreen()),
+            ),
+          ),
+        ),
       );
     } finally {
       _ignoreCameraUntil = DateTime.now().add(const Duration(seconds: 3));

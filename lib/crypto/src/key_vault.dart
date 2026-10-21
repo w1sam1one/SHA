@@ -14,6 +14,10 @@ abstract interface class KeyVault implements EntropySource {
 
   Future<void> delete(String name);
 
+  /// Deletes every stored entry and the vault's own key, so the next [write]
+  /// starts from scratch. Irreversible. Does nothing if the vault is empty.
+  Future<void> reset();
+
   /// How the vault's key is protected on this device.
   Future<KeyProtection> protection();
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../app/theme.dart';
 import '../crypto/crypto.dart';
+import 'trust_display.dart';
 
 const _palette = [
   (Color(0xFF2B3F55), Color(0xFFD6E4F2)),
@@ -14,20 +14,18 @@ const _palette = [
 ];
 
 /// Initials avatar with a colour picked from the contact's identity hash and
-/// an optional "verified" badge.
+/// the "verified in person" badge (every contact is verified in person).
 class ContactAvatar extends StatelessWidget {
   const ContactAvatar({
     super.key,
     required this.name,
     required this.hash,
     this.size = 44,
-    this.verified = false,
   });
 
   final String name;
   final IdentityHash hash;
   final double size;
-  final bool verified;
 
   @override
   Widget build(BuildContext context) {
@@ -50,25 +48,7 @@ class ContactAvatar extends StatelessWidget {
               ),
             ),
           ),
-          if (verified)
-            Positioned(
-              right: -3,
-              bottom: -3,
-              child: Container(
-                width: badge,
-                height: badge,
-                decoration: BoxDecoration(
-                  color: ShaColors.success,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: ShaColors.background, width: 3),
-                ),
-                child: Icon(
-                  Icons.check_rounded,
-                  size: badge * 0.6,
-                  color: ShaColors.onSuccess,
-                ),
-              ),
-            ),
+          Positioned(right: -3, bottom: -3, child: VerifiedBadge(size: badge)),
         ],
       ),
     );

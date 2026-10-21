@@ -36,6 +36,9 @@ final class AndroidKeystoreVault implements KeyVault {
       _call<void>('delete', {'name': _checkName(name)});
 
   @override
+  Future<void> reset() => _call<void>('reset', const {});
+
+  @override
   Future<Uint8List> randomBytes(int length) async {
     if (length <= 0 || length > 1024) {
       throw const CryptoException('Invalid random length');

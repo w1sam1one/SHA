@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/errors.dart';
+import '../crypto/crypto.dart';
 import '../features/home/home_shell.dart';
 import '../features/onboarding/identity_controller.dart';
+import '../features/onboarding/identity_recovery_screen.dart';
 import '../features/onboarding/identity_screen.dart';
 import 'theme.dart';
 
@@ -30,6 +32,10 @@ class _Root extends ConsumerWidget {
     return switch (ref.watch(identityProvider)) {
       AsyncData(:final value) =>
         value.firstLaunch ? const IdentityScreen() : const HomeShell(),
+      // Keyed by the error: the screen keeps its "busy" state while the
+      // provider reloads (same error), and starts fresh if it fails again.
+      AsyncError(:final error) when _needsRecovery(error) =>
+        IdentityRecoveryScreen(key: ObjectKey(error)),
       AsyncError(:final error) => Scaffold(
         body: Center(
           child: Padding(
@@ -53,4 +59,11 @@ class _Root extends ConsumerWidget {
       _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
     };
   }
+
+  /// The key protecting the identity is gone or unreadable: retrying alone
+  /// can never succeed, so offer to start over.
+  static bool _needsRecovery(Object error) =>
+      error is CryptoException &&
+      (error.kind == CryptoErrorKind.keyInvalidated ||
+          error.kind == CryptoErrorKind.corrupt);
 }
