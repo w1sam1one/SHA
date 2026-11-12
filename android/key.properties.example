@@ -1,0 +1,20 @@
+# Mall för release-signering. Se docs/release.md.
+#
+# 1. Kopiera den här filen till android/key.properties (samma mapp).
+# 2. Fyll i värdena i KOPIAN, aldrig här.
+# 3. android/key.properties är git-ignorerad och får ALDRIG checkas in,
+#    klistras in i en chatt, ett ärende eller skickas till någon.
+#
+# storeFile:     hela sökvägen till din uppladdningsnyckel (.jks), som ska
+#                ligga UTANFÖR repot, t.ex. /home/<namn>/upload-keystore.jks
+#                eller C:/Users/<namn>/upload-keystore.jks. ~ fungerar inte,
+#                och använd / (inte \) även på Windows.
+# keyAlias:      aliaset du valde i keytool (upload om du följer docs/release.md).
+# storePassword: lösenordet till nyckelfilen.
+# keyPassword:   lösenordet till nyckeln (ofta samma som storePassword).
+#
+# Innehåller ett lösenord tecknet \ måste det skrivas \\ här.
+storePassword=
+keyPassword=
+keyAlias=
+storeFile=
