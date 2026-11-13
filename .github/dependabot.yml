@@ -1,0 +1,95 @@
+# Dependabot version updates, once a week, with minor and patch updates
+# grouped so there are few pull requests. Security updates and alerts are
+# switched on in the repository settings, not in this file (see
+# docs/decisions/0004-olm-integration-design.md, point 12).
+#
+# Keys checked against the Dependabot options reference on docs.github.com,
+# 2026-11-13:
+# https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+#
+# Not covered by Dependabot, updated by hand: the Flutter SDK, Go and Rust
+# toolchains and the Android NDK/system image pinned in .github/workflows/,
+# and the Rust crates that flutter_vodozemac builds from its own Cargo.lock.
+version: 2
+updates:
+  # The app: pubspec.yaml and pubspec.lock in the repository root.
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Stockholm"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(app)"
+    groups:
+      app-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # The Olm spike: exact pins and its own lockfile. The three Olm packages
+  # are released together and must move together, so they share one group
+  # (all update types, majors included).
+  - package-ecosystem: "pub"
+    directory: "/spike/vodozemac"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Stockholm"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps(spike)"
+    groups:
+      olm:
+        applies-to: version-updates
+        patterns:
+          - "flutter_vodozemac"
+          - "vodozemac"
+          - "flutter_rust_bridge"
+      spike-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # The relay: only Go's standard library today, so this raises pull
+  # requests only if modules are added to relay/go.mod.
+  - package-ecosystem: "gomod"
+    directory: "/relay"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Stockholm"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps(relay)"
+    groups:
+      relay-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Actions in .github/workflows/, pinned by commit SHA with the version as
+  # a comment on the same line; Dependabot updates both.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Stockholm"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
