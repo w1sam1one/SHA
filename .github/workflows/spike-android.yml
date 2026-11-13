@@ -74,11 +74,26 @@ jobs:
         run: |
           ls -l /dev/kvm
           emulator -accel-check || true
+          # avdmanager and the emulator must look in the same place: in
+          # an earlier run avdmanager wrote the AVD elsewhere and the emulator
+          # stopped with "Unknown AVD name [spike]".
+          export ANDROID_AVD_HOME="$HOME/.android/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
             --force -n spike -k "$SYSTEM_IMAGE" --device pixel_6
+          emulator -list-avds | grep -qx spike
           nohup emulator -avd spike -no-window -no-audio -no-boot-anim \
             -gpu swiftshader_indirect -no-snapshot > "$RUNNER_TEMP/emulator.log" 2>&1 &
-          if ! timeout 300 adb wait-for-device; then
+          emulator_pid=$!
+          for _ in $(seq 1 60); do
+            adb devices | grep -q '^emulator-5554' && break
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              echo "::error::the emulator exited"
+              exit 1
+            fi
+            sleep 5
+          done
+          if ! timeout 60 adb wait-for-device; then
             echo "::error::the emulator did not come up within 5 minutes"
             exit 1
           fi
