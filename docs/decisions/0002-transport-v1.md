@@ -33,6 +33,16 @@ fortfarande på D3.
 loggar. En IP-adress får bara finnas i RAM för spamgränser och ska glömmas
 inom några minuter.
 
+## Licens
+
+Beslutat av ägaren 2026-11-13.
+
+- Repot är stängt nu: "All rights reserved" (`LICENSE`).
+- Om ett AGPL-bibliotek väljs för protokollet (D3, se
+  [0003](0003-protocol-library.md)) byts `LICENSE` till **AGPL-3.0**. Det
+  sker senast före första utdelningen av appen, även till testare via
+  Google Play.
+
 ## Formuleringar i appen
 
 Beslutat av ägaren:
