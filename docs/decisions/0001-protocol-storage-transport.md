@@ -2,7 +2,9 @@
 
 Status: **D1 Accepted by owner** (2026-11-13). **D2 amended by owner**
 (2026-11-13): the standalone relay may be built now, see
-[0002](0002-transport-v1.md). **D3 open – owner decides.** See Gate.
+[0002](0002-transport-v1.md). **D3 Accepted by owner with conditions**
+(2026-11-13): flutter_vodozemac (Olm), see
+[0003](0003-protocol-library.md). See Gate.
 
 ## Facts (with source)
 
@@ -95,7 +97,10 @@ because:
    contacts can only be re-established by meeting again.
 3. Mailbox derivation and polling depend on the protocol's key schedule.
 
-**D3 – Library and licence.** Options:
+**D3 – Library and licence.** *(Accepted by owner with conditions,
+2026-11-13, in [0003](0003-protocol-library.md), section "Beslut":
+flutter_vodozemac (Olm); `LICENSE` becomes AGPL-3.0 before the first
+distribution, which is option (a) below.)* Options:
 
 - (a) Publish SHA as open source under an AGPL-compatible licence and use an
   AGPL library (libsignal, or flutter_vodozemac/vodozemac Dart packages).
@@ -120,6 +125,13 @@ an AI assistant must not invent cryptography for SHA.
 - Allowed now (D2 as amended, [0002](0002-transport-v1.md)): the standalone
   relay server in `relay/`. It stores only opaque packets, decrypts nothing
   and is not connected to the app.
-- Blocked until **D3** is marked **Accepted** by the owner: storage in the
-  app and connecting the app to the relay. Until then no protocol library,
-  database, HTTP/Tor client or other dependency is added to the app.
+- **D3** is accepted with conditions ([0003](0003-protocol-library.md),
+  "Beslut").
+- Blocked until **[0004](0004-olm-integration-design.md)** (how the app uses
+  Olm) is marked **Accepted** by the owner: connecting Olm in the app,
+  storage in the app, and connecting the app to the relay. Until then no
+  protocol library, database, HTTP/Tor client or other dependency is added
+  to the app.
+- Before the first distribution of the app, also to testers via Google
+  Play: the conditions in 0003 ("Beslut") and `LICENSE` changed to
+  AGPL-3.0.
