@@ -85,3 +85,9 @@ storlekar. Detaljer i `lib/crypto/README.md`.
 - Tor/mixnät och täcktrafik mot reläerna.
 - Persistent, krypterad lagring av kontakter och meddelanden.
 - App-lås med biometri/PIN.
+
+## Licens
+
+Copyright © 2026 Wisam Husein. Alla rättigheter förbehållna. Ingen del får
+användas, kopieras, ändras eller spridas utan skriftligt tillstånd. Se
+[`LICENSE`](LICENSE). Typsnitt och paket från andra behåller sina egna licenser.

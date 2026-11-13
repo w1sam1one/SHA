@@ -1,0 +1,35 @@
+Copyright (c) 2026 Wisam Husein. All rights reserved.
+
+This repository and everything in it (source code, documentation, designs
+and other material) is protected by copyright. No licence is granted.
+
+You may not use, copy, modify, merge, publish, distribute, sublicense or
+sell any part of it, or create derivative works from it, without prior
+written permission from the copyright holder. Being given access to this
+repository does not grant any of these rights.
+
+Third-party components keep their own licences. This includes the fonts in
+assets/fonts/ (SIL Open Font License, see the OFL files there) and the
+packages listed in pubspec.yaml.
+
+To ask for permission, contact the copyright holder through GitHub
+(@w1sam1one).
+
+-------------------------------------------------------------------------
+
+Upphovsrätt (c) 2026 Wisam Husein. Alla rättigheter förbehållna.
+
+Detta repo och allt innehåll (källkod, dokumentation, design och annat
+material) skyddas av upphovsrätt. Ingen licens ges.
+
+Du får inte använda, kopiera, ändra, publicera, sprida, underlicensiera
+eller sälja någon del av det, eller skapa bearbetningar av det, utan
+skriftligt tillstånd i förväg från upphovsrättsinnehavaren. Att du har fått
+tillgång till repot ger dig inte någon av dessa rättigheter.
+
+Komponenter från andra behåller sina egna licenser. Det gäller typsnitten i
+assets/fonts/ (SIL Open Font License, se OFL-filerna där) och paketen i
+pubspec.yaml.
+
+Kontakta upphovsrättsinnehavaren via GitHub (@w1sam1one) för att be om
+tillstånd.
