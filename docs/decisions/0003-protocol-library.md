@@ -160,9 +160,22 @@ dem, vilket redan gäller enligt `test/security/no_logging_test.dart`.
   Hinkstorlekarna måste räknas om.
 
 **R8 – Android.**
-- **Värddatorn:** `linux_x64`, Dart 3.13.5, gröna tester.
-- **Android:** fylls i efter körningen på emulatorn
-  (`.github/workflows/spike-android.yml`).
+- **Värddatorn:** `linux_x64`, Dart 3.13.5, 14 av 14 gröna.
+- **Android-emulator i CI:** `.github/workflows/spike-android.yml`,
+  körning 43378865772 på commit `bb65d69`, 2026-11-13.
+  - ABI **x86_64**, Android **15** (API 35), systemavbild
+    `google_apis;x86_64`.
+  - Samma 14 tester via `integration_test`: **14 av 14 gröna**
+    (`flutter test integration_test/olm_spike_test.dart -d emulator-5554`).
+  - Pluginet byggde Rust-delen från källkod för `x86_64-linux-android` och
+    `i686-linux-android` ("Precompiled binaries are disabled"). Bygget
+    (`assembleDebug`) tog 595 sekunder.
+- **Inte visat på Android:** raderna `SPIKE-REPORT` syns inte i CI-loggen.
+  Storlekarna i R7 är därför bara mätta på datorn. På emulatorn kördes
+  testernas kontroller, till exempel att ciffertexten växer med texten och
+  att tillägget ligger mellan 16 och 96 byte.
+- **Ej verifierat:** riktig telefon (arm64) och prestanda. Emulatorn kör
+  x86_64, och arm64-bygget är inte provat.
 
 ### Mutationer
 
