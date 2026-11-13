@@ -1,0 +1,140 @@
+# R8 of the vodozemac spike: the requirement tests on an Android emulator.
+# Separate from ci.yml because it is slow; runs only when the spike changes,
+# or by hand. Versions pinned as in ci.yml; the emulator system image is
+# pinned by API level and variant (sdkmanager has no revision pin).
+name: Spike Android
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - spike/vodozemac/**
+      - .github/workflows/spike-android.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spike-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulator:
+    name: Spike vodozemac on Android emulator
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: spike/vodozemac
+    env:
+      FLUTTER_VERSION: 3.47.7
+      FLUTTER_SHA256: af7455f540df951184c7953fbe3cf884766e7541dacf8571f9f582db03dd6230
+      RUST_TOOLCHAIN: 1.97.0
+      API_LEVEL: 35
+      SYSTEM_IMAGE: system-images;android-35;google_apis;x86_64
+      NDK_VERSION: 28.2.13676358
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The runner image is nearly full: run 4 stopped with "No space left on
+      # device" while sdkmanager unpacked the system image. Remove preinstalled
+      # tools this job never uses, and every NDK except the one Flutter and the
+      # plugin build with.
+      - name: Free disk space
+        working-directory: .
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/share/swift /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/powershell /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          if [ -d "$ANDROID_HOME/ndk" ]; then
+            find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 ! -name "$NDK_VERSION" \
+              -exec sudo rm -rf {} +
+          fi
+          df -h /
+
+      - name: Install Flutter ${{ env.FLUTTER_VERSION }} (checksum verified)
+        working-directory: .
+        run: |
+          archive="$RUNNER_TEMP/flutter.tar.xz"
+          curl -fsSL -o "$archive" \
+            "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+          echo "${FLUTTER_SHA256}  ${archive}" | sha256sum -c -
+          tar -xf "$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }} with the Android target
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target x86_64-linux-android
+          rustup default "$RUST_TOOLCHAIN"
+          rustc --version
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null
+          "$sdkmanager" --install "platform-tools" "emulator" "$SYSTEM_IMAGE" "ndk;$NDK_VERSION" > /dev/null
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Start emulator
+        timeout-minutes: 15
+        run: |
+          ls -l /dev/kvm
+          emulator -accel-check || true
+          # avdmanager and the emulator must look in the same place: in
+          # an earlier run avdmanager wrote the AVD elsewhere and the emulator
+          # stopped with "Unknown AVD name [spike]".
+          export ANDROID_AVD_HOME="$HOME/.android/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+            --force -n spike -k "$SYSTEM_IMAGE" --device pixel_6
+          emulator -list-avds | grep -qx spike
+          nohup emulator -avd spike -no-window -no-audio -no-boot-anim \
+            -gpu swiftshader_indirect -no-snapshot > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          emulator_pid=$!
+          for _ in $(seq 1 60); do
+            adb devices | grep -q '^emulator-5554' && break
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              echo "::error::the emulator exited"
+              exit 1
+            fi
+            sleep 5
+          done
+          if ! timeout 60 adb wait-for-device; then
+            echo "::error::the emulator did not come up within 5 minutes"
+            exit 1
+          fi
+          booted=""
+          for _ in $(seq 1 120); do
+            booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+            [ "$booted" = "1" ] && break
+            sleep 5
+          done
+          if [ "$booted" != "1" ]; then
+            echo "::error::the emulator did not finish booting within 10 minutes"
+            exit 1
+          fi
+          echo "abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')" \
+               "android=$(adb shell getprop ro.build.version.release | tr -d '\r')" \
+               "sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+
+      - name: Get packages (lockfile must match)
+        run: |
+          flutter config --no-analytics
+          flutter pub get --enforce-lockfile
+
+      - name: flutter test integration_test on the emulator (R1-R8)
+        run: flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded
+
+      - name: Emulator log (on failure)
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/emulator.log" || true

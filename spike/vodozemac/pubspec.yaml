@@ -1,0 +1,23 @@
+name: sha_vodozemac_spike
+description: "Spike for decision D3: does flutter_vodozemac (Olm) work for SHA? Not part of the app; nothing here is shipped."
+publish_to: 'none'
+version: 0.0.1
+
+environment:
+  sdk: 3.13.5
+  flutter: 3.47.7
+
+# Exact versions only (no ^): this spike measures one specific library release.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_vodozemac: 0.9.1
+  vodozemac: 0.9.1
+  flutter_rust_bridge: 2.13.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
