@@ -4,6 +4,8 @@ analyzer:
   exclude:
     - build/**
     - android/**
+    # Spikes are separate packages with their own pubspec and CI job.
+    - spike/**
   language:
     strict-casts: true
     strict-raw-types: true
