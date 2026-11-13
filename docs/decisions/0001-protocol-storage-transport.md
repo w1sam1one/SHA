@@ -1,7 +1,8 @@
 # 0001 – Protocol, storage and transport: order and library
 
-Status: **Proposed – owner decides**. No code changes follow from this record
-until the owner marks D2 and D3 as Accepted (see Gate).
+Status: **D1 Accepted by owner** (2026-11-13). **D2 amended by owner**
+(2026-11-13): the standalone relay may be built now, see
+[0002](0002-transport-v1.md). **D3 open – owner decides.** See Gate.
 
 ## Facts (with source)
 
@@ -72,13 +73,17 @@ permissive: both published Dart packages are AGPL-3.0.
 
 ## Decisions needed from the owner
 
-**D1 – Trust model.** A contact means "verified in person"; there is no
+**D1 – Trust model.** *(Accepted by owner, 2026-11-13.)* A contact means "verified in person"; there is no
 unverified or changed-key state. A new phone or a reset identity is a new key,
 so the people involved must meet again. A future "replace existing contact"
 flow (new in-person scan, explicit warning, old key retired) is needed but is
 not designed here.
 
-**D2 – Order: protocol → storage → transport.** Proposed because:
+**D2 – Order: protocol → storage → transport.** *(Amended by owner,
+2026-11-13, in [0002](0002-transport-v1.md): the relay server may be built
+now as a standalone part, because it only stores opaque packets. App-side
+storage and connecting the app to the relay still wait for D3.)* Proposed
+because:
 
 1. Today stored packets are re-opened with the static keys, including one's
    own sent messages. Under a Double Ratchet message keys are deleted after
@@ -112,6 +117,9 @@ an AI assistant must not invent cryptography for SHA.
 
 ## Gate
 
-Storage and transport work must not start until **D2 and D3** are marked
-**Accepted** by the owner in this file. Until then no protocol library,
-database, HTTP/Tor client or other dependency is added.
+- Allowed now (D2 as amended, [0002](0002-transport-v1.md)): the standalone
+  relay server in `relay/`. It stores only opaque packets, decrypts nothing
+  and is not connected to the app.
+- Blocked until **D3** is marked **Accepted** by the owner: storage in the
+  app and connecting the app to the relay. Until then no protocol library,
+  database, HTTP/Tor client or other dependency is added to the app.
