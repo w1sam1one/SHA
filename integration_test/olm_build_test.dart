@@ -17,13 +17,15 @@ import 'package:vodozemac/vodozemac.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  test('the native Olm library loads in the app build', () async {
-    await fv.init();
+  // Once per process: flutter_rust_bridge throws if it is initialised twice.
+  // init() itself fails if the APK has no native library, or the wrong one.
+  setUpAll(fv.init);
+
+  test('the native Olm library loads in the app build', () {
     expect(isInitialized(), isTrue);
   });
 
-  test('a session starts and a message goes each way', () async {
-    await fv.init();
+  test('a session starts and a message goes each way', () {
     final alice = Account();
     final bob = Account();
     bob.generateOneTimeKeys(1);

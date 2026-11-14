@@ -24,6 +24,14 @@ updates:
     commit-message:
       prefix: "deps(app)"
     groups:
+      # The same three Olm packages as in the spike, which must move
+      # together and stay equal to the spike's versions (ROADMAP P2).
+      olm:
+        applies-to: version-updates
+        patterns:
+          - "flutter_vodozemac"
+          - "vodozemac"
+          - "flutter_rust_bridge"
       app-minor-and-patch:
         applies-to: version-updates
         update-types:
