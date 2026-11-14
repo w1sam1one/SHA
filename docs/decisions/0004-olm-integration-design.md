@@ -22,9 +22,14 @@ Beslutat av ägaren 2026-11-14, i [`CLAUDE.md`](../../CLAUDE.md) under
 - **Claude får merga sina egna PR:er** enligt "Merge" i `CLAUDE.md`. Det
   ersätter "mergar aldrig" i §12.
 
-Rättat 2026-11-14 efter en oberoende granskning: typ 0 gäller alla
-meddelanden före det första svaret (§4, §5, §6, §10), felet för en
-utträngd kedja (§10) och två saknade märkningar (§1, §6).
+Rättat 2026-11-14 efter två oberoende granskningar:
+- typ 0 gäller alla meddelanden före det första svaret (§4, §5, §6, §10);
+- ett misslyckat försök kan ändra en session i minnet, och ett ändrat typ
+  0-meddelande får inte leda till "träffas igen" (§6, §8, §10);
+- felet för en utträngd kedja (§10);
+- två saknade märkningar (§1, §6).
+Rekommendationerna är desamma. Två saker är förtydligade för prototypen:
+Olm version 1 (§5) och 30 dagar för oanvända engångsnycklar (§8).
 
 ## Så läses dokumentet
 
@@ -39,7 +44,7 @@ utträngd kedja (§10) och två saknade märkningar (§1, §6).
   - `crate/…` betyder vodozemac-craten 0.11.2, som pluginets `Cargo.lock`
     hämtar.
   - `api.dart` betyder Dart-paketet `vodozemac` 0.9.1, `lib/src/api.dart`.
-  - Båda är lästa 2026-11-13.
+  - Båda är lästa 2026-11-13 och 2026-11-14.
 - **"Ej verifierat"** betyder att det inte är kört eller läst.
 
 ## Utgångsläge
@@ -398,6 +403,9 @@ vilken typ av Olm-meddelande det är.
     `experimental-session-config` (`crate/src/olm/session_config.rs:43-50`),
     som pluginet slår på (0003, "Fakta").
   - Valet av version: **Kräver granskning av kryptoexpert.**
+  - **Rekommendation för prototypen:** version 1, som är standard i
+    Dart-API:t (`api.dart:382-390`). Storlekarna i punkt 4 och relayns gräns
+    nedan är räknade för den.
 
 **Relayn** (beskrivning, ingen ändring nu):
 - **Största paket** blir 18 + 65 692 + 2 = **65 712 byte**: hinken 65 536,
@@ -434,20 +442,43 @@ vilken typ av Olm-meddelande det är.
      (punkt 2).
    - **Typ 0:** prova också först kontaktens sparade sessioner. Alla
      meddelanden före det första svaret är typ 0 (punkt 4), så de flesta
-     hör till en session som redan finns. Craten kan räkna ut vilken
-     session ett typ 0-meddelande hör till (`crate/src/olm/messages/pre_key.rs:80`),
-     men Dart-API:t visar det inte (`api.dart`). Först om ingen sparad
-     session kan läsa meddelandet skapas en inkommande session.
-   - **Om man inte gör så:** en andra inkommande session för samma
-     engångsnyckel ger `unknown one-time key`, eftersom nyckeln redan är
-     använd. Då skulle appen felaktigt be användarna att träffas igen
-     (punkt 10). Kört mot craten 0.11.2 den 2026-11-14 (ett testprogram
-     utanför repot): två typ 0-meddelanden i rad, det andra lästes av den
-     befintliga sessionen, och en andra `createInboundSession` gav felet.
-   - **Ett misslyckat försök** med fel session ändrar inte sessionen när
-     ratchet-nyckeln är okänd: läget sparas bara om avkrypteringen lyckas
-     (`crate/src/olm/session/mod.rs:438-458`). Vid alla fel kastas ändå det
-     som finns i minnet, och den sparade pickeln läses in igen.
+     hör till en session som redan finns.
+     - Craten kan räkna ut vilken session ett typ 0-meddelande hör till
+       (`crate/src/olm/messages/pre_key.rs:80`), men Dart-API:t visar det
+       inte: där finns bara `Session` (`api.dart:242-300`) och
+       `createInboundSession` (`api.dart:395-406`).
+     - **En inkommande session skapas bara** om ingen sparad session kan
+       läsa meddelandet, **och** det finns en engångsnyckel som visats för
+       just den kontakten och inte använts än. Appen räknar själv hur
+       många sådana nycklar varje kontakt har (punkt 8): ett mer vid varje
+       visning för kontakten, ett mindre när en inkommande session har
+       skapats.
+     - Finns ingen sådan nyckel är meddelandet ändrat eller för sent, och
+       det räknas som "går inte att läsa" (punkt 10).
+   - **Varför:** en andra inkommande session för samma engångsnyckel ger
+     `unknown one-time key`, eftersom nyckeln redan är använd. Utan regeln
+     ovan skulle appen felaktigt be användarna att träffas igen (punkt 10),
+     och vem som helst som kan brevlåde-ID:t skulle kunna orsaka det med
+     ett enda ändrat paket (0002, fråga i). Kört mot craten 0.11.2 den
+     2026-11-14 (testprogram utanför repot):
+     - två typ 0-meddelanden i rad: det andra lästes av den befintliga
+       sessionen, och en andra `createInboundSession` gav felet;
+     - ett typ 0-meddelande med en ändrad byte gav `invalid MAC` på rätt
+       session och sedan `unknown one-time key`;
+     - ett typ 0-meddelande som kom för sent gav `can't be created` och
+       sedan `unknown one-time key`.
+   - **Ett misslyckat försök kan ändra sessionen i minnet.** Har sessionen
+     ännu inte skickat något (en inkommande session innan ägaren har
+     svarat) aktiverar craten en ny egen ratchet-nyckel innan den försöker
+     avkryptera, och sparar den även om avkrypteringen misslyckas
+     (`crate/src/olm/session/double_ratchet.rs:168-191`,
+     `crate/src/olm/session/mod.rs:447-449`). Kört 2026-11-14: efter ett
+     misslyckat försök med ett främmande typ 0-meddelande var sessionens
+     pickle ändrad. Sessionen fungerade ändå efteråt.
+     - **Därför:** varje försök görs på en session som just lästs in från
+       den sparade pickeln. Efter ett misslyckat försök kastas den, även
+       när en annan session sedan lyckas. Bara den session som lyckades
+       sparas i steg 3.
 3. **Spara allt i en enda atomisk skrivning:**
    - sessionens nya pickle;
    - kontots pickle, om en engångsnyckel användes;
@@ -509,8 +540,9 @@ koden (punkt 1).
 - **Skyddet:** posten skyddas av Keystore och kan bara läsas när telefonen
   är upplåst (`lib/crypto/README.md:43-49`). Det passar ihop med att appen
   bara hämtar när den är öppen (0002).
-  - Nyckeln ligger i StrongBox eller TEE om telefonen har det, annars bara
-    i mjukvara. Appen visar vilket (`lib/crypto/README.md:57-59`).
+  - Keystore-nyckeln som krypterar posten ligger i StrongBox eller TEE om
+    telefonen har det, annars bara i mjukvara (`lib/crypto/README.md:43-46`).
+    Appen visar vilket (`lib/crypto/README.md:57-59`).
   - Kravet på upplåst telefon finns från Android 9
     (`lib/crypto/README.md:47-49`).
 - **`resetIdentity()` raderar allt.** Först raderas valvet med alla nycklar
@@ -525,6 +557,8 @@ koden (punkt 1).
 - omstart läser in rätt läge;
 - samma första meddelande avvisas efter en omstart;
 - två typ 0-meddelanden i rad läses båda, utan en andra inkommande session;
+- ett ändrat typ 0-meddelande ger "går inte att läsa", inte "träffas igen";
+- ett misslyckat försök med fel session ändrar inte det som sparas;
 - utkorgen skickar samma byte;
 - `resetIdentity()` lämnar inget kvar.
 
@@ -610,7 +644,11 @@ inte att läsa.
   - Nycklar ligger kvar i åratal, och vid taket raderas den äldsta tyst.
 
 **Rekommendation: (a), plus (b) när det finns nät.**
-- Ägaren väljer antalet dagar.
+- Ägaren väljer antalet dagar. I prototypen gäller 30, som i (a), tills
+  ägaren har valt.
+- Appen räknar också hur många visade, oanvända nycklar varje kontakt har.
+  Räknaren avgör om ett typ 0-meddelande får skapa en inkommande session
+  (punkt 6).
 - Inga reservnycklar (`generateFallbackKey`, `api.dart:354-357`), eftersom
   QR-koden alltid har en ny engångsnyckel.
 
@@ -672,12 +710,12 @@ fortfarande öppen.
 
 | Fall | Vad biblioteket säger (0003) | Vad användaren ser |
 | --- | --- | --- |
-| Engångsnyckeln saknas (städad, eller valvet återställt), och ingen sparad session kunde läsa meddelandet (punkt 6) | `unknown one-time key` | "Ett meddelande från `<namn>` kunde inte öppnas. Ni behöver träffas och skanna varandras koder igen." |
+| Engångsnyckeln saknas (städad, eller valvet återställt): ingen sparad session kunde läsa ett typ 0-meddelande, kontakten har en visad nyckel som inte använts, och `createInboundSession` misslyckades (punkt 6) | `unknown one-time key` | "Ett meddelande från `<namn>` kunde inte öppnas. Ni behöver träffas och skanna varandras koder igen." |
 | QR-koden visas igen | inget, en ny nyckel varje gång | Inget särskilt. Skannar någon igen blir det en ny session (punkt 2). |
-| Ett meddelande går inte att läsa: ändrat, fel session, eller från en kedja som trängts ut eftersom det är äldre än 5 nyckelbyten (`crate/src/olm/session/mod.rs:55`) | `invalid MAC` | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas." Paketet slängs. |
-| Meddelandet kom för sent: ett nyare meddelande i samma kedja, mer än 40 steg längre fram, har redan lästs (`crate/src/olm/session/receiver_chain.rs:50`, 0003 R3) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." |
+| Ett meddelande går inte att läsa: ändrat, fel session, ett typ 0-meddelande utan visad oanvänd nyckel (punkt 6), eller från en kedja som trängts ut (mottagaren sparar bara kedjor för avsändarens 5 senaste ratchet-nycklar, `crate/src/olm/session/mod.rs:55`) | `invalid MAC` eller annat | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas." Paketet slängs. |
+| Meddelandet kom för sent: ett meddelande mer än 40 steg längre fram i samma kedja lästes först, eller fler än 40 nyare överhoppade nycklar har sparats (`crate/src/olm/session/receiver_chain.rs:50,62-68,202`, 0003 R3) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." |
 | En lucka på mer än 2 000 meddelanden (`receiver_chain.rs:31`) | `message gap was too big` | "Några meddelanden från `<namn>` saknas. Be `<namn>` skriva igen." |
-| Relayn svarar `507`: brevlådan är full, eller relayns minne (`relay/README.md:79-82`) | – | "Meddelandet väntar. Servern har inte plats för det just nu. Appen försöker igen." |
+| Relayn svarar `507`: brevlådan är full, eller relayns minne är fullt (`relay/README.md:79-82`) | – | "Meddelandet väntar. Servern har inte plats för det just nu. Appen försöker igen." |
 | Relayn svarar `429` | – | "Servern är upptagen. Appen försöker igen om en stund." Appen väntar enligt `Retry-After`. |
 | Felaktigt paket (fel version, typ eller längd) | – | Inget. Paketet slängs och räknas. |
 
@@ -687,8 +725,16 @@ först, med hashen. Det fel som då är kvar betyder "för sent".
 
 **En utträngd kedja ger `invalid MAC`**, inte `can't be created`. Kört mot
 craten 0.11.2 den 2026-11-14 (ett testprogram utanför repot): ett
-meddelande som hölls kvar gick att läsa efter 5 hela nyckelbyten, men inte
-efter 6. Det hamnar därför i raden "går inte att läsa".
+meddelande som hölls kvar gick förlorat efter 5 respektive 6 rundor fram
+och tillbaka i två körningar som räknade rundorna olika. Regeln är att
+mottagaren bara sparar kedjor för avsändarens 5 senaste ratchet-nycklar
+(`crate/src/olm/session/mod.rs:55`). Meddelandet hamnar därför i raden "går
+inte att läsa".
+
+**Kvar att lösa:** har kontakten en visad nyckel som inte använts, till
+exempel efter en ny skanning, kan ett ändrat gammalt typ 0-meddelande ändå
+ge raden "Engångsnyckeln saknas". Det kräver att någon ändrar ett paket
+just då.
 
 **Varför felen samlas.** Vem som helst som kan ett brevlåde-ID kan lämna
 paket där, eftersom relayn inte kontrollerar avsändaren (0002, fråga i). En
@@ -756,7 +802,10 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
 1. **Dependabot** (`.github/dependabot.yml`): versionsuppdateringar varje
    vecka. Varningar och säkerhetsuppdateringar slås på i repots
    inställningar: Settings → Advanced Security → Dependency graph,
-   Dependabot alerts och Dependabot security updates (källorna ovan).
+   Dependabot alerts och Dependabot security updates
+   (<https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-dependabot-alerts>,
+   <https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates>,
+   lästa 2026-11-13).
 2. **Rust-craten för hand:**
    - Bevaka säkerhetsmeddelandena för `matrix-org/vodozemac` och för
      pluginets repo hos famedly på GitHub.
@@ -779,6 +828,8 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
 - **Claude** förbereder PR:er (versionsbyte, CI, spiken på emulatorn,
   läsning av ändringsloggar och `BREAKING`-rader). Claude får merga sina
   egna PR:er enligt "Merge" i `CLAUDE.md`.
+- **Dependabots PR:er** mergar ägaren, eftersom `CLAUDE.md` bara låter
+  Claude merga sina egna.
 - **Vid varje uppdatering av Olm-paketen** ska CI vara grön, även spiken på
   emulatorn, och cratens CHANGELOG ska vara läst innan PR:en mergas.
 
