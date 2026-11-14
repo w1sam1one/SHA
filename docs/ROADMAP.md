@@ -33,7 +33,8 @@ Prototypen är klar när allt detta gäller:
   tester mot appens klasser. Väntar på G4.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
-  Sessionsregeln (§2); ägaren svarar först på den öppna frågan i §2.
+  Sessionsregeln (§2): först ett beslutsunderlag om den öppna frågan i §2,
+  som ägaren avgör. Texterna i §10 som P4 behöver godkänns av ägaren först.
   Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
   väljer antal dagar. Kontakter sparas krypterade via valvet.
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
@@ -41,7 +42,7 @@ Prototypen är klar när allt detta gäller:
 - [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
   Hämtning enligt §9 (b). Intervallet 1, 5, 15 eller 60 minuter i
   inställningarna. Felfall och texter (§10, 0002); ägaren godkänner
-  texterna i §10 innan P6 mergas. `INTERNET` i
+  texterna i §10 innan de byggs in. `INTERNET` i
   release-manifestet, med motivering i README. Relayns adress går att ställa
   in.
 - [ ] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
@@ -93,7 +94,8 @@ någon annan än ägaren (0003, 0004 §13):
 - `LICENSE` är bytt till AGPL-3.0.
 - Spiken och appen är körda på en riktig arm64-telefon.
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
-  granskningen av bygget godtagit att det inte är det (0004 §12, §13). I
+  ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
+  §12, §13). I
   dag bygger cargokit med CI-maskinens `stable`, och att ändra det kräver
   ett ändrat plugin.
 

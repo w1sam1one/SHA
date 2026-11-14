@@ -40,8 +40,8 @@ Appen kan inte skilja en städad engångsnyckel från ett ändrat eller sent
 meddelande, så de hamnar i raden "kunde inte läsas", som nu slutar med
 "Fortsätter det, träffas och skanna varandras koder igen." Texten för `507`
 var "Mottagarens brevlåda är full just nu" och är nu "Servern har inte plats
-för det just nu". Ägaren godkänner texterna i §10 innan P6 mergas
-(`docs/ROADMAP.md`, P6).
+för det just nu". Ägaren godkänner texterna i §10 innan de byggs in i appen
+(`docs/ROADMAP.md`, P4 och P6).
 
 ## Så läses dokumentet
 
@@ -197,14 +197,13 @@ koden visas (punkt 6 och 8).
   raderas därför aldrig, och har den minsta id fortsätter kontakten att
   skicka på den. En ny skanning hjälper bara om den nya sessionen råkar få
   lägre id. Sessions-id är SHA-256 av sessionens nycklar
-  (`crate/src/olm/session_keys.rs:46-56`), så det är slumpmässigt. Förslag
-  att välja mellan:
-  - en ny skanning raderar kontaktens gamla sessioner på båda telefonerna;
-  - regeln väljer bland sessioner som har tagit emot ett meddelande från
-    kontakten, och minsta id bara om ingen har det.
-
-  Båda ändrar rekommendationen i den här punkten och avgörs därför av
-  ägaren.
+  (`crate/src/olm/session_keys.rs:46-56`), så det är slumpmässigt.
+  - En lösning ändrar regeln för vilken session som väljs, och kanske när
+    sessioner raderas. Det ändrar rekommendationen i den här punkten.
+  - Claude tar därför fram ett eget beslutsunderlag med alternativ, för-
+    och nackdelar innan P4, och ägaren avgör. Alternativen måste hålla
+    kravet att inget meddelande går förlorat, även paket som ligger kvar
+    på relayn.
 - **Ingen kryptografi:** regeln jämför bara text.
 
 **Testa:**
@@ -898,7 +897,8 @@ Det här lägger 0004 till:
 8. Relayns största paketstorlek är ändrad (punkt 5).
 9. Texterna i appen följer 0002 ("Formuleringar i appen") och punkt 10.
 10. Rust i Android-bygget är låst och cargo körs med `--locked`, eller så
-    har granskningen av bygget godtagit att det inte är det (punkt 12).
+    har ägaren, efter granskningen av bygget, godtagit att det inte är det
+    (punkt 12).
 
 ## Kräver granskning av kryptoexpert
 
