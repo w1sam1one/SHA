@@ -42,6 +42,8 @@ Beslutat av ägaren 2026-11-13.
   [0003](0003-protocol-library.md)) byts `LICENSE` till **AGPL-3.0**. Det
   sker senast före första utdelningen av appen, även till testare via
   Google Play.
+- **D3 är nu godkänd** (2026-11-13, 0003 "Beslut"): `flutter_vodozemac`
+  har licensen AGPL-3.0, så bytet till AGPL-3.0 gäller.
 
 ## Formuleringar i appen
 

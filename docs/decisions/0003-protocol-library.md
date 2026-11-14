@@ -1,10 +1,30 @@
 # 0003 – Protokollbibliotek: flutter_vodozemac (Olm)
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-13.
+Status: **Accepted by owner with conditions, 2026-11-13.** Skrivet
+2026-11-13.
 
 Underlag för D3 i [0001](0001-protocol-storage-transport.md). Prototypen
 finns i [`spike/vodozemac/`](../../spike/vodozemac/README.md). Appen är
 inte ändrad.
+
+## Beslut
+
+Beslutat av ägaren 2026-11-13. Avsnittet skriver ner beslutet; inget är
+tillagt.
+
+- **D3 godkänns med villkor.** `flutter_vodozemac` (Olm) är SHA:s
+  protokollbibliotek.
+- **Licens:** `LICENSE` byts till **AGPL-3.0** senast före första
+  utdelningen av appen, även till testare via Google Play (se 0002,
+  "Licens").
+- **Villkor före första utdelningen:**
+  1. spiken körd på en riktig telefon (arm64);
+  2. granskning av Flutter/Dart-lagret och bygget;
+  3. en plan för säkerhetsuppdateringar av beroenden.
+- **Ordning:** inkopplingen av Olm i appen får börja först när
+  [0004](0004-olm-integration-design.md) är godkänd av ägaren.
+
+Resten av dokumentet är underlaget som beslutet bygger på, oförändrat.
 
 ## Vad som utreds och varför
 
