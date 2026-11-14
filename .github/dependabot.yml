@@ -30,8 +30,9 @@ updates:
           - "minor"
           - "patch"
 
-  # The Olm spike: exact pins and its own lockfile. The three Olm packages
-  # are released together and must move together, so they share one group
+  # The Olm spike: exact pins and its own lockfile. flutter_vodozemac and
+  # vodozemac are released together, and flutter_rust_bridge must match the
+  # bindings the plugin generated with it, so the three share one group
   # (all update types, majors included).
   - package-ecosystem: "pub"
     directory: "/spike/vodozemac"

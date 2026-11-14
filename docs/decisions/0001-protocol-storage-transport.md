@@ -84,7 +84,9 @@ not designed here.
 **D2 – Order: protocol → storage → transport.** *(Amended by owner,
 2026-11-13, in [0002](0002-transport-v1.md): the relay server may be built
 now as a standalone part, because it only stores opaque packets. App-side
-storage and connecting the app to the relay still wait for D3.)* Proposed
+storage and connecting the app to the relay still wait for D3. Later: D3
+accepted 2026-11-13 in [0003](0003-protocol-library.md); 0004 accepted for
+an internal prototype 2026-11-14.)* Proposed
 because:
 
 1. Today stored packets are re-opened with the static keys, including one's
@@ -127,11 +129,12 @@ an AI assistant must not invent cryptography for SHA.
   and is not connected to the app.
 - **D3** is accepted with conditions ([0003](0003-protocol-library.md),
   "Beslut").
-- Blocked until **[0004](0004-olm-integration-design.md)** (how the app uses
-  Olm) is marked **Accepted** by the owner: connecting Olm in the app,
-  storage in the app, and connecting the app to the relay. Until then no
-  protocol library, database, HTTP/Tor client or other dependency is added
-  to the app.
+- **[0004](0004-olm-integration-design.md)** (how the app uses Olm) is
+  accepted by the owner for an internal prototype (2026-11-14, 0004
+  "Beslut"). Connecting Olm in the app, storage in the app and connecting
+  the app to the relay now follow the order in
+  [`docs/ROADMAP.md`](../ROADMAP.md). A dependency is added only when an
+  accepted decision record names it (`CLAUDE.md`).
 - Before the first distribution of the app, also to testers via Google
   Play: the conditions in 0003 ("Beslut") and `LICENSE` changed to
   AGPL-3.0.

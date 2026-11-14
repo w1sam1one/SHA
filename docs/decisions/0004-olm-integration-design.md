@@ -1,25 +1,51 @@
 # 0004 – Så ska appen använda Olm
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-13.
+Status: **Accepted by owner for an internal prototype, 2026-11-14.**
+Skrivet 2026-11-13.
 
 Underlag för hur appen kopplar in Olm. Bygger på
 [0003](0003-protocol-library.md), där D3 godkändes med villkor 2026-11-13.
-Ingen appkod är ändrad. Inkopplingen får börja först när ägaren har godkänt
-det här dokumentet (0003, "Beslut").
+
+## Beslut
+
+Beslutat av ägaren 2026-11-14, i [`CLAUDE.md`](../../CLAUDE.md) under
+"Ägarens beslut". Avsnittet skriver ner beslutet; inget är tillagt.
+
+- **0004 godkänns för en intern prototyp**, med det rekommenderade
+  alternativet i varje punkt.
+- **Punkter märkta "Kräver granskning av kryptoexpert"** får byggas med det
+  rekommenderade alternativet. Koden märks `OGRANSKAT (0004 §N)`, och
+  punkten listas i [`docs/ROADMAP.md`](../ROADMAP.md) under "Före första
+  utdelning".
+- **Ingen utdelning** av appen till någon annan än ägaren förrän en
+  kryptoexpert har granskat de punkterna.
+- **Claude får merga sina egna PR:er** enligt "Merge" i `CLAUDE.md`. Det
+  ersätter "mergar aldrig" i §12.
+
+Rättat 2026-11-14 efter två oberoende granskningar:
+- typ 0 gäller alla meddelanden före det första svaret (§4, §5, §6, §10);
+- ett misslyckat försök kan ändra en session i minnet, och ett ändrat typ
+  0-meddelande får inte leda till "träffas igen" (§6, §10);
+- felet för en utträngd kedja (§10);
+- två saknade märkningar (§1, §6).
+
+Rekommendationerna är desamma. Två saker är förtydligade för prototypen:
+Olm version 1 (§5) och 30 dagar för oanvända engångsnycklar (§8).
 
 ## Så läses dokumentet
 
 - **Varje punkt** har krav, alternativ med för- och nackdelar, en
   rekommendation och vad som måste testas.
 - **"Kräver granskning av kryptoexpert"** betyder att förslaget sätter
-  ihop kryptografiska byggstenar på ett nytt sätt. Det är inte färdigt och
-  får inte byggas innan en expert har granskat det. Alla sådana punkter
-  står samlade sist.
+  ihop kryptografiska byggstenar på ett nytt sätt. Det är inte granskat.
+  Enligt beslutet ovan får det byggas för den interna prototypen, märkt
+  `OGRANSKAT`, men inte delas ut innan en expert har granskat det. Alla
+  sådana punkter står samlade sist.
 - **Källor** står inom parentes: fil och rad i repot, eller URL och datum.
   - `crate/…` betyder vodozemac-craten 0.11.2, som pluginets `Cargo.lock`
     hämtar.
   - `api.dart` betyder Dart-paketet `vodozemac` 0.9.1, `lib/src/api.dart`.
-  - Båda är lästa 2026-11-13.
+  - Båda är lästa 2026-11-13 och 2026-11-14.
 - **"Ej verifierat"** betyder att det inte är kört eller läst.
 
 ## Utgångsläge
@@ -79,17 +105,19 @@ Kontrollkoden (20 siffror) räknas på båda identitetsnycklarna.
 kontrollkoden, inte från hashen.
 
 **Hash och kontrollkod:**
-- **Identitetshashen** är SHA-256 av Olm-identitetsnyckeln, som i dag fast
+- **Identitetshashen** är SHA-256 av Olm-identitetsnyckeln, som i dag, fast
   på den nya nyckeln. `Contact.id` blir den hashen (`contacts_store.dart:18`).
 - **Kontrollkoden** räknas med dagens funktion, oförändrad:
   SHA-256("SHA/v2/verification-code" ‖ min(nyckel A, nyckel B) ‖ max(…)),
   fyra grupper om fem siffror (`sha_crypto_service.dart:131-148`,
-  `key_agreement.dart:110-114`).
+  `key_agreement.dart:110-114`). **Kräver granskning av kryptoexpert**
+  (funktionen är testad, men indata är nya nycklar).
   - Indata är de två Olm-identitetsnycklarna.
   - Engångsnyckeln ingår inte.
 - **Med alternativ A i punkt 3:** frågan om kontrollkoden också ska
   omfatta adresseringsnycklarna står i punkt 3. **Kräver granskning av
-  kryptoexpert.**
+  kryptoexpert.** I prototypen räknas koden bara på Olm-nycklarna, med
+  dagens funktion oförändrad.
 
 **Ny engångsnyckel per visning.** Appen skapar en ny nyckel varje gång
 QR-koden visas och markerar den som publicerad. Kontot sparas **innan**
@@ -142,9 +170,12 @@ koden visas (punkt 6 och 8).
     förlorade.
 
 **Rekommendation: (a).**
-- **Den andra sessionen** behålls så länge meddelanden kan komma på den:
-  minst 48 timmar efter det senaste meddelandet på den, vilket är relayns
-  livslängd (`relay/limits.go:27`). Sedan raderas den.
+- **Den andra sessionen** behålls så länge meddelanden kan komma på den.
+  Den raderas först när båda dessa gäller:
+  - den valda sessionen har tagit emot ett meddelande från den andra, så
+    att den andra också har bytt;
+  - det har gått minst 48 timmar sedan det senaste meddelandet på den
+    andra sessionen, vilket är relayns livslängd (`relay/limits.go:27`).
 - **Skannar någon igen** blir det en tredje session, med en ny
   engångsnyckel. Regeln gäller fortfarande: minsta id av alla.
 - **Ingen kryptografi:** regeln jämför bara text.
@@ -183,9 +214,14 @@ koden visas (punkt 6 och 8).
   - Adresseringen får ingen forward secrecy. Läcker nyckeln kan någon räkna
     ut alla brevlåde-ID:n, men inte läsa meddelandena.
   - En utbytt adresseringsnyckel vid mötet märks inte på kontrollkoden om
-    koden bara räknas på Olm-nycklarna. Då kommer meddelandena inte fram och
-    angriparen ser trafiken, men kan inte läsa den. Att ta med nycklarna i
-    kontrollkoden ändrar en kryptografisk funktion.
+    koden bara räknas på Olm-nycklarna.
+    - Byts en av dem kommer meddelandena inte fram, och angriparen ser
+      trafiken.
+    - Byts båda kan angriparen flytta paketen mellan brevlådorna utan att
+      det märks, och ser då all trafik mellan de två. Innehållet kan den
+      ändå inte läsa, eftersom Olm-nycklarna är kontrollerade.
+    - Att ta med nycklarna i kontrollkoden ändrar en kryptografisk
+      funktion.
 - **(B) Ett slumpmässigt brevlådefrö i QR-koden.** Varje sida visar 32
   slumpbyte, och ID:t är HMAC(frö, etikett ‖ dag) som i dag.
   - Då behövs ingen statisk nyckel, och varje kontakt får ett nytt frö.
@@ -198,10 +234,14 @@ koden visas (punkt 6 och 8).
   - Men startbrevlådan behöver ändå A eller B. Det är också mest
     komplicerat, och det blir ett nytt protokoll ovanpå Olm.
 
-**Rekommendation, inte färdig: (A).** Den återanvänder testad kod och
-uppfyller krav 5. Två saker måste en kryptoexpert avgöra innan den byggs:
+**Rekommendation: (A), ogranskad.** Den återanvänder testad kod och
+uppfyller krav 5. Två saker måste en kryptoexpert avgöra innan appen delas
+ut:
 - om kontrollkoden ska omfatta adresseringsnycklarna;
 - om det är rätt att behålla en statisk nyckel bredvid Olm.
+
+I prototypen räknas kontrollkoden bara på Olm-nycklarna (punkt 1), och koden
+märks `OGRANSKAT (0004 §3)`.
 
 **Testa:**
 - samma ID på båda sidor;
@@ -219,8 +259,9 @@ uppfyller krav 5. Två saker måste en kryptoexpert avgöra innan den byggs:
 - API:t tar text, `String` (`api.dart:263`).
 
 **Så stort blir ett Olm-meddelande.** Storleken är räknad ur cratens kod och
-kontrollerad mot spikens mätningar och en egen mätning (se nedan). Spiken använde Olm version 1, som är
-standard i Dart-API:t (`api.dart:382-390`, `crate/src/olm/session/mod.rs:389`).
+kontrollerad mot spikens mätningar och en egen mätning (se nedan). Spiken
+använde Olm version 1, som är standard i Dart-API:t (`api.dart:382-390`,
+`crate/src/olm/session/mod.rs:389`).
 - **Ett vanligt meddelande (typ 1):**
   1 (version) + 34 (ratchet-nyckel) + 1 + v(i) (kedjeindex) + 1 + v(c)
   (längd) + c (ciffertext) + 8 (MAC) = **c + 45 + v(i) + v(c)**
@@ -231,9 +272,13 @@ standard i Dart-API:t (`api.dart:382-390`, `crate/src/olm/session/mod.rs:389`).
   (`crate/src/cipher/mod.rs:174-175`).
 - **v(x)** är antalet byte för talet x som varint: 1 under 128, 2 under
   16 384 och 3 under 2 097 152.
-- **Det första meddelandet (typ 0)** är ett vanligt meddelande plus
+- **Ett pre-key-meddelande (typ 0)** är ett vanligt meddelande plus
   1 + 3 × 34 + 1 + v(vanligt), alltså **vanligt + 104 + v(vanligt)**
   (`crate/src/olm/messages/pre_key.rs:217-226`).
+- **Typ 0 gäller alla meddelanden före det första svaret.** Olm skickar typ
+  0 tills sessionen har tagit emot och läst ett meddelande från den andra
+  (`crate/src/olm/session/mod.rs:377-399`). Det första vanliga meddelandet
+  (typ 1) kommer efter det första svaret.
 
 **Kontroll mot spikens R7** (0003):
 
@@ -243,7 +288,7 @@ standard i Dart-API:t (`api.dart:382-390`, `crate/src/olm/session/mod.rs:389`).
 | 100 tecken | c = 112: 112 + 45 + 1 + 1 = 159 | 159 |
 | 1 000 tecken | c = 1 008: 1 008 + 45 + 1 + 2 = 1 056 | 1 056 |
 | 10 000 tecken | c = 10 016: 10 016 + 45 + 1 + 2 = 10 064 | 10 064 |
-| Första meddelandet, 1 tecken | 63 + 104 + 1 = 168 | 168 |
+| Typ 0, 1 tecken | 63 + 104 + 1 = 168 | 168 |
 
 **Alternativ:**
 - **(A) Utfyllnad innanför Olm, med mellanslag.** Appen fyller ut JSON-texten
@@ -272,7 +317,7 @@ standard i Dart-API:t (`api.dart:382-390`, `crate/src/olm/session/mod.rs:389`).
 **Nya storlekar med (A).** B är dagens hinkar (`padding.dart:11`).
 Kedjeindex under 128. Paketet är 18 byte plus Olm-meddelandet (punkt 5).
 
-| Hink B | Största text (B − 1 byte) | Olm, vanligt | Olm, första | Paket, vanligt | Paket, första | Paket i dag |
+| Hink B | Största text (B − 1 byte) | Olm, typ 1 | Olm, typ 0 | Paket, typ 1 | Paket, typ 0 | Paket i dag |
 | --- | --- | --- | --- | --- | --- | --- |
 | 256 | 255 | 304 | 410 | 322 | 428 | 301 |
 | 1 024 | 1 023 | 1 072 | 1 178 | 1 090 | 1 196 | 1 069 |
@@ -283,7 +328,7 @@ Kedjeindex under 128. Paketet är 18 byte plus Olm-meddelandet (punkt 5).
 **Uträkning för hinken 256:**
 - Vanligt Olm-meddelande: c = 256, v(i) = 1 och v(256) = 2, alltså
   256 + 45 + 1 + 2 = 304.
-- Första meddelandet: 304 + 104 + v(304), där v(304) = 2, alltså 410.
+- Typ 0: 304 + 104 + v(304), där v(304) = 2, alltså 410.
 - Paketet: 18 + 304 = 322.
 - Dagens paket i sista kolumnen är 17 + 28 + B (`wire_format.dart:21-24`).
 
@@ -293,16 +338,18 @@ Kedjeindex under 128. Paketet är 18 byte plus Olm-meddelandet (punkt 5).
   får plats i 1 024, försvinner eftersom Olms tillägg nu ligger utanför
   hinken.
 - **Vad storleken ändå visar:**
-  - Det första meddelandet i en session är 106–107 byte större.
+  - Alla meddelanden före det första svaret (typ 0) är 106–107 byte
+    större.
   - Kedjeindex från 128 ger 1 byte till, och från 16 384 ytterligare 1.
-  - Relayn kan alltså se när en ny session börjar, och ungefär hur många
-    meddelanden i rad någon har skickat utan svar.
+  - Relayn kan alltså se när en ny session börjar, att inget svar har
+    kommit än, och ungefär hur många meddelanden i rad någon har skickat
+    utan svar.
   - Hur allvarligt det är: **Kräver granskning av kryptoexpert** (listan
     sist).
 - **Mätt 2026-11-13** med en kopia av spiken utanför repot (Linux x86_64,
   samma låsta versioner). Testet är inte incheckat.
-  - **Tabellen:** alla Olm-storlekar stämmer exakt, både vanligt och första
-    meddelande i alla fem hinkar.
+  - **Tabellen:** alla Olm-storlekar stämmer exakt, både typ 1 och typ 0, i
+    alla fem hinkar.
   - **Kedjeindex:** 127 gav samma storlek och 128 gav 1 byte mer.
   - **Utfyllnaden:** text med å och emoji, utfylld med mellanslag, kom
     fram oförändrad, och `jsonDecode` godtog mellanslagen.
@@ -326,7 +373,7 @@ vilken typ av Olm-meddelande det är.
 | --- | --- | --- |
 | version | 1 | `3` |
 | brevlåde-ID | 16 | som i dag (punkt 3) |
-| Olm-typ | 1 | `0` = första meddelandet (pre-key), `1` = vanligt |
+| Olm-typ | 1 | `0` = pre-key (alla meddelanden innan sessionen har fått ett svar, punkt 4), `1` = vanligt |
 | Olm-meddelande | resten | Olm-meddelandet som byte. Dart-API:t ger base64, som appen avkodar. |
 
 **Texten inuti Olm-meddelandet**, före utfyllnad, är JSON
@@ -338,7 +385,8 @@ vilken typ av Olm-meddelande det är.
   - Enkelt.
   - Relayn ser typen, men den syns ändå på storleken (punkt 4).
 - **(b) Appen provar båda typerna vid avkryptering.**
-  - Det blir onödiga försök, och ett första meddelande provas mot fel sak.
+  - Det blir onödiga försök, och ett misslyckat försök går inte att skilja
+    från ett trasigt paket.
 
 **Rekommendation: (a).**
 
@@ -359,11 +407,16 @@ vilken typ av Olm-meddelande det är.
     `experimental-session-config` (`crate/src/olm/session_config.rs:43-50`),
     som pluginet slår på (0003, "Fakta").
   - Valet av version: **Kräver granskning av kryptoexpert.**
+  - **Rekommendation för prototypen:** version 1, som är standard i
+    Dart-API:t (`api.dart:382-390`). Storlekarna i punkt 4 och relayns gräns
+    nedan är räknade för den.
 
 **Relayn** (beskrivning, ingen ändring nu):
 - **Största paket** blir 18 + 65 692 + 2 = **65 712 byte**: hinken 65 536,
-  första meddelandet och kedjeindex på upp till 3 byte. I dag är det 65 581
+  typ 0 och kedjeindex på upp till 3 byte. I dag är det 65 581
   (`relay/limits.go:20`).
+- Det gäller Olm version 1. Med version 2 blir det 24 byte mer, 65 736 byte
+  (se ovan).
 - `maxPacketSize` och raden "Största paket" i `relay/README.md` ändras i
   samma PR som inkopplingen.
 - Relayn kontrollerar bara största längd (`relay/README.md`, "Gränser och
@@ -375,7 +428,7 @@ vilken typ av Olm-meddelande det är.
 - okänd version eller typ;
 - relayn tar emot 65 712 byte och avvisar 65 713.
 
-## 6. Tillstånd, ordning och krascher
+## 6. Tillstånd, ordning och krascher — **Kräver granskning av kryptoexpert**
 
 **Krav:**
 - En krasch får aldrig göra att ett meddelande försvinner tyst.
@@ -388,7 +441,50 @@ vilken typ av Olm-meddelande det är.
    vid varje hämtning i 48 timmar (`relay/README.md:66`). Appen sparar
    SHA-256 av varje behandlat paket (`crypto_service.dart:31-32`) i minst
    48 timmar. Utan det skulle Olm ge fel för varje dubblett (0003, R4).
-2. **Avkryptera i minnet**, eller skapa en inkommande session för typ 0.
+2. **Avkryptera i minnet.**
+   - **Typ 1:** prova kontaktens sparade sessioner, den valda först
+     (punkt 2).
+   - **Typ 0:** prova också först kontaktens sparade sessioner. Alla
+     meddelanden före det första svaret är typ 0 (punkt 4), så de flesta
+     hör till en session som redan finns.
+     - Craten kan räkna ut vilken session ett typ 0-meddelande hör till
+       (`crate/src/olm/messages/pre_key.rs:80`), men Dart-API:t visar det
+       inte: där finns bara `Session` (`api.dart:242-300`) och
+       `createInboundSession` (`api.dart:395-406`).
+     - **Först om ingen sparad session kan läsa meddelandet** anropas
+       `createInboundSession` med kontaktens identitetsnyckel. Lyckas det
+       finns en ny session. Misslyckas det, oavsett fel, räknas meddelandet
+       som "går inte att läsa" (punkt 10).
+     - Ett misslyckat `createInboundSession` ändrar inte kontot: felen
+       kommer innan engångsnyckeln tas bort
+       (`crate/src/olm/account/mod.rs:285-324`). Kontot läses ändå in från
+       den sparade pickeln efter ett fel, som sessionerna nedan.
+   - **Varför felet aldrig leder till "träffas igen":** `unknown one-time
+     key` betyder oftast att nyckeln redan är använd, alltså att meddelandet
+     hör till en session som finns men inte kunde läsa det (ändrat, för sent
+     eller från en raderad session). Appen kan inte se vilken engångsnyckel
+     meddelandet pekar på, så den kan inte skilja det från en städad nyckel.
+     Vem som helst som kan brevlåde-ID:t kan dessutom orsaka felet med ett
+     enda ändrat paket (0002, fråga i). Kört mot craten 0.11.2 den
+     2026-11-14 (testprogram utanför repot):
+     - två typ 0-meddelanden i rad: det andra lästes av den befintliga
+       sessionen, och en andra `createInboundSession` gav felet;
+     - ett typ 0-meddelande med en ändrad byte gav `invalid MAC` på rätt
+       session och sedan `unknown one-time key`;
+     - ett typ 0-meddelande som kom för sent gav `can't be created` och
+       sedan `unknown one-time key`.
+   - **Ett misslyckat försök kan ändra sessionen i minnet.** Har sessionen
+     ännu inte skickat något (en inkommande session innan den här telefonen
+     har svarat) aktiverar craten en ny egen ratchet-nyckel innan den försöker
+     avkryptera, och sparar den även om avkrypteringen misslyckas
+     (`crate/src/olm/session/double_ratchet.rs:168-191`,
+     `crate/src/olm/session/mod.rs:447-449`). Kört 2026-11-14: efter ett
+     misslyckat försök med ett främmande typ 0-meddelande var sessionens
+     pickle ändrad. Sessionen fungerade ändå efteråt.
+     - **Därför:** varje försök görs på en session som just lästs in från
+       den sparade pickeln. Efter ett misslyckat försök kastas den, även
+       när en annan session sedan lyckas. Bara den session som lyckades
+       sparas i steg 3.
 3. **Spara allt i en enda atomisk skrivning:**
    - sessionens nya pickle;
    - kontots pickle, om en engångsnyckel användes;
@@ -447,9 +543,15 @@ koden (punkt 1).
 - **Nyckeln** är 32 byte från den blandade slumpkällan
   (`lib/crypto/README.md:66-71`), sparad som en egen post i valvet:
   `olm.pickle-key.v1` (0003, R6).
-- **Skyddet:** posten skyddas av Keystore (StrongBox eller TEE) och kan bara
-  läsas när telefonen är upplåst (`lib/crypto/README.md:43-49`). Det passar
-  ihop med att appen bara hämtar när den är öppen (0002).
+- **Skyddet:** posten skyddas av Keystore och kan bara läsas när telefonen
+  är upplåst (`lib/crypto/README.md:43-49`). Det passar ihop med att appen
+  bara hämtar när den är öppen (0002).
+  - Keystore-nyckeln som krypterar posten ligger i StrongBox om telefonen
+    har det, annars i TEE (`lib/crypto/README.md:43-46`). Appen visar
+    skyddsnivån, även om nyckeln bara skulle ligga i mjukvara
+    (`lib/crypto/README.md:57-59`).
+  - Kravet på upplåst telefon finns från Android 9
+    (`lib/crypto/README.md:47-49`).
 - **`resetIdentity()` raderar allt.** Först raderas valvet med alla nycklar
   (`lib/crypto/src/key_vault.dart:17-19`, `crypto_service.dart:25-29`).
   Sedan raderas databasen med pickles, historik, hashar och utkorg.
@@ -461,6 +563,10 @@ koden (punkt 1).
 - krasch efter varje steg, vid både mottagning och sändning;
 - omstart läser in rätt läge;
 - samma första meddelande avvisas efter en omstart;
+- två typ 0-meddelanden i rad läses båda, utan en andra inkommande session;
+- ett ändrat typ 0-meddelande och ett som kom för sent ger "går inte att
+  läsa", inte "träffas igen", och kontot är oförändrat efteråt;
+- ett misslyckat försök med fel session ändrar inte det som sparas;
 - utkorgen skickar samma byte;
 - `resetIdentity()` lämnar inget kvar.
 
@@ -546,7 +652,8 @@ inte att läsa.
   - Nycklar ligger kvar i åratal, och vid taket raderas den äldsta tyst.
 
 **Rekommendation: (a), plus (b) när det finns nät.**
-- Ägaren väljer antalet dagar.
+- Ägaren väljer antalet dagar. I prototypen gäller 30, som i (a), tills
+  ägaren har valt.
 - Inga reservnycklar (`generateFallbackKey`, `api.dart:354-357`), eftersom
   QR-koden alltid har en ny engångsnyckel.
 
@@ -608,18 +715,29 @@ fortfarande öppen.
 
 | Fall | Vad biblioteket säger (0003) | Vad användaren ser |
 | --- | --- | --- |
-| Engångsnyckeln saknas (städad, eller valvet återställt) | `unknown one-time key` | "Ett meddelande från `<namn>` kunde inte öppnas. Ni behöver träffas och skanna varandras koder igen." |
 | QR-koden visas igen | inget, en ny nyckel varje gång | Inget särskilt. Skannar någon igen blir det en ny session (punkt 2). |
-| Ett meddelande går inte att läsa (ändrat, eller fel session) | `invalid MAC` | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas." Paketet slängs. |
-| Meddelandet kom för sent: fler än 40 nyare kom före (`crate/src/olm/session/receiver_chain.rs:50`), eller det är äldre än 5 nyckelbyten (`crate/src/olm/session/mod.rs:55`) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." |
+| Ett meddelande går inte att läsa: ändrat, fel session, ett typ 0-meddelande som varken en sparad session eller `createInboundSession` kunde läsa (punkt 6, även en städad engångsnyckel), eller från en kedja som trängts ut (mottagaren sparar bara kedjor för avsändarens 5 senaste ratchet-nycklar, `crate/src/olm/session/mod.rs:55`) | `invalid MAC`, `unknown one-time key` eller annat | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas. Fortsätter det, träffas och skanna varandras koder igen." Paketet slängs. |
+| Ett vanligt meddelande (typ 1) kom för sent: ett meddelande mer än 40 steg längre fram i samma kedja lästes först, eller 40 eller fler nyare överhoppade nycklar har sparats (`crate/src/olm/session/receiver_chain.rs:50,62-68,202`, 0003 R3) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." Ett typ 0-meddelande som kom för sent hamnar i raden ovan, eftersom `createInboundSession` provas efteråt (punkt 6). |
 | En lucka på mer än 2 000 meddelanden (`receiver_chain.rs:31`) | `message gap was too big` | "Några meddelanden från `<namn>` saknas. Be `<namn>` skriva igen." |
-| Relayn svarar `507` (brevlådan är full) | – | "Meddelandet väntar. Mottagarens brevlåda är full just nu. Appen försöker igen." |
+| Relayn svarar `507`: brevlådan är full, eller relayns minne är fullt (`relay/README.md:79-82`) | – | "Meddelandet väntar. Servern har inte plats för det just nu. Appen försöker igen." |
 | Relayn svarar `429` | – | "Servern är upptagen. Appen försöker igen om en stund." Appen väntar enligt `Retry-After`. |
 | Felaktigt paket (fel version, typ eller längd) | – | Inget. Paketet slängs och räknas. |
 
 **Samma feltext för två fall.** Olm ger samma fel för en dubblett som för ett
 meddelande som kom för sent (0003, R3 och R4). Därför tas dubbletterna bort
 först, med hashen. Det fel som då är kvar betyder "för sent".
+
+**En utträngd kedja ger `invalid MAC`**, inte `can't be created`. Kört mot
+craten 0.11.2 den 2026-11-14 (ett testprogram utanför repot): ett
+meddelande som hölls kvar gick förlorat efter 5 respektive 6 rundor fram
+och tillbaka i två körningar som räknade rundorna olika. Regeln är att
+mottagaren bara sparar kedjor för avsändarens 5 senaste ratchet-nycklar
+(`crate/src/olm/session/mod.rs:55`). Meddelandet hamnar därför i raden "går
+inte att läsa".
+
+**En städad engångsnyckel** (punkt 8) syns inte som ett eget fall. Appen
+kan inte skilja den från ett ändrat eller sent typ 0-meddelande, så den
+hamnar i raden "går inte att läsa", som också föreslår en ny skanning.
 
 **Varför felen samlas.** Vem som helst som kan ett brevlåde-ID kan lämna
 paket där, eftersom relayn inte kontrollerar avsändaren (0002, fråga i). En
@@ -686,7 +804,11 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
 **Så följs beroendena:**
 1. **Dependabot** (`.github/dependabot.yml`): versionsuppdateringar varje
    vecka. Varningar och säkerhetsuppdateringar slås på i repots
-   inställningar (se PR:en).
+   inställningar: Settings → Advanced Security → Dependency graph,
+   Dependabot alerts och Dependabot security updates
+   (<https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-dependabot-alerts>,
+   <https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates>,
+   lästa 2026-11-13).
 2. **Rust-craten för hand:**
    - Bevaka säkerhetsmeddelandena för `matrix-org/vodozemac` och för
      pluginets repo hos famedly på GitHub.
@@ -703,14 +825,16 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
 - **Övrigt:** inom 14 dagar, eller i nästa vanliga version.
 - **Om rättelsen inte kan komma i tid:** överväg att stoppa utdelningen.
 
-**Vem gör vad:**
-- **Ägaren** slår på inställningarna, läser varningarna, beslutar och
-  mergar. Bara ägaren mergar.
-- **Assistenten (Claude)** förbereder PR:er (versionsbyte, CI, spiken på
-  emulatorn, läsning av ändringsloggar och `BREAKING`-rader) och mergar
-  aldrig.
+**Vem gör vad** (ändrat 2026-11-14 enligt ägarens beslut, se "Beslut"):
+- **Ägaren** slår på inställningarna, läser varningarna och beslutar.
+  Ägaren mergar det som `CLAUDE.md` under "Aldrig" lämnar till ägaren.
+- **Claude** förbereder PR:er (versionsbyte, CI, spiken på emulatorn,
+  läsning av ändringsloggar och `BREAKING`-rader). Claude får merga sina
+  egna PR:er enligt "Merge" i `CLAUDE.md`.
+- **Dependabots PR:er** mergar ägaren, eftersom `CLAUDE.md` bara låter
+  Claude merga sina egna.
 - **Vid varje uppdatering av Olm-paketen** ska CI vara grön, även spiken på
-  emulatorn, och cratens CHANGELOG ska vara läst innan ägaren mergar.
+  emulatorn, och cratens CHANGELOG ska vara läst innan PR:en mergas.
 
 ## 13. Kvar till den första utdelningen
 
@@ -722,7 +846,8 @@ Från 0003, "Beslut":
 4. `LICENSE` bytt till AGPL-3.0.
 
 Det här lägger 0004 till:
-5. Ägaren har godkänt 0004.
+5. Ägaren har godkänt 0004. Gjort för den interna prototypen 2026-11-14
+   ("Beslut"); utdelning kräver även punkt 6.
 6. En kryptoexpert har granskat punkterna i listan nedan.
 7. Testplanen i punkt 11 är grön.
 8. Relayns största paketstorlek är ändrad (punkt 5).
@@ -737,8 +862,8 @@ Det här lägger 0004 till:
    identitetsnycklar som indata. Bekräfta att det räcker.
 3. **Utfyllnad utanför Olm** (punkt 4, alternativ C): rekommenderas inte,
    och är bara aktuell tillsammans med ett yttre lager.
-4. **Vad storleken visar** (punkt 4): det första meddelandet och kedjeindex
-   syns på storleken. Är det godtagbart?
+4. **Vad storleken visar** (punkt 4): typ 0 (alla meddelanden före det
+   första svaret) och kedjeindex syns på storleken. Är det godtagbart?
 5. **Huvudet är inte bundet till innehållet** (punkt 5): behövs en kontroll
    av brevlåde-ID:t inuti det krypterade?
 6. **Olm-version** (punkt 5): version 1 med 8 byte MAC eller version 2 med
@@ -746,6 +871,8 @@ Det här lägger 0004 till:
 7. **Krypteringen av historiken** (punkt 7): `Aes256Gcm` med en nyckel per
    konversation, och vad som ska vara associerad data.
 8. **Pickles och återställning** (punkt 6): att ordningen hindrar att ett
-   gammalt läge läses in, och hur pickle-nyckeln hanteras.
+   gammalt läge läses in, att typ 0 först provas mot sparade sessioner, att
+   varje försök börjar från den sparade pickeln, och hur pickle-nyckeln
+   hanteras.
 9. **Ett yttre AEAD-lager med en hemlighet från QR-koden** (öppen fråga i
    0003): fortfarande öppen.

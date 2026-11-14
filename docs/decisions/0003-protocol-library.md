@@ -22,7 +22,8 @@ tillagt.
   2. granskning av Flutter/Dart-lagret och bygget;
   3. en plan för säkerhetsuppdateringar av beroenden.
 - **Ordning:** inkopplingen av Olm i appen får börja först när
-  [0004](0004-olm-integration-design.md) är godkänd av ägaren.
+  [0004](0004-olm-integration-design.md) är godkänd av ägaren. (0004
+  godkändes för en intern prototyp 2026-11-14.)
 
 Resten av dokumentet är underlaget som beslutet bygger på, oförändrat.
 

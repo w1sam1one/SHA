@@ -21,7 +21,7 @@ Prototypen är klar när allt detta gäller:
 ## Paket
 
 - [x] **P0 – Styrning.** `CLAUDE.md` och den här filen.
-- [ ] **P1 – 0004 godkänd.** Merga PR #8. Skriv in ägarens beslut i 0004:
+- [x] **P1 – 0004 godkänd.** Merga PR #8. Skriv in ägarens beslut i 0004:
   status, merge-reglerna i §12 enligt `CLAUDE.md`, och listan över
   OGRANSKAT-punkter under "Före första utdelning" nedan.
 - [ ] **P2 – Olm i bygget.** `flutter_vodozemac` med exakt samma version som
@@ -29,11 +29,12 @@ Prototypen är klar när allt detta gäller:
   appen, som `spike-android.yml`. Ingen funktion i appen ändras.
 - [ ] **P3 – Olm bakom `CryptoService`.** Konto, sessioner och pickles, med
   pickle-nyckeln i `KeyVault` (0003 R6, 0004 §6). Ordningen vid krascher
-  enligt §6. `resetIdentity()` raderar allt. Spikens R1–R7 som tester mot
-  appens klasser.
+  enligt §6, OGRANSKAT. `resetIdentity()` raderar allt. Spikens R1–R7 som
+  tester mot appens klasser. Väntar på G4.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
-  (§1). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
-  Sessionsregeln (§2). Engångsnycklar (§8). Kontakter sparas krypterade via
+  (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
+  Sessionsregeln (§2). Engångsnycklar (§8), med 30 dagar för oanvända
+  nycklar tills ägaren väljer antal dagar. Kontakter sparas krypterade via
   valvet.
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
@@ -55,6 +56,12 @@ Prototypen är klar när allt detta gäller:
   enligt `relay/README.md`. Claude kan hjälpa till steg för steg.
 - **G3 – Två riktiga telefoner.** Prova prototypen. Kör även spiken på en
   arm64-telefon (villkor 1 i 0003).
+- **G4 – Lagring (före P3).** 0004 §6 (a) behöver en lokal databas med
+  transaktioner, och §6 sparar mottagna meddelanden och utkorgen krypterade
+  i vila, alltså §7 (a). Inget databasberoende är godkänt än, och §7 står
+  under "Efter prototypen". Claude skriver ett beslutsunderlag (0005,
+  "Proposed – owner decides") med alternativen. Ägaren väljer beroende och
+  hur mycket av §7 (a) prototypen ska ha.
 
 ## Före första utdelning
 
@@ -62,7 +69,23 @@ Inget av detta behövs för prototypen, men allt behövs innan appen ges till
 någon annan än ägaren (0003, 0004 §13):
 
 - En kryptoexpert har granskat alla OGRANSKAT-punkter och listan sist i
-  0004.
+  0004. OGRANSKAT-punkterna, som byggs i prototypen med det rekommenderade
+  alternativet och märks `OGRANSKAT (0004 §N)` i koden:
+  - **§1** – kontrollkoden räknas med dagens funktion på
+    Olm-identitetsnycklarna (P4).
+  - **§3 (A)** – en separat statisk X25519-nyckel för brevlåde-ID:n.
+    Kontrollkoden omfattar inte adresseringsnycklarna (P4).
+  - **§4** – storleken visar typ 0 (allt före det första svaret) och
+    kedjeindex (P5).
+  - **§5** – paketets huvud är inte bundet till innehållet, och Olm version
+    1 med 8 byte MAC används (P5).
+  - **§6** – ordningen vid krascher, pickles och pickle-nyckeln, att typ 0
+    först provas mot sparade sessioner, och att varje försök börjar från den
+    sparade pickeln (P3).
+  - **§7 (a)** – kryptering i vila av mottagna meddelanden och utkorgen,
+    om ägaren väljer det vid G4 (P3).
+  - Byggs inte i prototypen men står också i listan sist i 0004: §4
+    alternativ C, resten av §7 (historiken) och ett yttre lager.
 - Flutter/Dart-lagret och bygget är granskade.
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna.
@@ -79,4 +102,13 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-14 – P1: PR #8 mergad (0899c76). 0004 har status "Accepted by
+  owner for an internal prototype" och ett avsnitt "Beslut", §12 följer
+  merge-reglerna i `CLAUDE.md`, och OGRANSKAT-punkterna står ovan. 0004 är
+  också rättad efter två oberoende granskningar: typ 0 gäller allt före det
+  första svaret, ett misslyckat försök kan ändra en session i minnet, ett
+  ändrat typ 0-meddelande får inte leda till "träffas igen", en utträngd
+  kedja ger `invalid MAC`, och två märkningar saknades. Ny grind G4
+  (lagring) före P3.
+- 2026-11-14 – G1: PR #9 mergad av ägaren (edb983d).
 - 2026-11-14 – P0: regler och färdplan skrivna. Väntar på G1.

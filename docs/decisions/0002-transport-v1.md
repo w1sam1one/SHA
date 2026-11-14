@@ -20,6 +20,11 @@ fortfarande på D3.
 
 **D3 i 0001 är fortfarande obestämt.**
 
+*Senare beslut: D3 godkändes 2026-11-13 ([0003](0003-protocol-library.md),
+"Beslut"), och [0004](0004-olm-integration-design.md) godkändes för en intern
+prototyp 2026-11-14. Lagring i appen och appens koppling till servern görs
+nu enligt 0004 och [`docs/ROADMAP.md`](../ROADMAP.md).*
+
 **Transport v1:**
 
 - Servern har bara två funktioner: **lämna** ett paket och **hämta** paket.
