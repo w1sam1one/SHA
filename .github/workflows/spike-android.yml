@@ -132,6 +132,12 @@ jobs:
           flutter config --no-analytics
           flutter pub get --enforce-lockfile
 
+      # cargokit builds with `rustup run stable` (flutter_vodozemac 0.9.1,
+      # cargokit/build_tool/lib/src/builder.dart), not with the toolchain
+      # installed above. Print the one it will use.
+      - name: Rust toolchain used by cargokit
+        run: rustup run stable rustc --version
+
       - name: flutter test integration_test on the emulator (R1-R8)
         run: flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded
 

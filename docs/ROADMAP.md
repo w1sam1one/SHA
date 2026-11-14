@@ -91,6 +91,8 @@ någon annan än ägaren (0003, 0004 §13):
   alerts och security updates är påslagna.
 - `LICENSE` är bytt till AGPL-3.0.
 - Spiken och appen är körda på en riktig arm64-telefon.
+- Rust-versionen i Android-bygget är låst, och cargo körs med `--locked`
+  (0004 §12). I dag bygger cargokit med CI-maskinens `stable`.
 
 ## Efter prototypen (inte nu)
 
@@ -102,10 +104,16 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-14 – Rättelser efter granskningarna av P1 och P2 (PR #11, #12):
+  0004 §2, §6, §8, §10 och §12. Android-bygget använder CI-maskinens
+  stabila Rust, inte 1.97.0 (cargokit kör `rustup run stable` utan
+  `--locked`); versionen skrivs nu i loggen. Nytt test att appen och
+  spiken har samma Olm-versioner.
 - 2026-11-14 – P2: `flutter_vodozemac` 0.9.1, `vodozemac` 0.9.1 och
   `flutter_rust_bridge` 2.13.0 i appens `pubspec.yaml`, samma versioner och
-  SHA-256 som spiken. Nytt CI-jobb `app-android` i `ci.yml`: Rust 1.97.0,
-  appens APK på en Android-emulator och `integration_test/olm_build_test.dart`.
+  SHA-256 som spiken. Nytt CI-jobb `app-android` i `ci.yml`: Rust (se
+  rättelsen ovan), appens APK på en Android-emulator och
+  `integration_test/olm_build_test.dart`.
   Ingen funktion i appen ändrad. Pluginet lägger inte till några
   Android-behörigheter.
 - 2026-11-14 – P1: PR #8 mergad (0899c76). 0004 har status "Accepted by
