@@ -9,7 +9,7 @@ void main() {
   const packages = ['flutter_vodozemac', 'vodozemac', 'flutter_rust_bridge'];
 
   String? pinOf(String pubspec, String name) => RegExp(
-    '^  $name: *([^ #]+) *(#.*)?\$',
+    '^  $name:[ \t]*([^\\s#]+)[ \t]*(#.*)?\$',
     multiLine: true,
   ).firstMatch(pubspec)?.group(1);
 
