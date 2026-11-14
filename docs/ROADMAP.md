@@ -21,7 +21,7 @@ Prototypen är klar när allt detta gäller:
 ## Paket
 
 - [x] **P0 – Styrning.** `CLAUDE.md` och den här filen.
-- [ ] **P1 – 0004 godkänd.** Merga PR #8. Skriv in ägarens beslut i 0004:
+- [x] **P1 – 0004 godkänd.** Merga PR #8. Skriv in ägarens beslut i 0004:
   status, merge-reglerna i §12 enligt `CLAUDE.md`, och listan över
   OGRANSKAT-punkter under "Före första utdelning" nedan.
 - [ ] **P2 – Olm i bygget.** `flutter_vodozemac` med exakt samma version som
@@ -29,10 +29,10 @@ Prototypen är klar när allt detta gäller:
   appen, som `spike-android.yml`. Ingen funktion i appen ändras.
 - [ ] **P3 – Olm bakom `CryptoService`.** Konto, sessioner och pickles, med
   pickle-nyckeln i `KeyVault` (0003 R6, 0004 §6). Ordningen vid krascher
-  enligt §6. `resetIdentity()` raderar allt. Spikens R1–R7 som tester mot
+  enligt §6, OGRANSKAT. `resetIdentity()` raderar allt. Spikens R1–R7 som tester mot
   appens klasser.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
-  (§1). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
+  (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
   Sessionsregeln (§2). Engångsnycklar (§8). Kontakter sparas krypterade via
   valvet.
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
@@ -62,7 +62,20 @@ Inget av detta behövs för prototypen, men allt behövs innan appen ges till
 någon annan än ägaren (0003, 0004 §13):
 
 - En kryptoexpert har granskat alla OGRANSKAT-punkter och listan sist i
-  0004.
+  0004. OGRANSKAT-punkterna, som byggs i prototypen med det rekommenderade
+  alternativet och märks `OGRANSKAT (0004 §N)` i koden:
+  - **§1** – kontrollkoden räknas med dagens funktion på
+    Olm-identitetsnycklarna (P4).
+  - **§3 (A)** – en separat statisk X25519-nyckel för brevlåde-ID:n.
+    Kontrollkoden omfattar inte adresseringsnycklarna (P4).
+  - **§4** – storleken visar typ 0 (allt före det första svaret) och
+    kedjeindex (P5).
+  - **§5** – paketets huvud är inte bundet till innehållet, och Olm version
+    1 med 8 byte MAC används (P5).
+  - **§6** – ordningen vid krascher, pickles och pickle-nyckeln, och att
+    typ 0 först provas mot sparade sessioner (P3).
+  - Byggs inte i prototypen men står också i listan sist i 0004: §4
+    alternativ C, §7 (historiken) och ett yttre lager.
 - Flutter/Dart-lagret och bygget är granskade.
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna.
@@ -79,4 +92,11 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-14 – P1: PR #8 mergad (0899c76). 0004 har status "Accepted by
+  owner for an internal prototype" och ett avsnitt "Beslut", §12 följer
+  merge-reglerna i `CLAUDE.md`, och OGRANSKAT-punkterna står ovan. 0004 är
+  också rättad efter en oberoende granskning: typ 0 gäller allt före det
+  första svaret, en utträngd kedja ger `invalid MAC`, och två märkningar
+  saknades.
+- 2026-11-14 – G1: PR #9 mergad av ägaren (edb983d).
 - 2026-11-14 – P0: regler och färdplan skrivna. Väntar på G1.
