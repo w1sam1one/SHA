@@ -34,6 +34,10 @@ Rekommendationerna är desamma. Förtydligat för prototypen: Olm version 1
 (§5), 30 dagar för oanvända engångsnycklar (§8), och när den andra
 sessionen får raderas (§2).
 
+**Lagring (ägarens beslut 2026-11-14,
+[0005](0005-lagring-i-prototypen.md)):** för prototypen gäller §6 (c) på
+valvet, och §7 byggs inte.
+
 **Ändrat i det användaren ser (ägaren avgör, `CLAUDE.md`):** §10 har inte
 längre en egen rad "Ni behöver träffas och skanna varandras koder igen".
 Appen kan inte skilja en städad engångsnyckel från ett ändrat eller sent
@@ -567,6 +571,11 @@ koden (punkt 1).
 
 **Rekommendation: (a).**
 
+**För prototypen gäller (c), byggt på valvet** (ägarens beslut 2026-11-14,
+[0005](0005-lagring-i-prototypen.md)): hela tillståndet sparas i en enda
+valvpost som skrivs om vid varje ändring. Valvets skrivning görs först
+säker enligt 0005. (a) tas upp igen när historiken byggs.
+
 **Pickle-nyckeln:**
 - **Nyckeln** är 32 byte från den blandade slumpkällan
   (`lib/crypto/README.md:66-71`), sparad som en egen post i valvet:
@@ -586,6 +595,9 @@ koden (punkt 1).
   Nycklarna raderas först, så att resten inte går att läsa även om
   raderingen av filerna avbryts. I dag raderar `resetIdentity()` bara valvet
   (`sha_crypto_service.dart:79-94`).
+  - I prototypen ligger hela tillståndet i valvet (0005), så det finns
+    ingen databas att radera. Valvets `reset()` ändras så att nyckeln
+    raderas först och filerna sedan (0005).
 
 **Testa:**
 - krasch efter varje steg, vid både mottagning och sändning;
@@ -599,6 +611,10 @@ koden (punkt 1).
 - `resetIdentity()` lämnar inget kvar.
 
 ## 7. Historik
+
+**Byggs inte i prototypen** (ägarens beslut 2026-11-14,
+[0005](0005-lagring-i-prototypen.md)). Där sparas ett meddelande bara tills
+det har visats, i tillståndet enligt punkt 6.
 
 **Krav:**
 - Olm raderar meddelandenycklar efter användning, och egna skickade
@@ -920,6 +936,7 @@ Det här lägger 0004 till:
 8. **Pickles och återställning** (punkt 6): att ordningen hindrar att ett
    gammalt läge läses in, att typ 0 först provas mot sparade sessioner, att
    varje försök börjar från den sparade pickeln, och hur pickle-nyckeln
-   hanteras.
+   hanteras. I prototypen sparas hela tillståndet som en enda valvpost
+   (0005).
 9. **Ett yttre AEAD-lager med en hemlighet från QR-koden** (öppen fråga i
    0003): fortfarande öppen.

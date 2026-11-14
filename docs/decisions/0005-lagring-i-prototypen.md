@@ -1,9 +1,22 @@
 # 0005 – Lagring i prototypen
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-14.
+Status: **Accepted by owner, 2026-11-14.** Skrivet 2026-11-14.
 
-Underlag för grinden G4 i [`docs/ROADMAP.md`](../ROADMAP.md). P3 väntar på
-det här beslutet. Ingen kod är ändrad.
+Underlag för grinden G4 i [`docs/ROADMAP.md`](../ROADMAP.md). Ingen kod är
+ändrad här; beslutet byggs i P3.
+
+## Beslut
+
+Beslutat av ägaren 2026-11-14. Avsnittet skriver ner beslutet; inget är
+tillagt.
+
+- **Lagring: (A).** Hela tillståndet sparas i en enda valvpost, med kraven
+  under "Om ägaren väljer (A) och (i)".
+- **Meddelanden: (i).** De sparas bara tills de har visats.
+- **Gränsen 300 ms** för en skrivning gäller. Tar en skrivning längre tid i
+  mätningen stannar Claude och tar frågan tillbaka till ägaren.
+
+Resten av dokumentet är underlaget som beslutet bygger på, oförändrat.
 
 ## Varför ett beslut behövs
 
@@ -175,3 +188,5 @@ sådan kod än.
 
 1. (A), (B) eller (C) för prototypen.
 2. (i) eller (ii).
+
+Beslutat 2026-11-14: (A) och (i), se "Beslut" överst.
