@@ -33,8 +33,8 @@ Prototypen är klar när allt detta gäller:
   tester mot appens klasser. Väntar på G4.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
-  Sessionsregeln (§2): först ett beslutsunderlag om den öppna frågan i §2,
-  som ägaren avgör. Texterna i §10 som P4 behöver godkänns av ägaren först.
+  Sessionsregeln (§2): väntar på G5. Texterna i §10 som P4 behöver
+  godkänns av ägaren först.
   Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
   väljer antal dagar. Kontakter sparas krypterade via valvet.
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
@@ -61,9 +61,13 @@ Prototypen är klar när allt detta gäller:
 - **G4 – Lagring (före P3).** 0004 §6 (a) behöver en lokal databas med
   transaktioner, och §6 sparar mottagna meddelanden och utkorgen krypterade
   i vila, alltså §7 (a). Inget databasberoende är godkänt än, och §7 står
-  under "Efter prototypen". Claude skriver ett beslutsunderlag (0005,
-  "Proposed – owner decides") med alternativen. Ägaren väljer beroende och
-  hur mycket av §7 (a) prototypen ska ha.
+  under "Efter prototypen". Beslutsunderlaget är
+  [0005](decisions/0005-lagring-i-prototypen.md) ("Proposed – owner
+  decides"). Ägaren väljer lagring och hur mycket av meddelandena som sparas.
+- **G5 – Sessionsregeln (före P4).** 0004 §2 har en öppen fråga: en session
+  vars första meddelande aldrig kan läsas väljs aldrig bort av regeln om
+  minsta id. Claude skriver ett beslutsunderlag med alternativ, och ägaren
+  avgör.
 
 ## Före första utdelning
 
@@ -109,6 +113,8 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-14 – G4: beslutsunderlag 0005 (lagring i prototypen) skrivet.
+  Ny grind G5 för den öppna frågan i 0004 §2. P3 väntar på G4.
 - 2026-11-14 – Rättelser efter granskningarna av P1 och P2 (PR #11, #12):
   0004 "Beslut", §2, §6, §8, §12 och §13. Android-bygget använder
   CI-maskinens stabila Rust, inte 1.97.0 (cargokit kör `rustup run stable`
