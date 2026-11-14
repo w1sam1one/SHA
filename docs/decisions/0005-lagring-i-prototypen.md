@@ -17,44 +17,71 @@ det här beslutet. Ingen kod är ändrad.
 
 ## Vad som måste sparas i prototypen
 
-Från "Klart när" i färdplanen (punkt 2) och 0004 §6 och §8:
+Från "Klart när" i färdplanen (punkt 2) och 0004 §2, §6, §8 och §10:
 
 1. Olm-kontot, som pickle.
-2. Sessionerna per kontakt, som pickles.
+2. Sessionerna per kontakt, som pickles. För varje session: när den först
+   tog emot ett meddelande från kontakten, som raderingsregeln i 0004 §2
+   behöver. G5 kan ändra det.
 3. Kontakterna: identitetsnyckel, adresseringsnyckel (0004 §3), namn och
    när ni träffades.
 4. Visade engångsnycklar och när de visades (0004 §8).
 5. Hashar av behandlade paket, i minst 48 timmar (0004 §6).
-6. Utkorgen: paketens byte och om de är skickade (0004 §6).
+6. Utkorgen: paketens byte, texten och om paketet är skickat (0004 §6).
 7. Mottagna meddelanden, i alla fall tills appen har visat dem (0004 §6,
    steg 3 och 4).
+8. Räknarna för "kunde inte läsas" och "för sent" per kontakt (0004 §10).
+   De sparas i samma skrivning som paketets hash, annars kan ett fel
+   försvinna tyst vid en omstart.
+9. Inställningarna från P6: hämtningsintervallet och relayns adress.
 
-Pickle-nyckeln ligger redan som egen post i valvet (0004 §6).
+Pickle-nyckeln ska ligga som egen post i valvet (0004 §6). Det finns ingen
+sådan kod än.
 
 **Krav:**
 - **Atomiskt:** flera av sakerna ovan ändras i samma skrivning (0004 §6).
+  En skrivning som misslyckas får aldrig rapporteras som lyckad, för då kan
+  ett gammalt läge läsas in igen (0004 §6, "Varför sparandet måste komma
+  före nätet").
 - **Krypterat i vila, och inte i backup.**
-- **Raderas helt** av `resetIdentity()`.
+- **Raderas helt** av `resetIdentity()`, och nycklarna först (0004 §6).
 - **Ingen ny egen kryptografi** (`CLAUDE.md`, "Aldrig").
 
 ## Fakta
 
 - **Valvet** krypterar varje post med Keystore-nyckeln (AES-GCM, med
-  postens namn som associerad data) och skriver den atomiskt med
+  postens namn som associerad data) och skriver den med Androids
   `AtomicFile` (`android/app/src/main/kotlin/se/sha/sha/keystore/KeystoreVault.kt:64-88`).
-  - Det är atomiskt för en post, inte för flera.
   - Filerna ligger i `noBackupFilesDir` (`lib/crypto/README.md:40,50-52`).
-  - `reset()` raderar alla poster och valvets nyckel
-    (`lib/crypto/src/key_vault.dart:17-19`).
-- **Ej verifierat:** hur snabbt valvet krypterar en stor post. Ligger
-  Keystore-nyckeln i StrongBox, som är ett separat chip, kan det vara
-  långsamt. Det är inte mätt.
+  - `reset()` raderar först alla filer och sist nyckeln
+    (`KeystoreVault.kt:99-111`). Det är omvänt mot vad 0004 §6 kräver.
+- **`AtomicFile` säger inte till när något går fel.** `finishWrite` loggar
+  bara ett misslyckat fsync och ett misslyckat namnbyte, och kastar inget
+  fel. Mappen fsyncas inte heller. Källa: AOSP `main`,
+  `core/java/android/util/AtomicFile.java:172-188,338-353` (GitHub-spegeln
+  av `platform_frameworks_base`, läst 2026-11-14).
+  - Valvets `write()` kan därför rapportera att det lyckades fast det gamla
+    innehållet ligger kvar, och ett strömavbrott kan göra namnbytet ogjort.
+  - Ej verifierat: att API 35 beter sig som `main`.
+- **Valvets Kotlin-kod har inget test på en enhet.**
+  `test/crypto/android_keystore_vault_test.dart` testar Dart-sidan mot en
+  låtsad kanal, och det finns ingen `androidTest`.
+- **Storlek:** koden har ingen gräns för en post, varken i Dart
+  (`lib/crypto/src/android_keystore_vault.dart:31-32`) eller i Kotlin.
+- **Ej verifierat:**
+  - hur stor post Keystore klarar med AES-GCM;
+  - hur snabbt det går, särskilt i StrongBox, som är ett separat chip.
+  - CI:s emulator har troligen ingen StrongBox (allmän kunskap, inte
+    kontrollerat här), så en mätning där säger inget om StrongBox.
 - **SQLite-paket på pub.dev** (pub.dev API, läst 2026-11-14):
-  - `sqlite3` 3.9.1, publicerad 2026-11-08, publisher simonbinder.eu, MIT;
-  - `sqflite` 2.4.6, publicerad 2026-11-10, publisher tekartik.com,
+  - `sqlite3` 3.9.1, publicerad 2026-11-08, utgivare simonbinder.eu, MIT.
+    Paketet bygger in SQLite och kan använda SQLCipher eller
+    SQLite3MultipleCiphers för att kryptera databasen (README i arkivet,
+    rad 8 och 131-132).
+  - `sqflite` 2.4.6, publicerad 2026-11-10, utgivare tekartik.com,
     BSD-2-Clause.
-  - `sqlite3_flutter_libs` och `sqlcipher_flutter_libs` är markerade som
-    avvecklade: "update to version 3.x of package:sqlite3".
+  - De äldre paketen `sqlite3_flutter_libs` och `sqlcipher_flutter_libs`
+    säger "update to version 3.x of package:sqlite3".
 
 ## Alternativ
 
@@ -62,39 +89,58 @@ Pickle-nyckeln ligger redan som egen post i valvet (0004 §6).
   som en struktur och skrivs om helt vid varje ändring, med
   `KeyVault.write`. Det är 0004 §6, alternativ (c), byggt på valvet.
   - Inget nytt beroende.
-  - Ingen ny kryptografi: valvet finns och är testat.
-  - Atomiskt, eftersom allt är en `AtomicFile`.
-  - `resetIdentity()` raderar det redan.
-  - Men allt skrivs om vid varje meddelande, så posten måste vara liten.
-  - Farten i StrongBox är inte mätt (se ovan).
+  - Ingen ny kryptografi: valvets AES-GCM med Keystore-nyckeln finns redan.
+  - Men valvets skrivning måste göras säker först: fsync och namnbyte
+    måste ge fel om de misslyckas, och mappen måste fsyncas. Det är en
+    ändring i valvets Kotlin-kod (se "Om ägaren väljer (A)").
+  - Allt skrivs om vid varje meddelande, så posten måste vara liten.
+  - Går posten sönder försvinner allt på en gång: kontot, kontakterna och
+    sessionerna.
+  - Storlek och fart i Keystore är inte mätta (se ovan).
   - Det räcker inte för en riktig historik senare.
 - **(B) En krypterad tillståndsfil i Dart, med en nyckel i valvet.**
   Tillståndet krypteras med dagens `Aes256Gcm` (`lib/crypto/src/aes_gcm.dart`)
-  och en slumpad nyckel som sparas som valvpost. Filen skrivs till en
-  tillfällig fil och döps sedan om.
-  - Inget nytt beroende, och snabbt.
-  - Men det är en ny användning av AES-GCM, alltså 0004 §7 (a). **Kräver
-    granskning av kryptoexpert** och märks OGRANSKAT.
-  - Den atomiska skrivningen blir egen kod i Dart.
-- **(C) SQLite med transaktioner** (`sqlite3` eller `sqflite`), där varje
-  rads innehåll krypteras med `Aes256Gcm`.
+  och en slumpad nyckel som sparas som valvpost.
+  - Inget nytt beroende.
+  - Men det är en ny användning av AES-GCM för hela tillståndet, alltså
+    0004 §6 (c) gjort i Dart. **Kräver granskning av kryptoexpert**, och
+    koden märks OGRANSKAT.
+  - Dart behöver sökvägen till `noBackupFilesDir`. Det finns ingen
+    `path_provider` i lockfilen, så det kräver en ny metod i den inbyggda
+    kanalen.
+  - Den atomiska skrivningen blir egen kod, med samma krav på fsync som i
+    (A).
+  - Farten är inte mätt: `Aes256Gcm` är skriven i ren Dart
+    (`lib/crypto/src/aes_gcm.dart:3,21`).
+  - Går filen sönder försvinner allt på en gång, som i (A).
+- **(C) SQLite med transaktioner** (`sqlite3` eller `sqflite`).
+  - SQLite sköter själv att en transaktion överlever en krasch eller ett
+    strömavbrott.
   - Den räcker för historik senare.
+  - Kryptering antingen per rad med `Aes256Gcm`, eller hela databasen med
+    SQLCipher via `sqlite3` (0004 §7 (b)). Båda **kräver granskning av
+    kryptoexpert**. Att SQLCipher fungerar på Android här är inte provat.
   - Men det är ett nytt beroende med inbyggd kod, som måste godkännas och
-    granskas.
-  - Det är också 0004 §7 (a), alltså **Kräver granskning av kryptoexpert**,
-    och mest kod.
+    granskas, och det blir mest kod.
 
-**Rekommendation för prototypen: (A).**
-- I P3 mäter Claude hur lång tid en skrivning tar på emulatorn, med ett
-  tillstånd för 20 kontakter.
-- Tar en skrivning mer än 300 ms stannar Claude och föreslår (B).
-- (C) tas upp igen när historiken byggs, efter prototypen.
+**Rekommendation för prototypen: (A)**, med kraven under "Om ägaren väljer
+(A)".
+- **Mätning i P3:** på CI:s emulator mäter Claude både skrivning och
+  läsning vid start. Tillståndet har 20 kontakter med 3 sessioner var, 5
+  paket i utkorgen på största storlek (cirka 65 kB) och 20 mottagna
+  meddelanden.
+- **Gräns:** tar en skrivning mer än 300 ms stannar Claude och tar frågan
+  tillbaka till ägaren. 300 ms är vald så att det ska kännas omedelbart att
+  skicka; ägaren kan ändra gränsen.
+- **StrongBox** går inte att mäta på emulatorn. Farten där är inte
+  verifierad förrän prototypen körs på riktiga telefoner (G3).
+- **(C)** tas upp igen när historiken byggs, efter prototypen.
 
 ## Hur mycket av meddelandena som sparas
 
-- **(i) Bara tills de har visats.** Ett mottaget meddelande sparas i
-  tillståndet tills appen har visat det, ett skickat tills relayn har tagit
-  emot det. Efter en omstart är chatten tom.
+- **(i) Bara tills de har visats.** Ett mottaget meddelande sparas tills
+  appen har visat det, ett skickat tills relayn har tagit emot det. Efter
+  en omstart är chatten tom.
 - **(ii) De senaste 7 dagarna,** i samma tillstånd.
   - Mer användbart.
   - Men tillståndet blir större, och det är en början på historik.
@@ -104,11 +150,22 @@ Pickle-nyckeln ligger redan som egen post i valvet (0004 §6).
 
 ## Om ägaren väljer (A) och (i)
 
+- **Valvet ändras i P3:**
+  - skrivningen ger fel om fsync eller namnbytet misslyckas, och mappen
+    fsyncas;
+  - `reset()` raderar nyckeln först och filerna sedan;
+  - ett nytt emulatortest för valvet: skriva, läsa, återställa, en stor
+    post, och att en misslyckad skrivning ger fel.
 - **0004 §6:** alternativ (c) gäller för prototypen i stället för (a).
-- **0004 §7 och §7 (a):** behövs inte i prototypen. Raden om §7 (a) under
-  "Före första utdelning" i färdplanen tas bort.
-- **P3** bygger tillståndet. Testerna är krasch efter varje steg (0004 §6),
-  `resetIdentity()` och mätningen av farten.
+  Raden om §6 under "Före första utdelning" i färdplanen säger då att
+  prototypen använder §6 (c) på valvet, så att kryptoexperten granskar
+  det.
+- **0004 §7 och §7 (a)** behövs inte i prototypen. Raden om §7 (a) under
+  "Före första utdelning" tas bort.
+- **P3** bygger tillståndet. Testerna är:
+  - krasch efter varje steg (0004 §6);
+  - att `resetIdentity()` lämnar inget kvar;
+  - mätningen ovan.
 
 ## Ägaren beslutar
 
