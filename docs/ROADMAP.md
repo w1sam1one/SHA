@@ -24,7 +24,7 @@ Prototypen är klar när allt detta gäller:
 - [x] **P1 – 0004 godkänd.** Merga PR #8. Skriv in ägarens beslut i 0004:
   status, merge-reglerna i §12 enligt `CLAUDE.md`, och listan över
   OGRANSKAT-punkter under "Före första utdelning" nedan.
-- [ ] **P2 – Olm i bygget.** `flutter_vodozemac` med exakt samma version som
+- [x] **P2 – Olm i bygget.** `flutter_vodozemac` med exakt samma version som
   spiken i appens `pubspec.yaml`. Rust i CI. Ett Android-emulatorjobb för
   appen, som `spike-android.yml`. Ingen funktion i appen ändras.
 - [ ] **P3 – Olm bakom `CryptoService`.** Konto, sessioner och pickles, med
@@ -102,6 +102,12 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-14 – P2: `flutter_vodozemac` 0.9.1, `vodozemac` 0.9.1 och
+  `flutter_rust_bridge` 2.13.0 i appens `pubspec.yaml`, samma versioner och
+  SHA-256 som spiken. Nytt CI-jobb `app-android` i `ci.yml`: Rust 1.97.0,
+  appens APK på en Android-emulator och `integration_test/olm_build_test.dart`.
+  Ingen funktion i appen ändrad. Pluginet lägger inte till några
+  Android-behörigheter.
 - 2026-11-14 – P1: PR #8 mergad (0899c76). 0004 har status "Accepted by
   owner for an internal prototype" och ett avsnitt "Beslut", §12 följer
   merge-reglerna i `CLAUDE.md`, och OGRANSKAT-punkterna står ovan. 0004 är

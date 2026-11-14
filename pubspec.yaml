@@ -38,8 +38,17 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.2
 
+  # Olm (decision 0003, D3). Exact versions, the same as in spike/vodozemac:
+  # flutter_vodozemac and vodozemac are released together, and
+  # flutter_rust_bridge must match the bindings the plugin was generated with.
+  flutter_vodozemac: 0.9.1
+  vodozemac: 0.9.1
+  flutter_rust_bridge: 2.13.0
+
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
