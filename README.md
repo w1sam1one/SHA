@@ -17,9 +17,9 @@ flutter run           # Android-enhet eller emulator (API 24+)
 ```
 
 Att bygga appen för Android kräver också Rust via `rustup`: Olm-pluginet
-`flutter_vodozemac` kompilerar sin Rust-del från källkod vid bygget. Det
-körs med `rustup run stable`, lägger själv till Android-målen och hämtar
-Rust-paket från crates.io, så bygget behöver nät. `flutter test` och
+`flutter_vodozemac` kompilerar sin Rust-del från källkod vid bygget.
+Pluginet bygger med `rustup run stable`, lägger själv till Android-målen och
+hämtar Rust-paket från crates.io, så bygget behöver nät. `flutter test` och
 `flutter analyze` behöver inte Rust.
 
 Utan kamera (t.ex. emulator), i **debug-bygge**: tryck kopiera-ikonen på

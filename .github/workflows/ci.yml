@@ -104,6 +104,8 @@ jobs:
           tar -xf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
+      # Not what the Android build compiles with: cargokit uses `stable`
+      # (see "Rust toolchain used by cargokit" below).
       - name: Install Rust ${{ env.RUST_TOOLCHAIN }} with the Android target
         run: |
           rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target x86_64-linux-android

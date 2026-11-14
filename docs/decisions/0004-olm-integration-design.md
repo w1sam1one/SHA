@@ -9,7 +9,8 @@ Underlag för hur appen kopplar in Olm. Bygger på
 ## Beslut
 
 Beslutat av ägaren 2026-11-14, i [`CLAUDE.md`](../../CLAUDE.md) under
-"Ägarens beslut". Avsnittet skriver ner beslutet; inget är tillagt.
+"Ägarens beslut". Punkterna nedan skriver ner beslutet; inget är tillagt i
+dem. Rättelserna efteråt står längre ned i avsnittet.
 
 - **0004 godkänns för en intern prototyp**, med det rekommenderade
   alternativet i varje punkt.
@@ -38,7 +39,9 @@ längre en egen rad "Ni behöver träffas och skanna varandras koder igen".
 Appen kan inte skilja en städad engångsnyckel från ett ändrat eller sent
 meddelande, så de hamnar i raden "kunde inte läsas", som nu slutar med
 "Fortsätter det, träffas och skanna varandras koder igen." Texten för `507`
-är "Servern har inte plats för det just nu".
+var "Mottagarens brevlåda är full just nu" och är nu "Servern har inte plats
+för det just nu". Ägaren godkänner texterna i §10 innan P6 mergas
+(`docs/ROADMAP.md`, P6).
 
 ## Så läses dokumentet
 
@@ -188,6 +191,20 @@ koden visas (punkt 6 och 8).
     strax före bytet kan då fortfarande hämtas.
 - **Skannar någon igen** blir det en tredje session, med en ny
   engångsnyckel. Regeln gäller fortfarande: minsta id av alla.
+- **Öppen fråga (ägaren avgör före P4):** en session vars första meddelande
+  aldrig kan läsas (till exempel för att engångsnyckeln har städats,
+  punkt 8) blir aldrig vald bort av regeln ovan. Den tar inte emot något och
+  raderas därför aldrig, och har den minsta id fortsätter kontakten att
+  skicka på den. En ny skanning hjälper bara om den nya sessionen råkar få
+  lägre id. Sessions-id är SHA-256 av sessionens nycklar
+  (`crate/src/olm/session_keys.rs:46-56`), så det är slumpmässigt. Förslag
+  att välja mellan:
+  - en ny skanning raderar kontaktens gamla sessioner på båda telefonerna;
+  - regeln väljer bland sessioner som har tagit emot ett meddelande från
+    kontakten, och minsta id bara om ingen har det.
+
+  Båda ändrar rekommendationen i den här punkten och avgörs därför av
+  ägaren.
 - **Ingen kryptografi:** regeln jämför bara text.
 
 **Testa:**
@@ -659,7 +676,8 @@ inte att läsa.
   - Men ett första meddelande som kommer senare går inte att öppna. Är den
     valda sessionen (punkt 2) kontaktens egen utgående session, och
     kontakten skriver första gången efter städningen, går inget av
-    kontaktens meddelanden att läsa förrän ni har skannat igen.
+    kontaktens meddelanden att läsa. En ny skanning löser det inte säkert;
+    se den öppna frågan i punkt 2.
 - **(b) Den som skannar skickar automatiskt ett första meddelande** direkt
   efter mötet, så att nyckeln används snabbt.
   - Då kan nyckeln tas bort tidigt.
@@ -812,16 +830,21 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
   SHA versioning"
   (<https://docs.github.com/en/code-security/reference/supply-chain-security/dependency-graph-supported-package-ecosystems>).
   Versionsuppdateringarna fungerar ändå.
-- **Verktygen följs inte.** Flutter, Go, Rust, NDK och emulatorns
-  systemavbild är låsta i `.github/workflows/`, och dem följer Dependabot
-  inte.
+- **Verktygen följs inte.** Flutter, Go, NDK och emulatorns systemavbild är
+  låsta i `.github/workflows/`, liksom Rust för spikens värdbygge. Dem följer
+  Dependabot inte.
 - **Rust i Android-bygget är inte låst.** Pluginets cargokit bygger med
   `rustup run stable` och utan `--locked`
   (`flutter_vodozemac-0.9.1/cargokit/build_tool/lib/src/builder.dart:150-180`,
   läst 2026-11-14). Android-bygget använder alltså CI-maskinens
   förinstallerade stabila Rust, vars version skrivs i loggen, och cargo
-  följer pluginets `Cargo.lock` utan att tvingas till den. Det hör till
-  granskningen av bygget (0003, villkor 2).
+  följer pluginets `Cargo.lock` men tvingas inte följa den.
+  - Det går inte att ändra från appen. Cargokit läser byggval bara ur
+    pluginets egen `rust/cargokit.yaml`, och appens `cargokit_options.yaml`
+    har bara `use_precompiled_binaries` och `verbose_logging`
+    (`cargokit/build_tool/lib/src/options.dart:222,257-286`). Att låsa Rust
+    och bygga med `--locked` kräver ett ändrat plugin.
+  - Det hör till granskningen av bygget (0003, villkor 2) och punkt 13.
 
 **Så följs beroendena:**
 1. **Dependabot** (`.github/dependabot.yml`): versionsuppdateringar varje
@@ -874,6 +897,8 @@ Det här lägger 0004 till:
 7. Testplanen i punkt 11 är grön.
 8. Relayns största paketstorlek är ändrad (punkt 5).
 9. Texterna i appen följer 0002 ("Formuleringar i appen") och punkt 10.
+10. Rust i Android-bygget är låst och cargo körs med `--locked`, eller så
+    har granskningen av bygget godtagit att det inte är det (punkt 12).
 
 ## Kräver granskning av kryptoexpert
 
