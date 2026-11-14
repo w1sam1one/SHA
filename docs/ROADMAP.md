@@ -33,14 +33,16 @@ Prototypen är klar när allt detta gäller:
   tester mot appens klasser. Väntar på G4.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
-  Sessionsregeln (§2). Engångsnycklar (§8), med 30 dagar för oanvända
-  nycklar tills ägaren väljer antal dagar. Kontakter sparas krypterade via
-  valvet.
+  Sessionsregeln (§2): först ett beslutsunderlag om den öppna frågan i §2,
+  som ägaren avgör. Texterna i §10 som P4 behöver godkänns av ägaren först.
+  Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
+  väljer antal dagar. Kontakter sparas krypterade via valvet.
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
 - [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
   Hämtning enligt §9 (b). Intervallet 1, 5, 15 eller 60 minuter i
-  inställningarna. Felfall och texter (§10, 0002). `INTERNET` i
+  inställningarna. Felfall och texter (§10, 0002); ägaren godkänner
+  texterna i §10 innan de byggs in. `INTERNET` i
   release-manifestet, med motivering i README. Relayns adress går att ställa
   in.
 - [ ] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
@@ -91,6 +93,11 @@ någon annan än ägaren (0003, 0004 §13):
   alerts och security updates är påslagna.
 - `LICENSE` är bytt till AGPL-3.0.
 - Spiken och appen är körda på en riktig arm64-telefon.
+- Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
+  ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
+  §12, §13). I
+  dag bygger cargokit med CI-maskinens `stable`, och att ändra det kräver
+  ett ändrat plugin.
 
 ## Efter prototypen (inte nu)
 
@@ -102,16 +109,23 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-14 – Rättelser efter granskningarna av P1 och P2 (PR #11, #12):
+  0004 "Beslut", §2, §6, §8, §12 och §13. Android-bygget använder
+  CI-maskinens stabila Rust, inte 1.97.0 (cargokit kör `rustup run stable`
+  utan `--locked`); versionen skrivs nu i loggen. Nytt test att appen och
+  spiken har samma Olm-versioner. Ny öppen fråga till ägaren i 0004 §2,
+  före P4.
 - 2026-11-14 – P2: `flutter_vodozemac` 0.9.1, `vodozemac` 0.9.1 och
   `flutter_rust_bridge` 2.13.0 i appens `pubspec.yaml`, samma versioner och
-  SHA-256 som spiken. Nytt CI-jobb `app-android` i `ci.yml`: Rust 1.97.0,
-  appens APK på en Android-emulator och `integration_test/olm_build_test.dart`.
+  SHA-256 som spiken. Nytt CI-jobb `app-android` i `ci.yml`: Rust (se
+  rättelsen ovan), appens APK på en Android-emulator och
+  `integration_test/olm_build_test.dart`.
   Ingen funktion i appen ändrad. Pluginet lägger inte till några
   Android-behörigheter.
 - 2026-11-14 – P1: PR #8 mergad (0899c76). 0004 har status "Accepted by
   owner for an internal prototype" och ett avsnitt "Beslut", §12 följer
   merge-reglerna i `CLAUDE.md`, och OGRANSKAT-punkterna står ovan. 0004 är
-  också rättad efter två oberoende granskningar: typ 0 gäller allt före det
+  också rättad efter flera oberoende granskningar: typ 0 gäller allt före det
   första svaret, ett misslyckat försök kan ändra en session i minnet, ett
   ändrat typ 0-meddelande får inte leda till "träffas igen", en utträngd
   kedja ger `invalid MAC`, och två märkningar saknades. Ny grind G4

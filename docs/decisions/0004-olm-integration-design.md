@@ -9,7 +9,8 @@ Underlag för hur appen kopplar in Olm. Bygger på
 ## Beslut
 
 Beslutat av ägaren 2026-11-14, i [`CLAUDE.md`](../../CLAUDE.md) under
-"Ägarens beslut". Avsnittet skriver ner beslutet; inget är tillagt.
+"Ägarens beslut". Punkterna nedan skriver ner beslutet; inget är tillagt i
+dem. Rättelserna efteråt står längre ned i avsnittet.
 
 - **0004 godkänns för en intern prototyp**, med det rekommenderade
   alternativet i varje punkt.
@@ -22,15 +23,25 @@ Beslutat av ägaren 2026-11-14, i [`CLAUDE.md`](../../CLAUDE.md) under
 - **Claude får merga sina egna PR:er** enligt "Merge" i `CLAUDE.md`. Det
   ersätter "mergar aldrig" i §12.
 
-Rättat 2026-11-14 efter två oberoende granskningar:
+Rättat 2026-11-14 efter fyra oberoende granskningar:
 - typ 0 gäller alla meddelanden före det första svaret (§4, §5, §6, §10);
-- ett misslyckat försök kan ändra en session i minnet, och ett ändrat typ
-  0-meddelande får inte leda till "träffas igen" (§6, §10);
+- ett misslyckat försök kan ändra en session eller kontot i minnet, så
+  varje försök börjar från den sparade pickeln (§6);
 - felet för en utträngd kedja (§10);
 - två saknade märkningar (§1, §6).
 
-Rekommendationerna är desamma. Två saker är förtydligade för prototypen:
-Olm version 1 (§5) och 30 dagar för oanvända engångsnycklar (§8).
+Rekommendationerna är desamma. Förtydligat för prototypen: Olm version 1
+(§5), 30 dagar för oanvända engångsnycklar (§8), och när den andra
+sessionen får raderas (§2).
+
+**Ändrat i det användaren ser (ägaren avgör, `CLAUDE.md`):** §10 har inte
+längre en egen rad "Ni behöver träffas och skanna varandras koder igen".
+Appen kan inte skilja en städad engångsnyckel från ett ändrat eller sent
+meddelande, så de hamnar i raden "kunde inte läsas", som nu slutar med
+"Fortsätter det, träffas och skanna varandras koder igen." Texten för `507`
+var "Mottagarens brevlåda är full just nu" och är nu "Servern har inte plats
+för det just nu". Ägaren godkänner texterna i §10 innan de byggs in i appen
+(`docs/ROADMAP.md`, P4 och P6).
 
 ## Så läses dokumentet
 
@@ -172,12 +183,27 @@ koden visas (punkt 6 och 8).
 **Rekommendation: (a).**
 - **Den andra sessionen** behålls så länge meddelanden kan komma på den.
   Den raderas först när båda dessa gäller:
-  - den valda sessionen har tagit emot ett meddelande från den andra, så
-    att den andra också har bytt;
-  - det har gått minst 48 timmar sedan det senaste meddelandet på den
-    andra sessionen, vilket är relayns livslängd (`relay/limits.go:27`).
+  - den valda sessionen har tagit emot ett meddelande från kontakten, så
+    att kontakten också har bytt;
+  - det har gått minst 48 timmar sedan den valda sessionen tog emot det
+    första meddelandet från kontakten, vilket är relayns livslängd
+    (`relay/limits.go:27`). Ett paket på den andra sessionen som skickades
+    strax före bytet kan då fortfarande hämtas.
 - **Skannar någon igen** blir det en tredje session, med en ny
   engångsnyckel. Regeln gäller fortfarande: minsta id av alla.
+- **Öppen fråga (ägaren avgör före P4):** en session vars första meddelande
+  aldrig kan läsas (till exempel för att engångsnyckeln har städats,
+  punkt 8) blir aldrig vald bort av regeln ovan. Den tar inte emot något och
+  raderas därför aldrig, och har den minsta id fortsätter kontakten att
+  skicka på den. En ny skanning hjälper bara om den nya sessionen råkar få
+  lägre id. Sessions-id är SHA-256 av sessionens nycklar
+  (`crate/src/olm/session_keys.rs:46-56`), så det är slumpmässigt.
+  - En lösning ändrar regeln för vilken session som väljs, och kanske när
+    sessioner raderas. Det ändrar rekommendationen i den här punkten.
+  - Claude tar därför fram ett eget beslutsunderlag med alternativ, för-
+    och nackdelar innan P4, och ägaren avgör. Alternativen måste hålla
+    kravet att inget meddelande går förlorat, även paket som ligger kvar
+    på relayn.
 - **Ingen kryptografi:** regeln jämför bara text.
 
 **Testa:**
@@ -455,14 +481,16 @@ vilken typ av Olm-meddelande det är.
        `createInboundSession` med kontaktens identitetsnyckel. Lyckas det
        finns en ny session. Misslyckas det, oavsett fel, räknas meddelandet
        som "går inte att läsa" (punkt 10).
-     - Ett misslyckat `createInboundSession` ändrar inte kontot: felen
-       kommer innan engångsnyckeln tas bort
-       (`crate/src/olm/account/mod.rs:285-324`). Kontot läses ändå in från
-       den sparade pickeln efter ett fel, som sessionerna nedan.
-   - **Varför felet aldrig leder till "träffas igen":** `unknown one-time
-     key` betyder oftast att nyckeln redan är använd, alltså att meddelandet
-     hör till en session som finns men inte kunde läsa det (ändrat, för sent
-     eller från en raderad session). Appen kan inte se vilken engångsnyckel
+     - **Kontot läses in från den sparade pickeln efter varje fel.** I
+       craten kommer felen innan engångsnyckeln tas bort
+       (`crate/src/olm/account/mod.rs:257-324`). Men Dart-bindningen kan
+       ge ett fel efter att nyckeln redan är borttagen, när klartexten
+       inte är giltig UTF-8 (`flutter_vodozemac-0.9.1/rust/src/bindings.rs:654-672`).
+       Då är kontot i minnet ändrat, och sessionen finns inte.
+   - **Varför felet inte får en egen text:** `unknown one-time key` betyder
+     oftast att nyckeln redan är använd, alltså att meddelandet hör till en
+     session som finns eller har funnits, men inte kunde läsas (ändrat, för
+     sent eller från en raderad session). Appen kan inte se vilken engångsnyckel
      meddelandet pekar på, så den kan inte skilja det från en städad nyckel.
      Vem som helst som kan brevlåde-ID:t kan dessutom orsaka felet med ett
      enda ändrat paket (0002, fråga i). Kört mot craten 0.11.2 den
@@ -564,8 +592,8 @@ koden (punkt 1).
 - omstart läser in rätt läge;
 - samma första meddelande avvisas efter en omstart;
 - två typ 0-meddelanden i rad läses båda, utan en andra inkommande session;
-- ett ändrat typ 0-meddelande och ett som kom för sent ger "går inte att
-  läsa", inte "träffas igen", och kontot är oförändrat efteråt;
+- ett ändrat typ 0-meddelande och ett som kom för sent ger raden "går inte
+  att läsa", och den sparade kontopickeln är oförändrad efteråt;
 - ett misslyckat försök med fel session ändrar inte det som sparas;
 - utkorgen skickar samma byte;
 - `resetIdentity()` lämnar inget kvar.
@@ -640,10 +668,15 @@ inte att läsa.
 
 **Alternativ för städningen:**
 - **(a) Ta bort oanvända nycklar efter en fast tid**, till exempel 30 dagar.
-  Appen sparar själv när varje nyckel visades och för vilken kontakt, alltså
-  den som just skannades.
+  Appen sparar själv när varje nyckel visades. Nyckeln kopplas inte till
+  en kontakt: vid ett möte visar ofta den ena telefonen sin kod innan den
+  har skannat den andra.
   - Enkelt.
-  - Men ett första meddelande som kommer senare går inte att öppna.
+  - Men ett första meddelande som kommer senare går inte att öppna. Är den
+    valda sessionen (punkt 2) kontaktens egen utgående session, och
+    kontakten skriver första gången efter städningen, går inget av
+    kontaktens meddelanden att läsa. En ny skanning löser det inte säkert;
+    se den öppna frågan i punkt 2.
 - **(b) Den som skannar skickar automatiskt ett första meddelande** direkt
   efter mötet, så att nyckeln används snabbt.
   - Då kan nyckeln tas bort tidigt.
@@ -661,8 +694,7 @@ inte att läsa.
 - en ny nyckel per visning;
 - nyckeln finns kvar efter en omstart;
 - städning efter den valda tiden;
-- ett första meddelande efter städningen ger rätt text (punkt 10);
-- när en kontakt raderas tas dess nyckel bort.
+- ett första meddelande efter städningen ger rätt text (punkt 10).
 
 ## 9. Hämtning
 
@@ -797,9 +829,21 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
   SHA versioning"
   (<https://docs.github.com/en/code-security/reference/supply-chain-security/dependency-graph-supported-package-ecosystems>).
   Versionsuppdateringarna fungerar ändå.
-- **Verktygen följs inte.** Flutter, Go, Rust, NDK och emulatorns
-  systemavbild är låsta i `.github/workflows/`, och dem följer Dependabot
-  inte.
+- **Verktygen följs inte.** Flutter, Go, NDK och emulatorns systemavbild är
+  låsta i `.github/workflows/`, liksom Rust för spikens värdbygge. Dem följer
+  Dependabot inte.
+- **Rust i Android-bygget är inte låst.** Pluginets cargokit bygger med
+  `rustup run stable` och utan `--locked`
+  (`flutter_vodozemac-0.9.1/cargokit/build_tool/lib/src/builder.dart:150-180`,
+  läst 2026-11-14). Android-bygget använder alltså CI-maskinens
+  förinstallerade stabila Rust, vars version skrivs i loggen, och cargo
+  följer pluginets `Cargo.lock` men tvingas inte följa den.
+  - Det går inte att ändra från appen. Cargokit läser byggval bara ur
+    pluginets egen `rust/cargokit.yaml`, och appens `cargokit_options.yaml`
+    har bara `use_precompiled_binaries` och `verbose_logging`
+    (`cargokit/build_tool/lib/src/options.dart:222,257-286`). Att låsa Rust
+    och bygga med `--locked` kräver ett ändrat plugin.
+  - Det hör till granskningen av bygget (0003, villkor 2) och punkt 13.
 
 **Så följs beroendena:**
 1. **Dependabot** (`.github/dependabot.yml`): versionsuppdateringar varje
@@ -852,6 +896,9 @@ Det här lägger 0004 till:
 7. Testplanen i punkt 11 är grön.
 8. Relayns största paketstorlek är ändrad (punkt 5).
 9. Texterna i appen följer 0002 ("Formuleringar i appen") och punkt 10.
+10. Rust i Android-bygget är låst och cargo körs med `--locked`, eller så
+    har ägaren, efter granskningen av bygget, godtagit att det inte är det
+    (punkt 12).
 
 ## Kräver granskning av kryptoexpert
 
