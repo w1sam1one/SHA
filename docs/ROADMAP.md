@@ -33,7 +33,8 @@ Prototypen är klar när allt detta gäller:
   tester mot appens klasser. Väntar på G4.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
-  Sessionsregeln (§2). Engångsnycklar (§8). Kontakter sparas krypterade via
+  Sessionsregeln (§2). Engångsnycklar (§8), med 30 dagar för oanvända
+  nycklar tills ägaren väljer antal dagar. Kontakter sparas krypterade via
   valvet.
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
@@ -78,8 +79,9 @@ någon annan än ägaren (0003, 0004 §13):
     kedjeindex (P5).
   - **§5** – paketets huvud är inte bundet till innehållet, och Olm version
     1 med 8 byte MAC används (P5).
-  - **§6** – ordningen vid krascher, pickles och pickle-nyckeln, och att
-    typ 0 först provas mot sparade sessioner (P3).
+  - **§6** – ordningen vid krascher, pickles och pickle-nyckeln, att typ 0
+    först provas mot sparade sessioner, och att varje försök börjar från den
+    sparade pickeln (P3).
   - **§7 (a)** – kryptering i vila av mottagna meddelanden och utkorgen,
     om ägaren väljer det vid G4 (P3).
   - Byggs inte i prototypen men står också i listan sist i 0004: §4

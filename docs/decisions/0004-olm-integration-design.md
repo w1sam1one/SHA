@@ -25,9 +25,10 @@ Beslutat av ägaren 2026-11-14, i [`CLAUDE.md`](../../CLAUDE.md) under
 Rättat 2026-11-14 efter två oberoende granskningar:
 - typ 0 gäller alla meddelanden före det första svaret (§4, §5, §6, §10);
 - ett misslyckat försök kan ändra en session i minnet, och ett ändrat typ
-  0-meddelande får inte leda till "träffas igen" (§6, §8, §10);
+  0-meddelande får inte leda till "träffas igen" (§6, §10);
 - felet för en utträngd kedja (§10);
 - två saknade märkningar (§1, §6).
+
 Rekommendationerna är desamma. Två saker är förtydligade för prototypen:
 Olm version 1 (§5) och 30 dagar för oanvända engångsnycklar (§8).
 
@@ -169,9 +170,12 @@ koden visas (punkt 6 och 8).
     förlorade.
 
 **Rekommendation: (a).**
-- **Den andra sessionen** behålls så länge meddelanden kan komma på den:
-  minst 48 timmar efter det senaste meddelandet på den, vilket är relayns
-  livslängd (`relay/limits.go:27`). Sedan raderas den.
+- **Den andra sessionen** behålls så länge meddelanden kan komma på den.
+  Den raderas först när båda dessa gäller:
+  - den valda sessionen har tagit emot ett meddelande från den andra, så
+    att den andra också har bytt;
+  - det har gått minst 48 timmar sedan det senaste meddelandet på den
+    andra sessionen, vilket är relayns livslängd (`relay/limits.go:27`).
 - **Skannar någon igen** blir det en tredje session, med en ny
   engångsnyckel. Regeln gäller fortfarande: minsta id av alla.
 - **Ingen kryptografi:** regeln jämför bara text.
@@ -447,19 +451,21 @@ vilken typ av Olm-meddelande det är.
        (`crate/src/olm/messages/pre_key.rs:80`), men Dart-API:t visar det
        inte: där finns bara `Session` (`api.dart:242-300`) och
        `createInboundSession` (`api.dart:395-406`).
-     - **En inkommande session skapas bara** om ingen sparad session kan
-       läsa meddelandet, **och** det finns en engångsnyckel som visats för
-       just den kontakten och inte använts än. Appen räknar själv hur
-       många sådana nycklar varje kontakt har (punkt 8): ett mer vid varje
-       visning för kontakten, ett mindre när en inkommande session har
-       skapats.
-     - Finns ingen sådan nyckel är meddelandet ändrat eller för sent, och
-       det räknas som "går inte att läsa" (punkt 10).
-   - **Varför:** en andra inkommande session för samma engångsnyckel ger
-     `unknown one-time key`, eftersom nyckeln redan är använd. Utan regeln
-     ovan skulle appen felaktigt be användarna att träffas igen (punkt 10),
-     och vem som helst som kan brevlåde-ID:t skulle kunna orsaka det med
-     ett enda ändrat paket (0002, fråga i). Kört mot craten 0.11.2 den
+     - **Först om ingen sparad session kan läsa meddelandet** anropas
+       `createInboundSession` med kontaktens identitetsnyckel. Lyckas det
+       finns en ny session. Misslyckas det, oavsett fel, räknas meddelandet
+       som "går inte att läsa" (punkt 10).
+     - Ett misslyckat `createInboundSession` ändrar inte kontot: felen
+       kommer innan engångsnyckeln tas bort
+       (`crate/src/olm/account/mod.rs:285-324`). Kontot läses ändå in från
+       den sparade pickeln efter ett fel, som sessionerna nedan.
+   - **Varför felet aldrig leder till "träffas igen":** `unknown one-time
+     key` betyder oftast att nyckeln redan är använd, alltså att meddelandet
+     hör till en session som finns men inte kunde läsa det (ändrat, för sent
+     eller från en raderad session). Appen kan inte se vilken engångsnyckel
+     meddelandet pekar på, så den kan inte skilja det från en städad nyckel.
+     Vem som helst som kan brevlåde-ID:t kan dessutom orsaka felet med ett
+     enda ändrat paket (0002, fråga i). Kört mot craten 0.11.2 den
      2026-11-14 (testprogram utanför repot):
      - två typ 0-meddelanden i rad: det andra lästes av den befintliga
        sessionen, och en andra `createInboundSession` gav felet;
@@ -468,8 +474,8 @@ vilken typ av Olm-meddelande det är.
      - ett typ 0-meddelande som kom för sent gav `can't be created` och
        sedan `unknown one-time key`.
    - **Ett misslyckat försök kan ändra sessionen i minnet.** Har sessionen
-     ännu inte skickat något (en inkommande session innan ägaren har
-     svarat) aktiverar craten en ny egen ratchet-nyckel innan den försöker
+     ännu inte skickat något (en inkommande session innan den här telefonen
+     har svarat) aktiverar craten en ny egen ratchet-nyckel innan den försöker
      avkryptera, och sparar den även om avkrypteringen misslyckas
      (`crate/src/olm/session/double_ratchet.rs:168-191`,
      `crate/src/olm/session/mod.rs:447-449`). Kört 2026-11-14: efter ett
@@ -540,9 +546,10 @@ koden (punkt 1).
 - **Skyddet:** posten skyddas av Keystore och kan bara läsas när telefonen
   är upplåst (`lib/crypto/README.md:43-49`). Det passar ihop med att appen
   bara hämtar när den är öppen (0002).
-  - Keystore-nyckeln som krypterar posten ligger i StrongBox eller TEE om
-    telefonen har det, annars bara i mjukvara (`lib/crypto/README.md:43-46`).
-    Appen visar vilket (`lib/crypto/README.md:57-59`).
+  - Keystore-nyckeln som krypterar posten ligger i StrongBox om telefonen
+    har det, annars i TEE (`lib/crypto/README.md:43-46`). Appen visar
+    skyddsnivån, även om nyckeln bara skulle ligga i mjukvara
+    (`lib/crypto/README.md:57-59`).
   - Kravet på upplåst telefon finns från Android 9
     (`lib/crypto/README.md:47-49`).
 - **`resetIdentity()` raderar allt.** Först raderas valvet med alla nycklar
@@ -557,7 +564,8 @@ koden (punkt 1).
 - omstart läser in rätt läge;
 - samma första meddelande avvisas efter en omstart;
 - två typ 0-meddelanden i rad läses båda, utan en andra inkommande session;
-- ett ändrat typ 0-meddelande ger "går inte att läsa", inte "träffas igen";
+- ett ändrat typ 0-meddelande och ett som kom för sent ger "går inte att
+  läsa", inte "träffas igen", och kontot är oförändrat efteråt;
 - ett misslyckat försök med fel session ändrar inte det som sparas;
 - utkorgen skickar samma byte;
 - `resetIdentity()` lämnar inget kvar.
@@ -646,9 +654,6 @@ inte att läsa.
 **Rekommendation: (a), plus (b) när det finns nät.**
 - Ägaren väljer antalet dagar. I prototypen gäller 30, som i (a), tills
   ägaren har valt.
-- Appen räknar också hur många visade, oanvända nycklar varje kontakt har.
-  Räknaren avgör om ett typ 0-meddelande får skapa en inkommande session
-  (punkt 6).
 - Inga reservnycklar (`generateFallbackKey`, `api.dart:354-357`), eftersom
   QR-koden alltid har en ny engångsnyckel.
 
@@ -710,10 +715,9 @@ fortfarande öppen.
 
 | Fall | Vad biblioteket säger (0003) | Vad användaren ser |
 | --- | --- | --- |
-| Engångsnyckeln saknas (städad, eller valvet återställt): ingen sparad session kunde läsa ett typ 0-meddelande, kontakten har en visad nyckel som inte använts, och `createInboundSession` misslyckades (punkt 6) | `unknown one-time key` | "Ett meddelande från `<namn>` kunde inte öppnas. Ni behöver träffas och skanna varandras koder igen." |
 | QR-koden visas igen | inget, en ny nyckel varje gång | Inget särskilt. Skannar någon igen blir det en ny session (punkt 2). |
-| Ett meddelande går inte att läsa: ändrat, fel session, ett typ 0-meddelande utan visad oanvänd nyckel (punkt 6), eller från en kedja som trängts ut (mottagaren sparar bara kedjor för avsändarens 5 senaste ratchet-nycklar, `crate/src/olm/session/mod.rs:55`) | `invalid MAC` eller annat | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas." Paketet slängs. |
-| Meddelandet kom för sent: ett meddelande mer än 40 steg längre fram i samma kedja lästes först, eller fler än 40 nyare överhoppade nycklar har sparats (`crate/src/olm/session/receiver_chain.rs:50,62-68,202`, 0003 R3) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." |
+| Ett meddelande går inte att läsa: ändrat, fel session, ett typ 0-meddelande som varken en sparad session eller `createInboundSession` kunde läsa (punkt 6, även en städad engångsnyckel), eller från en kedja som trängts ut (mottagaren sparar bara kedjor för avsändarens 5 senaste ratchet-nycklar, `crate/src/olm/session/mod.rs:55`) | `invalid MAC`, `unknown one-time key` eller annat | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas. Fortsätter det, träffas och skanna varandras koder igen." Paketet slängs. |
+| Ett vanligt meddelande (typ 1) kom för sent: ett meddelande mer än 40 steg längre fram i samma kedja lästes först, eller 40 eller fler nyare överhoppade nycklar har sparats (`crate/src/olm/session/receiver_chain.rs:50,62-68,202`, 0003 R3) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." Ett typ 0-meddelande som kom för sent hamnar i raden ovan, eftersom `createInboundSession` provas efteråt (punkt 6). |
 | En lucka på mer än 2 000 meddelanden (`receiver_chain.rs:31`) | `message gap was too big` | "Några meddelanden från `<namn>` saknas. Be `<namn>` skriva igen." |
 | Relayn svarar `507`: brevlådan är full, eller relayns minne är fullt (`relay/README.md:79-82`) | – | "Meddelandet väntar. Servern har inte plats för det just nu. Appen försöker igen." |
 | Relayn svarar `429` | – | "Servern är upptagen. Appen försöker igen om en stund." Appen väntar enligt `Retry-After`. |
@@ -731,10 +735,9 @@ mottagaren bara sparar kedjor för avsändarens 5 senaste ratchet-nycklar
 (`crate/src/olm/session/mod.rs:55`). Meddelandet hamnar därför i raden "går
 inte att läsa".
 
-**Kvar att lösa:** har kontakten en visad nyckel som inte använts, till
-exempel efter en ny skanning, kan ett ändrat gammalt typ 0-meddelande ändå
-ge raden "Engångsnyckeln saknas". Det kräver att någon ändrar ett paket
-just då.
+**En städad engångsnyckel** (punkt 8) syns inte som ett eget fall. Appen
+kan inte skilja den från ett ändrat eller sent typ 0-meddelande, så den
+hamnar i raden "går inte att läsa", som också föreslår en ny skanning.
 
 **Varför felen samlas.** Vem som helst som kan ett brevlåde-ID kan lämna
 paket där, eftersom relayn inte kontrollerar avsändaren (0002, fråga i). En
@@ -868,7 +871,8 @@ Det här lägger 0004 till:
 7. **Krypteringen av historiken** (punkt 7): `Aes256Gcm` med en nyckel per
    konversation, och vad som ska vara associerad data.
 8. **Pickles och återställning** (punkt 6): att ordningen hindrar att ett
-   gammalt läge läses in, att typ 0 först provas mot sparade sessioner, och
-   hur pickle-nyckeln hanteras.
+   gammalt läge läses in, att typ 0 först provas mot sparade sessioner, att
+   varje försök börjar från den sparade pickeln, och hur pickle-nyckeln
+   hanteras.
 9. **Ett yttre AEAD-lager med en hemlighet från QR-koden** (öppen fråga i
    0003): fortfarande öppen.
