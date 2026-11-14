@@ -70,6 +70,11 @@ jobs:
     name: App on Android emulator (Olm in the build)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    # TEMPORARY while measuring the runner shutdowns: three samples per push.
+    strategy:
+      fail-fast: false
+      matrix:
+        sample: [1, 2, 3]
     env:
       FLUTTER_VERSION: 3.47.7
       FLUTTER_SHA256: af7455f540df951184c7953fbe3cf884766e7541dacf8571f9f582db03dd6230
@@ -94,6 +99,14 @@ jobs:
               -exec sudo rm -rf {} +
           fi
           df -h /
+
+      - name: Runner resources
+        run: |
+          echo "cpus=$(nproc)"
+          free -m
+          swapon --show || true
+          df -h /
+          grep -n jvmargs android/gradle.properties
 
       - name: Install Flutter ${{ env.FLUTTER_VERSION }} (checksum verified)
         run: |
@@ -178,8 +191,22 @@ jobs:
       - name: Rust toolchain used by cargokit
         run: rustup run stable rustc --version
 
+      - name: Emulator memory settings
+        run: |
+          grep -i -E "ram|heap|dataPartition|cpu.ncore" \
+            "$HOME/.android/avd/app.avd/config.ini" \
+            "$HOME/.android/avd/app.avd/hardware-qemu.ini" || true
+          free -m
+
       - name: flutter test integration_test on the emulator
-        run: flutter test integration_test/olm_build_test.dart -d emulator-5554 --reporter expanded
+        run: |
+          "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
+          monitor=$!
+          status=0
+          flutter test integration_test/olm_build_test.dart -d emulator-5554 --reporter expanded || status=$?
+          kill "$monitor" 2>/dev/null || true
+          sudo dmesg | grep -i -E "out of memory|oom-kill|killed process" || echo "dmesg: no OOM lines"
+          exit "$status"
 
       - name: Emulator log (on failure)
         if: failure()

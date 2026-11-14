@@ -54,6 +54,14 @@ jobs:
           fi
           df -h /
 
+      - name: Runner resources
+        run: |
+          echo "cpus=$(nproc)"
+          free -m
+          swapon --show || true
+          df -h /
+          grep -n jvmargs android/gradle.properties
+
       - name: Install Flutter ${{ env.FLUTTER_VERSION }} (checksum verified)
         working-directory: .
         run: |
@@ -140,8 +148,22 @@ jobs:
       - name: Rust toolchain used by cargokit
         run: rustup run stable rustc --version
 
+      - name: Emulator memory settings
+        run: |
+          grep -i -E "ram|heap|dataPartition|cpu.ncore" \
+            "$HOME/.android/avd/spike.avd/config.ini" \
+            "$HOME/.android/avd/spike.avd/hardware-qemu.ini" || true
+          free -m
+
       - name: flutter test integration_test on the emulator (R1-R8)
-        run: flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded
+        run: |
+          "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
+          monitor=$!
+          status=0
+          flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded || status=$?
+          kill "$monitor" 2>/dev/null || true
+          sudo dmesg | grep -i -E "out of memory|oom-kill|killed process" || echo "dmesg: no OOM lines"
+          exit "$status"
 
       - name: Emulator log (on failure)
         if: failure()
