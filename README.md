@@ -16,6 +16,11 @@ flutter analyze
 flutter run           # Android-enhet eller emulator (API 24+)
 ```
 
+Att bygga appen för Android kräver också Rust (CI använder 1.97.0, se
+`.github/workflows/ci.yml`): Olm-pluginet `flutter_vodozemac` kompilerar sin
+Rust-del från källkod vid bygget. `flutter test` och `flutter analyze`
+behöver inte Rust.
+
 Utan kamera (t.ex. emulator), i **debug-bygge**: tryck kopiera-ikonen på
 **Min QR** på den ena enheten och använd **Ange kod manuellt** på
 skannerskärmen på den andra. I release finns inte dessa – kontakter läggs bara
