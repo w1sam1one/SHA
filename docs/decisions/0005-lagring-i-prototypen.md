@@ -17,7 +17,8 @@ det här beslutet. Ingen kod är ändrad.
 
 ## Vad som måste sparas i prototypen
 
-Från "Klart när" i färdplanen (punkt 2) och 0004 §2, §6, §8 och §10:
+Från "Klart när" i färdplanen (punkt 2), 0004 §2, §6, §8 och §10, och P6 i
+färdplanen (punkt 9):
 
 1. Olm-kontot, som pickle.
 2. Sessionerna per kontakt, som pickles. För varje session: när den först
@@ -92,7 +93,7 @@ sådan kod än.
   - Ingen ny kryptografi: valvets AES-GCM med Keystore-nyckeln finns redan.
   - Men valvets skrivning måste göras säker först: fsync och namnbyte
     måste ge fel om de misslyckas, och mappen måste fsyncas. Det är en
-    ändring i valvets Kotlin-kod (se "Om ägaren väljer (A)").
+    ändring i valvets Kotlin-kod (se "Om ägaren väljer (A) och (i)").
   - Allt skrivs om vid varje meddelande, så posten måste vara liten.
   - Går posten sönder försvinner allt på en gång: kontot, kontakterna och
     sessionerna.
@@ -114,8 +115,9 @@ sådan kod än.
     (`lib/crypto/src/aes_gcm.dart:3,21`).
   - Går filen sönder försvinner allt på en gång, som i (A).
 - **(C) SQLite med transaktioner** (`sqlite3` eller `sqflite`).
-  - SQLite sköter själv att en transaktion överlever en krasch eller ett
-    strömavbrott.
+  - SQLite kan själv se till att en transaktion överlever en krasch eller
+    ett strömavbrott, men bara med rätt inställningar (till exempel
+    `synchronous=FULL`). Ej verifierat här.
   - Den räcker för historik senare.
   - Kryptering antingen per rad med `Aes256Gcm`, eller hela databasen med
     SQLCipher via `sqlite3` (0004 §7 (b)). Båda **kräver granskning av
@@ -124,7 +126,7 @@ sådan kod än.
     granskas, och det blir mest kod.
 
 **Rekommendation för prototypen: (A)**, med kraven under "Om ägaren väljer
-(A)".
+(A) och (i)".
 - **Mätning i P3:** på CI:s emulator mäter Claude både skrivning och
   läsning vid start. Tillståndet har 20 kontakter med 3 sessioner var, 5
   paket i utkorgen på största storlek (cirka 65 kB) och 20 mottagna
@@ -132,8 +134,9 @@ sådan kod än.
 - **Gräns:** tar en skrivning mer än 300 ms stannar Claude och tar frågan
   tillbaka till ägaren. 300 ms är vald så att det ska kännas omedelbart att
   skicka; ägaren kan ändra gränsen.
-- **StrongBox** går inte att mäta på emulatorn. Farten där är inte
-  verifierad förrän prototypen körs på riktiga telefoner (G3).
+- **StrongBox** har troligen inte emulatorn, så farten där går inte att mäta
+  i CI. Den kan visa sig först när prototypen körs på riktiga telefoner
+  (G3).
 - **(C)** tas upp igen när historiken byggs, efter prototypen.
 
 ## Hur mycket av meddelandena som sparas
@@ -155,7 +158,8 @@ sådan kod än.
     fsyncas;
   - `reset()` raderar nyckeln först och filerna sedan;
   - ett nytt emulatortest för valvet: skriva, läsa, återställa, en stor
-    post, och att en misslyckad skrivning ger fel.
+    post, att en misslyckad skrivning ger fel, och att poster som blev kvar
+    efter en avbruten återställning inte går att läsa.
 - **0004 §6:** alternativ (c) gäller för prototypen i stället för (a).
   Raden om §6 under "Före första utdelning" i färdplanen säger då att
   prototypen använder §6 (c) på valvet, så att kryptoexperten granskar
