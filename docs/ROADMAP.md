@@ -114,9 +114,10 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
-- 2026-11-16 – G5: beslutsunderlag 0006 (sessionsregeln) skrivet.
-  Rekommendation: senast aktiva sessionen, som i Matrix, och högst 5
-  sessioner per kontakt. P4 väntar på G5.
+- 2026-11-16 – G5: beslutsunderlag 0006 (sessionsregeln) skrivet och
+  rättat efter granskning. Rekommendation: senast aktiva sessionen, som i
+  matrix-js-sdk v30, och ingen radering av sessioner i prototypen. P4
+  väntar på G5.
 - 2026-11-14 – G4: beslutsunderlag 0005 (lagring i prototypen) skrivet.
   Ny grind G5 för den öppna frågan i 0004 §2. P3 väntar på G4.
 - 2026-11-14 – Rättelser efter granskningarna av P1 och P2 (PR #11, #12):
