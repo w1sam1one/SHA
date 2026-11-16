@@ -44,12 +44,24 @@ noBackupFilesDir/sha_keys/<namn>.bin   (atomisk skrivning)
 
 - **Skrivningen är klar eller ger fel.** Posten skrivs till en tillfällig
   fil, som fsyncas och sedan döps om över den gamla med `rename(2)`. Sist
-  fsyncas mappen. Misslyckas något steg ger `write` felet `WRITE_FAILED`, och
-  den gamla posten finns kvar (0005). Androids `AtomicFile`, som användes
-  förut, loggar bara ett misslyckat fsync eller namnbyte.
+  fsyncas mappen. Misslyckas något steg ger `write` felet `WRITE_FAILED`
+  (0005). Androids `AtomicFile`, som användes förut, loggar bara ett
+  misslyckat fsync eller namnbyte.
+  - **Efter `WRITE_FAILED`** kan antingen det gamla eller det nya värdet
+    läsas: har bara fsync av mappen misslyckats, är namnbytet redan gjort.
+    Båda är hela och går att verifiera. Den som anropar måste läsa om i
+    stället för att anta något av dem.
 - **`reset()` raderar nyckeln först** och filerna sedan. Avbryts det, går
   filerna som blev kvar inte att läsa (0004 §6, 0005).
-- **Testat på emulatorn** i `integration_test/vault_test.dart`.
+- **Testat på emulatorn** i `integration_test/vault_test.dart`:
+  - en skrivning i en mapp som inte går att skriva i ger fel, och det gamla
+    värdet finns kvar;
+  - ett namnbyte som misslyckas ger fel, och ingen tillfällig fil blir kvar;
+  - en återställning som avbryts efter att nyckeln är raderad lämnar filer
+    som inte går att läsa.
+  - Ett misslyckat fsync går inte att framkalla i testet och är inte testat.
+- **Data från äldre byggen** (`AtomicFile`, `.bin.bak`) läses inte. Appen
+  har inte delats ut. `delete` och `reset()` raderar sådana filer.
 
 - **Omslagsnyckeln skapas inne i Android Keystore** och kan aldrig exporteras.
   Den hamnar i **StrongBox** (separat säkerhetschip) om telefonen har det,

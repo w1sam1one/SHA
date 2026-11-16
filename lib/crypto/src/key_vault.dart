@@ -11,8 +11,10 @@ abstract interface class KeyVault implements EntropySource {
   Future<Uint8List?> read(String name);
 
   /// Stores [value] under [name], replacing any old value in one step.
-  /// Completes only once the value is on disk; throws [CryptoException] if
-  /// it may not have been saved. Then the old value may still be there.
+  /// Completes only once the value is on disk. Throws [CryptoException] if
+  /// it may not have been saved; then either the old or the new value may be
+  /// read back (both complete), so the caller must read it again rather
+  /// than assume either.
   Future<void> write(String name, Uint8List value);
 
   /// Throws [CryptoException] if the entry may still be there.
