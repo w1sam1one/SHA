@@ -8,16 +8,23 @@ import 'entropy.dart';
 import 'hashing.dart';
 import 'key_agreement.dart';
 import 'key_vault.dart';
+import 'olm_service.dart';
 import 'padding.dart';
+import 'sha_olm_service.dart';
 import 'types.dart';
 import 'wipe.dart';
 import 'wire_format.dart';
 
 /// Default [CryptoService], built only on the `cryptography` package.
 final class ShaCryptoService implements CryptoService {
-  ShaCryptoService({required KeyVault vault, EntropySource? localEntropy})
-    : _vault = vault,
-      _entropy = MixedEntropy(platform: vault, local: localEntropy);
+  ShaCryptoService({
+    required KeyVault vault,
+    EntropySource? localEntropy,
+    DateTime Function()? clock,
+  }) : _vault = vault,
+       _entropy = MixedEntropy(platform: vault, local: localEntropy) {
+    _olm = ShaOlmService(vault: vault, entropy: _entropy, clock: clock);
+  }
 
   static const String privateKeyName = 'identity.x25519.private.v2';
   static const String publicKeyName = 'identity.x25519.public.v2';
@@ -30,6 +37,10 @@ final class ShaCryptoService implements CryptoService {
   final Sha256Hasher _hasher = Sha256Hasher();
   final Aes256Gcm _aead = Aes256Gcm();
   final X25519KeyAgreement _agreement = X25519KeyAgreement();
+  late final ShaOlmService _olm;
+
+  @override
+  OlmService get olm => _olm;
 
   PublicIdentity? _identity;
   Future<PublicIdentity?>? _loading;
@@ -87,7 +98,10 @@ final class ShaCryptoService implements CryptoService {
         await (_creating ?? _loading);
       } catch (_) {}
     }
-    await _vault.reset();
+    // The vault deletes its key first and then every entry, the Olm state
+    // and pickle key included. Olm calls in progress finish first, and Olm
+    // forgets what it holds in memory afterwards.
+    await _olm.discardAfter(_vault.reset);
     _identity = null;
     _loading = null;
     _creating = null;

@@ -35,6 +35,9 @@ jobs:
     env:
       FLUTTER_VERSION: 3.47.7
       FLUTTER_SHA256: af7455f540df951184c7953fbe3cf884766e7541dacf8571f9f582db03dd6230
+      # P3: the Olm tests (test/crypto/olm_service_test.dart) need
+      # flutter_vodozemac's Rust library built for the host.
+      RUST_TOOLCHAIN: 1.97.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,6 +52,12 @@ jobs:
           tar -xf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+          rustc --version
+
       - name: Flutter version
         run: |
           flutter config --no-analytics
@@ -60,12 +69,17 @@ jobs:
       - name: flutter analyze
         run: flutter analyze
 
+      - name: Build the native library for the host
+        run: ./tool/build_native_host.sh
+
       - name: flutter test
         run: flutter test
 
   # P2 in docs/ROADMAP.md: the app's APK, with flutter_vodozemac built from
   # source, runs integration_test/olm_build_test.dart on an Android emulator.
-  # P3 adds integration_test/vault_test.dart: the Keystore vault (0005).
+  # P3 adds integration_test/vault_test.dart (the Keystore vault, 0005) and
+  # integration_test/olm_service_test.dart (Olm behind CryptoService, R8,
+  # and the 300 ms measurement in 0005).
   # The same steps as .github/workflows/spike-android.yml.
   app-android:
     name: App on Android emulator (Olm in the build)
@@ -232,6 +246,7 @@ jobs:
           monitor=$!
           status=0
           flutter test integration_test/olm_build_test.dart integration_test/vault_test.dart \
+            integration_test/olm_service_test.dart \
             -d emulator-5554 --reporter expanded || status=$?
           kill "$monitor" 2>/dev/null || true
           exit "$status"

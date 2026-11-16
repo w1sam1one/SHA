@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'olm_service.dart';
 import 'types.dart';
 
 /// The only entry point the rest of the app uses for cryptography.
@@ -22,11 +23,16 @@ abstract interface class CryptoService {
   /// How the private key is protected on this device.
   Future<KeyProtection> keyProtection();
 
-  /// Permanently deletes this device's identity, every other vault entry and
-  /// the vault key. Afterwards [loadIdentity] returns null and
-  /// [createIdentity] makes a new, unrelated identity. Irreversible: it is
-  /// the way out when the vault key is lost and the identity cannot be read.
+  /// Permanently deletes this device's identity, the Olm account and
+  /// sessions, every other vault entry and the vault key (the key first,
+  /// 0004 §6). Afterwards [loadIdentity] returns null and [createIdentity]
+  /// makes a new, unrelated identity. Irreversible: it is the way out when
+  /// the vault key is lost and the identity cannot be read.
   Future<void> resetIdentity();
+
+  /// Olm (0003, 0004): the account, the sessions and the order of saving.
+  /// The app switches to it in P4 to P6 (docs/ROADMAP.md).
+  OlmService get olm;
 
   /// SHA-256 of [data].
   Future<Uint8List> sha256(List<int> data);
