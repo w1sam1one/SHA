@@ -44,18 +44,24 @@ Prototypen är klar när allt detta gäller:
     300 ms stannar Claude och frågar ägaren.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
-  Sessionsregeln (§2): väntar på G5. Texterna i §10 som P4 behöver
-  godkänns av ägaren först.
+  Sessionsregeln enligt 0006 (b) och (iii): den senast aktiva sessionen,
+  ordnad med en räknare, och inga sessioner raderas. En engångsnyckel som
+  redan har gett en session med kontakten ger aldrig en till. Testerna och
+  de två mutationerna i 0006, plus en mutation som låter samma
+  engångsnyckel ge en andra session. P4 mäter också en skrivning med många
+  sessioner för en kontakt; tar den mer än 300 ms stannar Claude och frågar
+  ägaren. Texterna i §10 är godkända (2026-11-16).
   Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
   väljer antal dagar. Kontakterna sparas i tillståndets valvpost (0005 (A)).
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
 - [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
   Hämtning enligt §9 (b). Intervallet 1, 5, 15 eller 60 minuter i
-  inställningarna. Felfall och texter (§10, 0002); ägaren godkänner
-  texterna i §10 innan de byggs in. `INTERNET` i
-  release-manifestet, med motivering i README. Relayns adress går att ställa
-  in.
+  inställningarna. Felfall och texter enligt §10 (godkända 2026-11-16) och
+  0002. I allt användaren ser heter relayn "servern", även i
+  `lib/ui/technical_info_sheet.dart` ("reläer", "Ett relä"). `INTERNET` i
+  release-manifestet, med motivering i README. Serverns adress går att
+  ställa in.
 - [ ] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
   204, 507 och 429, dubbletter, krascher och mutationer (§11).
 - [ ] **P8 – Leverans till ägaren.** Debug-APK som CI-artefakt och
@@ -73,11 +79,10 @@ Prototypen är klar när allt detta gäller:
   [0005](decisions/0005-lagring-i-prototypen.md): hela tillståndet i en enda
   valvpost, meddelanden sparas bara tills de har visats, och gränsen 300 ms
   för en skrivning.
-- **G5 – Sessionsregeln (före P4).** 0004 §2 har en öppen fråga: en session
-  vars första meddelande aldrig kan läsas väljs aldrig bort av regeln om
-  minsta id. Beslutsunderlaget är
-  [0006](decisions/0006-sessionsregeln.md) ("Proposed – owner decides").
-  Ägaren väljer regel och hur sessioner raderas.
+- **G5 – Sessionsregeln (före P4). Klar 2026-11-16.** Ägaren valde (b) och
+  (iii) i [0006](decisions/0006-sessionsregeln.md): appen skickar på den
+  senast aktiva sessionen, ordnad med en räknare, och inga sessioner raderas
+  i prototypen.
 
 ## Före första utdelning
 
@@ -101,6 +106,9 @@ någon annan än ägaren (0003, 0004 §13):
     tillståndet i en enda valvpost (0005).
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
     alternativ C, §7 (historiken) och ett yttre lager.
+- En raderingsregel för gamla sessioner (0004 §2, 0006; (i) är
+  utgångspunkten). I prototypen raderas inga sessioner, och utan en regel
+  ligger gamla sessioners nycklar kvar i riktiga användares telefoner.
 - Flutter/Dart-lagret och bygget är granskade.
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna.
@@ -115,6 +123,8 @@ någon annan än ägaren (0003, 0004 §13):
 ## Efter prototypen (inte nu)
 
 - Historik i appen (0004 §7).
+- En raderingsregel för gamla sessioner (0006). Den måste vara klar före
+  första utdelningen, se ovan.
 - Internt test på Google Play.
 - Tor eller liknande, flera relays.
 
@@ -122,6 +132,11 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – G5 klar: ägaren valde (b) och (iii) i 0006, som har status
+  "Accepted by owner". Raderingsregeln för gamla sessioner står under "Före
+  första utdelning". Texterna i 0004 §10 är godkända, med antal meddelanden
+  i raden "kunde inte läsas" och "servern" i allt användaren ser. 0004
+  "Beslut", §2, §6, §8, §10 och §13, 0005 och P4 och P6 här är uppdaterade.
 - 2026-11-16 – G5: beslutsunderlag 0006 (sessionsregeln) skrivet och
   rättat efter granskning. Rekommendation: senast aktiva sessionen, som i
   matrix-js-sdk v30, och ingen radering av sessioner i prototypen. P4

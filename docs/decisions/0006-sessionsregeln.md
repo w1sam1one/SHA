@@ -1,11 +1,27 @@
 # 0006 – Vilken session som används (sessionsregeln)
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-16, rättat samma dag
-efter en oberoende granskning.
+Status: **Accepted by owner, 2026-11-16.** Skrivet 2026-11-16, rättat samma
+dag efter en oberoende granskning.
 
 Underlag för grinden G5 i [`docs/ROADMAP.md`](../ROADMAP.md) och den öppna
-frågan i [0004](0004-olm-integration-design.md) §2. P4 väntar på det här
-beslutet. Ingen kod är ändrad.
+frågan i [0004](0004-olm-integration-design.md) §2. Ingen kod är ändrad
+här; beslutet byggs i P4.
+
+## Beslut
+
+Beslutat av ägaren 2026-11-16. Avsnittet skriver ner beslutet.
+
+- **Vilken session: (b).** Appen skickar på den senast aktiva sessionen,
+  ordnad med en räknare i tillståndet.
+- **Radering: (iii).** Inga sessioner raderas i prototypen.
+- **Allt under "Om ägaren väljer (b) och (iii)"** gäller.
+- **En ändring jämfört med underlaget:** raderingsregeln för gamla
+  sessioner står i färdplanen under "Före första utdelning", inte bara
+  under "Efter prototypen". Annars ligger gamla sessioners nycklar kvar i
+  riktiga användares telefoner.
+
+Resten av dokumentet är underlaget som beslutet bygger på. Därifrån är
+bara status, inledningen och en rad under "Ägaren beslutar" ändrade.
 
 ## Problemet
 
@@ -230,3 +246,5 @@ säkert håller krav 3. (i) är utgångspunkten när raderingen tas upp igen.
 
 1. (a), (b), (c) eller (d).
 2. Med (b) eller (d): radering (i), (ii) eller (iii).
+
+Beslutat 2026-11-16: (b) och (iii), se "Beslut" överst.

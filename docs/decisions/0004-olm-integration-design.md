@@ -30,22 +30,26 @@ Rättat 2026-11-14 efter fyra oberoende granskningar:
 - felet för en utträngd kedja (§10);
 - två saknade märkningar (§1, §6).
 
-Rekommendationerna är desamma. Förtydligat för prototypen: Olm version 1
-(§5), 30 dagar för oanvända engångsnycklar (§8), och när den andra
-sessionen får raderas (§2).
+Rekommendationerna var då desamma. Förtydligat för prototypen: Olm version
+1 (§5) och 30 dagar för oanvända engångsnycklar (§8). Sessionsregeln i §2
+ändrades 2026-11-16, se nedan.
 
 **Lagring (ägarens beslut 2026-11-14,
 [0005](0005-lagring-i-prototypen.md)):** för prototypen gäller §6 (c) på
 valvet, och §7 byggs inte.
 
+**Sessionsregeln (ägarens beslut 2026-11-16,
+[0006](0006-sessionsregeln.md)):** §2 följer 0006 (b) och (iii). Appen
+skickar på den senast aktiva sessionen, och inga sessioner raderas i
+prototypen. Den öppna frågan i §2 är stängd.
+
 **Ändrat i det användaren ser (ägaren avgör, `CLAUDE.md`):** §10 har inte
 längre en egen rad "Ni behöver träffas och skanna varandras koder igen".
 Appen kan inte skilja en städad engångsnyckel från ett ändrat eller sent
-meddelande, så de hamnar i raden "kunde inte läsas", som nu slutar med
-"Fortsätter det, träffas och skanna varandras koder igen." Texten för `507`
+meddelande, så de hamnar i raden "kunde inte läsas". Texten för `507`
 var "Mottagarens brevlåda är full just nu" och är nu "Servern har inte plats
-för det just nu". Ägaren godkänner texterna i §10 innan de byggs in i appen
-(`docs/ROADMAP.md`, P4 och P6).
+för det just nu". **Ägaren godkände texterna i §10 den 2026-11-16,** med två
+ändringar som står i §10.
 
 ## Så läses dokumentet
 
@@ -159,6 +163,8 @@ koden visas (punkt 6 och 8).
 **Krav:**
 - Båda skannar varandra (D1), så båda kan starta en session.
 - Båda måste till slut skicka på samma session utan att prata om det.
+  Med 0006 (b) gäller det inte alltid, men inget går förlorat, eftersom
+  båda kan läsa båda sessionerna.
 - Inget meddelande får gå förlorat vid bytet.
 
 **Vad som händer** (spiken, R5, `olm_spike_test.dart:335-401`):
@@ -184,38 +190,40 @@ koden visas (punkt 6 och 8).
   - Men meddelanden som redan skickats på den kastade sessionen går
     förlorade.
 
-**Rekommendation: (a).**
-- **Den andra sessionen** behålls så länge meddelanden kan komma på den.
-  Den raderas först när båda dessa gäller:
-  - den valda sessionen har tagit emot ett meddelande från kontakten, så
-    att kontakten också har bytt;
-  - det har gått minst 48 timmar sedan den valda sessionen tog emot det
-    första meddelandet från kontakten, vilket är relayns livslängd
-    (`relay/limits.go:27`). Ett paket på den andra sessionen som skickades
-    strax före bytet kan då fortfarande hämtas.
-- **Skannar någon igen** blir det en tredje session, med en ny
-  engångsnyckel. Regeln gäller fortfarande: minsta id av alla.
-- **Öppen fråga (ägaren avgör före P4):** en session vars första meddelande
-  aldrig kan läsas (till exempel för att engångsnyckeln har städats,
-  punkt 8) blir aldrig vald bort av regeln ovan. Den tar inte emot något och
-  raderas därför aldrig, och har den minsta id fortsätter kontakten att
-  skicka på den. En ny skanning hjälper bara om den nya sessionen råkar få
-  lägre id. Sessions-id är SHA-256 av sessionens nycklar
-  (`crate/src/olm/session_keys.rs:46-56`), så det är slumpmässigt.
-  - En lösning ändrar regeln för vilken session som väljs, och kanske när
-    sessioner raderas. Det ändrar rekommendationen i den här punkten.
-  - Claude tar därför fram ett eget beslutsunderlag med alternativ, för-
-    och nackdelar innan P4, och ägaren avgör. Alternativen måste hålla
-    kravet att inget meddelande går förlorat, även paket som ligger kvar
-    på relayn.
-- **Ingen kryptografi:** regeln jämför bara text.
+**Rekommendation: båda startar, som i (a), och valet görs enligt 0006 (b)**
+(ägarens beslut 2026-11-16, [0006](0006-sessionsregeln.md)). Spikens regel
+med minsta id gäller inte längre: den valde aldrig bort en session vars
+första meddelande inte kunde läsas.
+- **Valet:** tillståndet har en räknare. En session får nästa nummer när
+  den skapas, som utgående eller inkommande, och när den har läst ett
+  meddelande från kontakten. Appen skickar på sessionen med högst nummer.
+  - Vid mottagning sätts numret bara efter en lyckad avkryptering, bara för
+    den session som lyckades, och i samma skrivning som sessionens pickle
+    (punkt 6, steg 3). Ett paket som ingen session kan läsa ändrar inget
+    nummer.
+- **Sidorna kan skicka på olika sessioner länge,** så länge båda skriver
+  innan de har läst den andras senaste meddelande. Inget går förlorat, eftersom
+  båda kan läsa båda sessionerna. De väljer samma session när ett
+  meddelande har lästs innan den andra skriver igen.
+- **Skannar någon igen** blir det en ny session, med en ny engångsnyckel,
+  och den väljs direkt. En engångsnyckel som redan har gett en session med
+  kontakten ger aldrig en till, så samma QR-visning skannad två gånger ger
+  ingen ny session.
+- **Radering:** inga sessioner raderas i prototypen (0006 (iii)). En
+  raderingsregel tas fram före första utdelningen (`docs/ROADMAP.md`).
+- **Den öppna frågan är stängd** (0006): en död session överges så fort
+  kontakten skriver på en annan, och en ny skanning väljs direkt.
+- **Ingen kryptografi:** regeln jämför bara nummer.
 
 **Testa:**
 - båda skannar, och meddelanden går åt båda håll före och efter bytet;
 - ett sent meddelande på den gamla sessionen;
 - en tredje skanning;
-- radering efter 48 timmar;
-- omstart mitt i bytet.
+- omstart mitt i bytet;
+- testerna och de två mutationerna i 0006, "Om ägaren väljer (b) och
+  (iii)";
+- en tredje mutation: att samma engångsnyckel får ge en andra session ska
+  få minst ett test att falla.
 
 ## 3. Brevlåde-ID:n — **Kräver granskning av kryptoexpert**
 
@@ -518,7 +526,7 @@ vilken typ av Olm-meddelande det är.
        när en annan session sedan lyckas. Bara den session som lyckades
        sparas i steg 3.
 3. **Spara allt i en enda atomisk skrivning:**
-   - sessionens nya pickle;
+   - sessionens nya pickle och dess nummer (punkt 2);
    - kontots pickle, om en engångsnyckel användes;
    - meddelandet i historiken;
    - paketets hash.
@@ -692,11 +700,11 @@ inte att läsa.
   en kontakt: vid ett möte visar ofta den ena telefonen sin kod innan den
   har skannat den andra.
   - Enkelt.
-  - Men ett första meddelande som kommer senare går inte att öppna. Är den
-    valda sessionen (punkt 2) kontaktens egen utgående session, och
-    kontakten skriver första gången efter städningen, går inget av
-    kontaktens meddelanden att läsa. En ny skanning löser det inte säkert;
-    se den öppna frågan i punkt 2.
+  - Men ett första meddelande som kommer senare går inte att öppna. Med
+    sessionsregeln i punkt 2 (0006 (b)) byter kontakten så fort appen
+    skriver på en session som kontakten kan läsa, och en ny skanning väljs
+    direkt. Har ingen av användarna skrivit inom tiden är båda sessionerna
+    döda, och då hjälper bara en ny skanning.
 - **(b) Den som skannar skickar automatiskt ett första meddelande** direkt
   efter mötet, så att nyckeln används snabbt.
   - Då kan nyckeln tas bort tidigt.
@@ -763,12 +771,32 @@ fortfarande öppen.
   visas. Appen gör om varje fel till en fast feltyp och visar bara texterna
   nedan.
 - **Dubbletter tas bort före avkrypteringen** (punkt 6), så de syns aldrig.
-- **`<namn>`** i tabellen är kontaktens namn.
+- **`<namn>`** i tabellen är kontaktens namn, och **`<n>`** antalet
+  meddelanden, 2 eller fler.
+- **"Servern", aldrig "relayn",** i allt användaren ser. "Relayn" i
+  kolumnen "Fall" och i resten av dokumentet är bara för utvecklare.
+
+**Godkänt av ägaren 2026-11-16:** texterna i tabellen, med två ändringar
+mot underlaget:
+- raden "går inte att läsa" räknar meddelandena: "Ett meddelande från
+  `<namn>` kunde inte läsas." eller "`<n>` meddelanden från `<namn>` kunde
+  inte läsas.", följt av "Händer det igen, träffas och skanna varandras
+  QR-koder på nytt.";
+- ordet "servern", aldrig "relayn", i allt användaren ser.
+
+Texten krockar inte med regeln i punkt 6: ett ändrat eller sent typ
+0-meddelande hamnar i den här raden, som punkt 6 säger. Men vem som helst
+som kan kontaktens brevlåde-ID kan lämna ett trasigt paket där (0002,
+fråga i). Raden kan alltså visas även om `<namn>` inte har skickat något,
+och "Händer det igen" kan då leda till ett möte i onödan. Den som kan hämta
+ett riktigt paket kan också lämna en ändrad kopia av det, med en annan hash,
+så raden kan komma tillbaka med varje riktigt meddelande. Samma risk fanns
+med den tidigare texten.
 
 | Fall | Vad biblioteket säger (0003) | Vad användaren ser |
 | --- | --- | --- |
-| QR-koden visas igen | inget, en ny nyckel varje gång | Inget särskilt. Skannar någon igen blir det en ny session (punkt 2). |
-| Ett meddelande går inte att läsa: ändrat, fel session, ett typ 0-meddelande som varken en sparad session eller `createInboundSession` kunde läsa (punkt 6, även en städad engångsnyckel), eller från en kedja som trängts ut (mottagaren sparar bara kedjor för avsändarens 5 senaste ratchet-nycklar, `crate/src/olm/session/mod.rs:55`) | `invalid MAC`, `unknown one-time key` eller annat | Samlat per kontakt: "1 meddelande från `<namn>` kunde inte läsas. Fortsätter det, träffas och skanna varandras koder igen." Paketet slängs. |
+| QR-koden visas igen | inget, en ny nyckel varje gång | Inget särskilt. Skannar någon en ny QR-kod blir det en ny session (punkt 2). Skannar någon samma visning två gånger blir det ingen ny session. |
+| Ett meddelande går inte att läsa: ändrat, fel session, ett typ 0-meddelande som varken en sparad session eller `createInboundSession` kunde läsa (punkt 6, även en städad engångsnyckel), eller från en kedja som trängts ut (mottagaren sparar bara kedjor för avsändarens 5 senaste ratchet-nycklar, `crate/src/olm/session/mod.rs:55`) | `invalid MAC`, `unknown one-time key` eller annat | Samlat per kontakt: "Ett meddelande från `<namn>` kunde inte läsas." eller "`<n>` meddelanden från `<namn>` kunde inte läsas.", följt av "Händer det igen, träffas och skanna varandras QR-koder på nytt." Paketet slängs. |
 | Ett vanligt meddelande (typ 1) kom för sent: ett meddelande mer än 40 steg längre fram i samma kedja lästes först, eller 40 eller fler nyare överhoppade nycklar har sparats (`crate/src/olm/session/receiver_chain.rs:50,62-68,202`, 0003 R3) | `can't be created` | Samlat: "Ett äldre meddelande från `<namn>` kom fram för sent och kan inte läsas." Ett typ 0-meddelande som kom för sent hamnar i raden ovan, eftersom `createInboundSession` provas efteråt (punkt 6). |
 | En lucka på mer än 2 000 meddelanden (`receiver_chain.rs:31`) | `message gap was too big` | "Några meddelanden från `<namn>` saknas. Be `<namn>` skriva igen." |
 | Relayn svarar `507`: brevlådan är full, eller relayns minne är fullt (`relay/README.md:79-82`) | – | "Meddelandet väntar. Servern har inte plats för det just nu. Appen försöker igen." |
@@ -796,7 +824,8 @@ paket där, eftersom relayn inte kontrollerar avsändaren (0002, fråga i). En
 rad per trasigt paket skulle kunna fylla chatten.
 
 **Testa:**
-- varje rad i tabellen ger rätt text;
+- varje rad i tabellen ger rätt text, och raden "går inte att läsa" med
+  ett och med flera meddelanden;
 - ingen text innehåller nyckelmaterial, genom att utöka
   `test/security/no_logging_test.dart`;
 - vid `507` och `429` försöker appen igen med samma byte.
@@ -919,6 +948,8 @@ Det här lägger 0004 till:
 10. Rust i Android-bygget är låst och cargo körs med `--locked`, eller så
     har ägaren, efter granskningen av bygget, godtagit att det inte är det
     (punkt 12).
+11. En raderingsregel för gamla sessioner (punkt 2, 0006). I prototypen
+    raderas inga.
 
 ## Kräver granskning av kryptoexpert
 
