@@ -15,7 +15,8 @@ import 'scan_screen.dart';
 /// Shows this device's identity as a QR code for someone to scan in person.
 ///
 /// Every time the screen opens it shows a new one-time key, which is saved
-/// before the code is drawn (0004 §1, §6 and §8).
+/// before the code is drawn (0004 §1, §6 and §8). HomeShell makes a new
+/// screen each time the tab is chosen.
 class MyQrScreen extends ConsumerStatefulWidget {
   const MyQrScreen({super.key});
 
@@ -174,9 +175,9 @@ class _MyQrScreenState extends ConsumerState<MyQrScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Koden är inte hemlig. Den innehåller bara din offentliga '
-                    'nyckel och kan visas för den du träffar. Din hemliga nyckel '
-                    'lämnar aldrig telefonen.',
+                    'Koden är inte hemlig. Den innehåller bara offentliga '
+                    'nycklar och kan visas för den du träffar. Dina hemliga '
+                    'nycklar lämnar aldrig telefonen.',
                     style: TextStyle(
                       fontSize: 13.5,
                       height: 20 / 13.5,

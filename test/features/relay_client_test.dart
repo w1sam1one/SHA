@@ -163,6 +163,23 @@ void main() {
     expect(await client.fetch(mailbox), isEmpty);
   });
 
+  test('an answer larger than the limit is refused before it is read, and '
+      'nothing asks for compression', () async {
+    server.handle = (req, _) async {
+      req.response
+        ..contentLength = HttpRelayClient.maxResponseBytes + 1
+        ..add(Uint8List(HttpRelayClient.maxResponseBytes + 1));
+    };
+    await expectLater(client.fetch(mailbox), throwsA(isA<RelayUnavailable>()));
+    expect(server.requests.last.headers.value('accept-encoding'), isNull);
+
+    server.handle = (req, _) async {
+      // No Content-Length: the limit is counted while reading.
+      req.response.add(Uint8List(HttpRelayClient.maxResponseBytes + 1));
+    };
+    await expectLater(client.fetch(mailbox), throwsA(isA<RelayUnavailable>()));
+  });
+
   test('a broken answer to fetch is RelayUnavailable', () async {
     final good = frames([List.filled(10, 1)]);
     for (final body in [

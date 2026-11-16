@@ -61,8 +61,10 @@ final transportSettingsProvider =
     );
 
 class ServerStatusNotifier extends Notifier<ServerStatus> {
+  /// Neutral until the server has answered: the chat says "no server"
+  /// from the settings, not from this.
   @override
-  ServerStatus build() => ServerStatus.notConfigured;
+  ServerStatus build() => ServerStatus.ok;
 
   void set(ServerStatus status) => state = status;
 }
@@ -96,6 +98,10 @@ final failureTickProvider = NotifierProvider<FailureTick, int>(FailureTick.new);
 /// - **Nothing in the background:** [pause] stops every timer when the app
 ///   is not in front, including when the phone is locked.
 class Transport {
+  /// Put in front of a packet that is not format 3, so the Olm service
+  /// counts it as malformed: it is never an Olm type (0 or 1).
+  static const int notAPacket = 0xff;
+
   Transport(this._ref) {
     _ref
       ..listen(transportSettingsProvider, (_, _) {
@@ -108,6 +114,9 @@ class Transport {
   final Ref _ref;
   final List<Timer> _timers = [];
   bool _running = false;
+
+  /// Counts rounds: a round started before a restart schedules nothing.
+  int _generation = 0;
   bool _restored = false;
   DateTime? _busyUntil;
   Future<void>? _sending;
@@ -139,20 +148,30 @@ class Transport {
   /// and the outbox (not yet sent) (0005 (i)).
   Future<void> restoreSaved() async {
     if (_restored) return;
-    _restored = true;
-    final store = _ref.read(messageStoreProvider.notifier);
     final olm = _crypto.olm;
     for (final m in await olm.inbox()) {
-      store.add(await _contactId(m.peer), _messaging.incomingMessage(m));
+      await _addIncoming(await _contactId(m.peer), m);
     }
+    final store = _ref.read(messageStoreProvider.notifier);
     for (final o in await olm.outbox()) {
       final message = _messaging.outgoingMessage(o);
       if (message != null) store.add(await _contactId(o.peer), message);
     }
+    _restored = true; // only after it worked: a failure is tried again
   }
 
-  /// Sends everything in the outbox, in order. Stops at the first packet
-  /// the server does not take.
+  /// Adds a read message to the chat. A second message with the same ID is
+  /// not shown, so it is removed from the inbox at once: no text stays on
+  /// disk that will never be shown (0005 (i)).
+  Future<void> _addIncoming(String contactId, OlmIncoming m) async {
+    final added = _ref
+        .read(messageStoreProvider.notifier)
+        .add(contactId, _messaging.incomingMessage(m));
+    if (!added) await _crypto.olm.markShown(m.id);
+  }
+
+  /// Sends everything in the outbox, in order. A full mailbox (507) skips
+  /// the rest for that contact only; 429 or no answer stops everything.
   Future<void> sendPending() {
     final running = _sending;
     if (running != null) {
@@ -177,16 +196,22 @@ class Transport {
     await _ref.read(contactsProvider.notifier).ready;
     final contacts = _ref.read(contactsProvider);
     final store = _ref.read(messageStoreProvider.notifier);
+    final full = <String>{};
     for (final out in await _crypto.olm.outbox()) {
       final contact = _contactFor(contacts, out.peer);
-      if (contact == null) continue;
+      if (contact == null || full.contains(contact.id)) continue;
       final packet = PacketV3.wrap(
         await _messaging.outgoingMailbox(contact),
         out.packet,
       );
-      if (!await _call(() => client.drop(packet.sublist(1, 17), packet))) {
-        return;
+      final error = await _call(
+        () => client.drop(packet.sublist(1, 17), packet),
+      );
+      if (error is RelayFull) {
+        full.add(contact.id); // keep the order for this contact
+        continue;
       }
+      if (error != null) return;
       await _crypto.olm.markSent(out.id);
       final message = _messaging.outgoingMessage(out);
       if (message != null) {
@@ -197,6 +222,8 @@ class Transport {
         );
       }
     }
+    // Another contact's success must not hide a message that waits.
+    if (full.isNotEmpty) _status(ServerStatus.full);
   }
 
   /// Fetches one mailbox of [contact] and reads every packet in it.
@@ -205,24 +232,28 @@ class Transport {
     final olm = contact.olm;
     if (client == null || olm == null || _isBusy()) return;
     late List<Uint8List> packets;
-    if (!await _call(() async => packets = await client.fetch(mailbox))) {
+    if (await _call(() async => packets = await client.fetch(mailbox)) !=
+        null) {
       return;
     }
-    final store = _ref.read(messageStoreProvider.notifier);
     for (final packet in packets) {
       final Uint8List inner;
       try {
         inner = PacketV3.unwrap(packet);
       } on CryptoException {
-        // Not a version 3 packet. Passed on whole: its first byte is not an
-        // Olm type, so it is counted as malformed, once (0004 §10).
-        await _crypto.olm.receive(olm.identityKey, packet);
+        // Not a version 3 packet: shows nothing (0004 §10). It is passed on
+        // behind a byte that is never an Olm type, so it is counted as
+        // malformed, once, whatever its own first byte is.
+        await _crypto.olm.receive(
+          olm.identityKey,
+          Uint8List.fromList([notAPacket, ...packet]),
+        );
         continue;
       }
       final result = await _crypto.olm.receive(olm.identityKey, inner);
       final message = result.message;
       if (message != null) {
-        store.add(contact.id, _messaging.incomingMessage(message));
+        await _addIncoming(contact.id, message);
       } else if (result.failure != OlmReceiveFailure.duplicate &&
           result.failure != OlmReceiveFailure.malformed) {
         _ref.read(failureTickProvider.notifier).bump();
@@ -232,39 +263,55 @@ class Transport {
 
   void _restart() {
     _cancelTimers();
-    if (_running) unawaited(_round());
+    final generation = ++_generation;
+    if (_running) unawaited(_round(generation));
   }
 
-  Future<void> _round() async {
+  /// One round. A failure (a locked phone, a failed read) is not thrown:
+  /// the next round is still planned and tries again.
+  Future<void> _round(int generation) async {
     final settings = _ref.read(transportSettingsProvider).value;
-    if (settings?.server == null) {
-      _status(ServerStatus.notConfigured);
-      return;
-    }
-    await restoreSaved();
-    _quietly(sendPending());
-    final mailboxes = <({Contact contact, Uint8List mailbox})>[];
-    // The first round after start waits for the saved contacts.
-    await _ref.read(contactsProvider.notifier).ready;
-    for (final c in _ref.read(contactsProvider)) {
-      if (c.olm == null) continue;
-      for (final m in await _messaging.inboxMailboxes(c)) {
-        mailboxes.add((contact: c, mailbox: m));
+    final server = settings?.server;
+    var next =
+        (settings?.interval ?? TransportSettings.defaultInterval).duration;
+    bool current() => _running && generation == _generation;
+    try {
+      // Saved messages are shown even before a server is set.
+      await restoreSaved();
+      if (server == null) {
+        _status(ServerStatus.notConfigured);
+        return;
+      }
+      _quietly(sendPending());
+      final mailboxes = <({Contact contact, Uint8List mailbox})>[];
+      // The first round after start waits for the saved contacts.
+      await _ref.read(contactsProvider.notifier).ready;
+      for (final c in _ref.read(contactsProvider)) {
+        if (c.olm == null) continue;
+        for (final m in await _messaging.inboxMailboxes(c)) {
+          mailboxes.add((contact: c, mailbox: m));
+        }
+      }
+      if (!current()) return;
+      final round = planRound(
+        mailboxes,
+        next,
+        _ref.read(transportRandomProvider),
+      );
+      next = round.length;
+      final timer = _ref.read(transportTimerProvider);
+      for (final r in round.requests) {
+        _timers.add(
+          timer(r.at, () => _quietly(fetch(r.item.contact, r.item.mailbox))),
+        );
+      }
+    } catch (_) {
+      // The text is not kept. The next round tries again.
+    } finally {
+      if (server != null && current()) {
+        _timers.add(_ref.read(transportTimerProvider)(next, _restart));
       }
     }
-    if (!_running) return;
-    final round = planRound(
-      mailboxes,
-      settings!.interval.duration,
-      _ref.read(transportRandomProvider),
-    );
-    final timer = _ref.read(transportTimerProvider);
-    for (final r in round.requests) {
-      _timers.add(
-        timer(r.at, () => _quietly(fetch(r.item.contact, r.item.mailbox))),
-      );
-    }
-    _timers.add(timer(round.length, _restart));
   }
 
   /// Runs [work] in the background. A failure (for example a locked phone
@@ -292,22 +339,24 @@ class Transport {
     return false;
   }
 
-  /// Runs one request. Returns whether the server answered as hoped; a
-  /// failure only sets the status.
-  Future<bool> _call(Future<void> Function() request) async {
+  /// Runs one request. Returns null if the server answered as hoped, or
+  /// what went wrong; a failure also sets the status.
+  Future<RelayException?> _call(Future<void> Function() request) async {
     try {
       await request();
       _status(ServerStatus.ok);
-      return true;
+      return null;
     } on RelayBusy catch (e) {
       _busyUntil = _now().add(e.retryAfter);
       _status(ServerStatus.busy);
-    } on RelayFull {
+      return e;
+    } on RelayFull catch (e) {
       _status(ServerStatus.full);
-    } on RelayUnavailable {
+      return e;
+    } on RelayUnavailable catch (e) {
       _status(ServerStatus.unavailable);
+      return e;
     }
-    return false;
   }
 
   void _status(ServerStatus status) =>

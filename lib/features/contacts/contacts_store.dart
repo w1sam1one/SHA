@@ -37,12 +37,18 @@ class Contact {
 /// The contact list. Saved contacts are read from the Olm state, which is
 /// the vault's single state entry (0005 (A)).
 class ContactsStore extends Notifier<List<Contact>> {
-  /// Completes when the saved contacts have been read.
-  late Future<void> ready;
+  Future<void>? _ready;
+
+  /// Completes when the saved contacts have been read. If the read failed
+  /// (for example on a locked phone), the next call tries again.
+  Future<void> get ready => _ready ??= Future(_load).catchError((Object e) {
+    _ready = null;
+    throw e;
+  });
 
   @override
   List<Contact> build() {
-    ready = Future(_load);
+    ready.ignore();
     return const [];
   }
 

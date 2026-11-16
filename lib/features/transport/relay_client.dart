@@ -44,7 +44,11 @@ abstract interface class RelayClient {
 /// - Every request has its own connection (0004 §9 (b)): a new
 ///   [HttpClient] that is closed afterwards.
 /// - No `User-Agent` header, and no cookies or other state.
-/// - `https` only, except for the computer's own address in tests.
+/// - `https` only, except `http` to this device itself outside release
+///   builds (for tests). `dart:io` does not follow Android's
+///   `network_security_config.xml`, so the check is made here.
+/// - Responses are not decompressed, so the size limit counts what is
+///   read.
 final class HttpRelayClient implements RelayClient {
   HttpRelayClient(
     this.server, {
@@ -68,8 +72,8 @@ final class HttpRelayClient implements RelayClient {
   static const Duration defaultRetryAfter = Duration(seconds: 60);
   static const Duration maxRetryAfter = Duration(hours: 1);
 
-  /// `https` with a host and nothing else, or `http` to the computer itself
-  /// (only for tests: Android blocks plain text traffic anyway).
+  /// `https` with a host and nothing else, or `http` to this device itself
+  /// in debug and test builds only.
   static bool isAllowedServer(Uri uri) {
     if (uri.host.isEmpty ||
         uri.userInfo.isNotEmpty ||
@@ -79,7 +83,8 @@ final class HttpRelayClient implements RelayClient {
       return false;
     }
     if (uri.scheme == 'https') return true;
-    return uri.scheme == 'http' &&
+    return !_release &&
+        uri.scheme == 'http' &&
         (uri.host == '127.0.0.1' ||
             uri.host == '::1' ||
             uri.host == 'localhost');
@@ -116,7 +121,8 @@ final class HttpRelayClient implements RelayClient {
     final client = _newClient()
       ..userAgent = null
       ..connectionTimeout = timeout
-      ..idleTimeout = Duration.zero;
+      ..idleTimeout = Duration.zero
+      ..autoUncompress = false;
     try {
       return await () async {
         final request = await client.openUrl(
@@ -125,7 +131,9 @@ final class HttpRelayClient implements RelayClient {
         );
         request
           ..persistentConnection = false
-          ..followRedirects = false;
+          ..followRedirects = false
+          // Ask for the packets as they are: nothing to decompress.
+          ..headers.removeAll(HttpHeaders.acceptEncodingHeader);
         if (body != null) {
           request.headers.contentType = ContentType.binary;
           request.contentLength = body.length;
@@ -160,6 +168,9 @@ final class HttpRelayClient implements RelayClient {
   }
 
   static Future<Uint8List> _readAll(HttpClientResponse response) async {
+    if (response.contentLength > maxResponseBytes) {
+      throw const RelayUnavailable();
+    }
     final out = BytesBuilder(copy: false);
     await for (final chunk in response) {
       out.add(chunk);
@@ -183,11 +194,13 @@ final class HttpRelayClient implements RelayClient {
           length > body.length - at) {
         throw const RelayUnavailable();
       }
-      packets.add(Uint8List.fromList(body.sublist(at, at + length)));
+      packets.add(body.sublist(at, at + length));
       at += length;
     }
     return packets;
   }
+
+  static const bool _release = bool.fromEnvironment('dart.vm.product');
 
   static String _hex(Uint8List bytes) =>
       [for (final b in bytes) b.toRadixString(16).padLeft(2, '0')].join();
