@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- No plain-text traffic and only system CAs (no user-installed CAs that
-     could be used to intercept relay traffic). Relay hosts should add
-     certificate pins here when they exist. -->
+     could be used to intercept traffic). The relay client uses dart:io,
+     which does not read this file: its rules (https only) are in
+     lib/features/transport/relay_client.dart, and pins would go there. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>

@@ -9,6 +9,7 @@ import 'package:sha/features/chat/chat_screen.dart';
 import 'package:sha/features/chat/notice_texts.dart';
 import 'package:sha/features/contacts/contacts_store.dart';
 import 'package:sha/features/transport/transport.dart';
+import 'package:sha/features/transport/transport_settings.dart';
 
 import '../support/in_memory_vault.dart';
 
@@ -16,12 +17,28 @@ const _noServer =
     'Ingen server är inställd än. Meddelanden sparas och skickas när du har '
     'skrivit in serverns adress under Inställningar.';
 
+/// Settings fixed for the test, so no vault or Olm is needed.
+final class _FixedSettings extends TransportSettingsStore {
+  _FixedSettings(this._settings);
+
+  final TransportSettings _settings;
+
+  @override
+  Future<TransportSettings> build() async => _settings;
+}
+
 Future<ProviderContainer> _pumpChat(
   WidgetTester tester, {
-  ServerStatus status = ServerStatus.notConfigured,
+  ServerStatus status = ServerStatus.ok,
+  Uri? server,
 }) async {
   final container = ProviderContainer(
-    overrides: [keyVaultProvider.overrideWithValue(InMemoryVault())],
+    overrides: [
+      keyVaultProvider.overrideWithValue(InMemoryVault()),
+      transportSettingsProvider.overrideWith(
+        () => _FixedSettings(TransportSettings(server: server)),
+      ),
+    ],
   );
   container.read(serverStatusProvider.notifier).set(status);
   addTearDown(container.dispose);
@@ -63,8 +80,11 @@ void main() {
   testWidgets('the server texts of 0004 §10, and none when all is well', (
     tester,
   ) async {
-    final container = await _pumpChat(tester, status: ServerStatus.ok);
-    expect(find.text(_noServer), findsNothing);
+    final container = await _pumpChat(
+      tester,
+      server: Uri.parse('https://server.example.se'),
+    );
+    expect(find.text(_noServer), findsNothing, reason: 'review S1');
     expect(find.text(NoticeTexts.serverBusy), findsNothing);
 
     container.read(serverStatusProvider.notifier).set(ServerStatus.busy);
@@ -74,15 +94,10 @@ void main() {
       findsOneWidget,
     );
 
+    // "Full" is shown only in a chat with a message waiting: none here.
     container.read(serverStatusProvider.notifier).set(ServerStatus.full);
     await tester.pump();
-    expect(
-      find.text(
-        'Meddelandet väntar. Servern har inte plats för det just nu. Appen '
-        'försöker igen.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text(NoticeTexts.serverFull), findsNothing);
 
     container.read(serverStatusProvider.notifier).set(ServerStatus.unavailable);
     await tester.pump();

@@ -81,6 +81,9 @@ jobs:
         run: ./tool/build_native_host.sh
 
       - name: Build the relay for the chain tests
+        env:
+          # The Go installed above, never one downloaded by the go command.
+          GOTOOLCHAIN: local
         run: ./tool/build_relay.sh
 
       - name: flutter test

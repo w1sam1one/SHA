@@ -30,11 +30,15 @@ final class FakeRelay implements RelayClient {
   RelayException? failFetch;
   int fetches = 0;
 
+  /// Mailboxes (hex) that answer 507 to every drop.
+  final Set<String> full = {};
+
   @override
   Future<void> drop(Uint8List mailboxId, Uint8List packet) async {
     final e = failDrop;
     failDrop = null;
     if (e != null) throw e;
+    if (full.contains(hex(mailboxId))) throw const RelayFull();
     dropped.add(packet);
     boxes.putIfAbsent(hex(mailboxId), () => []).add(packet);
   }
@@ -155,6 +159,19 @@ final class App {
 /// A vault whose writes fail while [failWrites] is set.
 final class FailingVault extends InMemoryVault {
   bool failWrites = false;
+
+  /// The next read throws, once.
+  bool failNextRead = false;
+
+  @override
+  Future<Uint8List?> read(String name) async {
+    if (failNextRead) {
+      failNextRead = false;
+      throw const CryptoException('locked', CryptoErrorKind.deviceLocked);
+    }
+    return super.read(name);
+  }
+
   int? _okLeft;
 
   /// Lets [n] more writes through, then sets [failWrites].

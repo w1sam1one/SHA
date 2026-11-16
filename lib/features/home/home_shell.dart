@@ -22,6 +22,10 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 1;
 
+  /// Counts the times "Min QR" was chosen: each time is a new screen, and so
+  /// a new one-time key (0004 §1). The tab is not kept alive in the stack.
+  int _qrShown = 0;
+
   @override
   Widget build(BuildContext context) {
     final protection = ref.watch(keyProtectionProvider).value;
@@ -76,11 +80,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               removeTop: warning != null,
               child: IndexedStack(
                 index: _index,
-                children: const [
-                  ChatsScreen(),
-                  ContactsScreen(),
-                  MyQrScreen(),
-                  SettingsScreen(),
+                children: [
+                  const ChatsScreen(),
+                  const ContactsScreen(),
+                  if (_index == 2)
+                    MyQrScreen(key: ValueKey(_qrShown))
+                  else
+                    const SizedBox.shrink(),
+                  const SettingsScreen(),
                 ],
               ),
             ),
@@ -89,7 +96,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) => setState(() {
+          if (i == 2 && _index != 2) _qrShown++;
+          _index = i;
+        }),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline_rounded),

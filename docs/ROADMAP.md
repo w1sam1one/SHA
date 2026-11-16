@@ -249,8 +249,9 @@ Nyast först. En rad per paket eller körning som ändrar något.
   CI. Ny grind G-P8: P8 väntar på ägarens beslut.
 - 2026-11-16 – P7 klar: `test/chain/relay_chain_test.dart` kör två appar
   mot den riktiga relayn i CI (`tool/build_relay.sh`, Go i Flutter-jobbet):
-  204, 507 och 429, dubbletter, och en krasch före och efter att relayn tog
-  paketet. Mutationer: fel brevlåda och ingen kontroll av dubbletter fångas.
+  204, 507 och 429, dubbletter, en krasch efter att relayn tog paketet och
+  en misslyckad skrivning hos mottagaren. Mutationer: fel brevlåda och ingen
+  kontroll av dubbletter fångas.
 - 2026-11-16 – P6 klar: appen skickar och hämtar via servern. En
   relay-klient med `dart:io`, varje brevlåda vid en egen slumpad tid i
   intervallet (§9 (b)), bara när appen är öppen, och `Retry-After` vid 429.
