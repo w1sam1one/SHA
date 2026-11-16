@@ -36,8 +36,10 @@ import javax.crypto.spec.GCMParameterSpec
  *   swapped between entries.
  * - A write either completes or throws: the blob is written to a temporary
  *   file, fsynced, renamed over the entry and the directory is fsynced, and
- *   any failure raises [VaultException.WRITE_FAILED]. (Android's AtomicFile,
- *   used before, only logs a failed fsync or rename: 0005, "Fakta".)
+ *   any failure raises [VaultException.WRITE_FAILED]. After that error the
+ *   old or the new value may be read back (if only the directory fsync
+ *   failed, the rename has happened); both are complete. (Android's
+ *   AtomicFile, used before, only logs a failed fsync or rename: 0005.)
  * - [reset] deletes the wrapping key first, so blobs left behind by an
  *   interrupted reset can never be decrypted (0004 §6, 0005).
  * - Nothing here logs, and errors carry fixed codes only.
@@ -72,6 +74,7 @@ class KeystoreVault(context: Context) {
     }
 
     fun write(name: String, value: ByteArray) {
+        val target = fileFor(name)
         val key = existingKey() ?: generateKey()
         val cipher = Cipher.getInstance(TRANSFORMATION)
         // The Keystore picks a fresh random IV; callers cannot supply one.
@@ -85,10 +88,13 @@ class KeystoreVault(context: Context) {
         iv.copyInto(blob, 2)
         sealed.copyInto(blob, 2 + iv.size)
 
-        val target = fileFor(name)
         val temporary = File(dir, "$name$TEMPORARY_SUFFIX")
         try {
-            if (!dir.isDirectory && !dir.mkdirs()) throw IOException("no directory")
+            if (!dir.isDirectory) {
+                if (!dir.mkdirs()) throw IOException("no directory")
+                // The new directory's own entry must survive a power cut too.
+                dir.parentFile?.let(::syncDirectory)
+            }
             FileOutputStream(temporary).use { out ->
                 out.write(blob)
                 out.flush()
@@ -98,20 +104,23 @@ class KeystoreVault(context: Context) {
             // rename(2) replaces the old entry in one step; throws ErrnoException.
             Os.rename(temporary.path, target.path)
             // Make the rename itself survive a power cut.
-            syncDirectory()
-        } catch (e: VaultException) {
-            temporary.delete()
-            throw e
+            syncDirectory(dir)
         } catch (_: Exception) {
             temporary.delete()
             throw VaultException(VaultException.WRITE_FAILED)
         }
     }
 
-    /** Deletes one entry. Throws [VaultException.WRITE_FAILED] if it stays. */
+    /**
+     * Deletes one entry, with its temporary file and any leftover from
+     * Android's AtomicFile in older builds. Throws
+     * [VaultException.WRITE_FAILED] if the entry stays.
+     */
     fun delete(name: String) {
         val target = fileFor(name)
-        File(dir, "$name$TEMPORARY_SUFFIX").delete()
+        for (suffix in listOf(TEMPORARY_SUFFIX, ".bin.new", ".bin.bak")) {
+            File(dir, "$name$suffix").delete()
+        }
         if (!target.delete() && target.exists()) throw VaultException(VaultException.WRITE_FAILED)
         if (dir.isDirectory) syncDirectorySafely()
     }
@@ -133,7 +142,10 @@ class KeystoreVault(context: Context) {
         } catch (_: Exception) {
             throw VaultException(VaultException.UNAVAILABLE)
         }
-        dir.listFiles()?.sortedBy { it.name }?.forEach { file ->
+        // listFiles() returns null on an I/O error: never report that as done.
+        val files = dir.listFiles()
+            ?: if (dir.exists()) throw VaultException(VaultException.WRITE_FAILED) else emptyArray()
+        files.sortedBy { it.name }.forEach { file ->
             if (file.isFile && !file.delete() && file.exists()) {
                 throw VaultException(VaultException.WRITE_FAILED)
             }
@@ -157,8 +169,8 @@ class KeystoreVault(context: Context) {
         )
     }
 
-    private fun syncDirectory() {
-        val fd = Os.open(dir.path, OsConstants.O_RDONLY, 0)
+    private fun syncDirectory(directory: File) {
+        val fd = Os.open(directory.path, OsConstants.O_RDONLY or OsConstants.O_CLOEXEC, 0)
         try {
             Os.fsync(fd)
         } finally {
@@ -168,7 +180,7 @@ class KeystoreVault(context: Context) {
 
     private fun syncDirectorySafely() {
         try {
-            syncDirectory()
+            syncDirectory(dir)
         } catch (_: ErrnoException) {
             throw VaultException(VaultException.WRITE_FAILED)
         }
