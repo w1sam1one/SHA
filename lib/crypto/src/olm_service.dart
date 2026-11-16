@@ -151,6 +151,15 @@ final class OlmFailureCounts {
 /// cryptography expert before the app is given to anyone.
 ///
 /// A contact is its Olm identity key until contacts are built (P4).
+///
+/// - **One instance per vault.** Each instance keeps the last saved state
+///   in memory and runs its calls one at a time. Two live instances on the
+///   same vault could write back an older state, which 0004 §6 forbids. The
+///   app has one [CryptoService] for the whole process.
+/// - **A call that throws may still have saved.** A failed vault write can
+///   leave the new state on disk (`KeyVault.write`). After an exception from
+///   [encrypt] or [receive], read [outbox] and [inbox] again rather than
+///   assume nothing was saved.
 abstract interface class OlmService {
   /// This device's Olm identity key, or null if there is no account yet.
   Future<Uint8List?> identityKey();
