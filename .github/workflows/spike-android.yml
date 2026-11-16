@@ -106,7 +106,7 @@ jobs:
       - name: Rust toolchain used by cargokit
         run: rustup run stable rustc --version
 
-      # The runner has 7.9 GB RAM and 3 GB swap. With the project's
+      # The runner has 7.9 GB RAM and 0-3 GB swap (both seen). With the project's
       # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.9 GB
       # while the emulator held 2-3.4 GB and rustc ran: swap filled up and
       # the runner was shut down ("The runner has received a shutdown
@@ -125,7 +125,7 @@ jobs:
 
       # Build first, while the emulator is not running yet: the Rust part
       # and the Java/Kotlin compile are the memory peak. The test step below
-      # reuses that build.
+      # reuses most of that build.
       - name: Build the APK before starting the emulator
         run: |
           "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
@@ -151,7 +151,7 @@ jobs:
             --force -n spike -k "$SYSTEM_IMAGE" --device pixel_6
           emulator -list-avds | grep -qx spike
           nohup emulator -avd spike -no-window -no-audio -no-boot-anim \
-            -gpu swiftshader_indirect -no-snapshot -memory 2048 > "$RUNNER_TEMP/emulator.log" 2>&1 &
+            -gpu swiftshader_indirect -no-snapshot > "$RUNNER_TEMP/emulator.log" 2>&1 &
           emulator_pid=$!
           for _ in $(seq 1 60); do
             adb devices | grep -q '^emulator-5554' && break
@@ -179,6 +179,9 @@ jobs:
                "android=$(adb shell getprop ro.build.version.release | tr -d '\r')" \
                "sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
+      # -memory 2048 did not lower the emulator's RAM (hardware-qemu.ini still
+      # said 2560 in ci.yml, run for e0745db), so no flag is set. This prints
+      # what it got.
       - name: Emulator memory settings
         run: |
           grep -i -E "ram|heap|dataPartition|cpu.ncore" \

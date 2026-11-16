@@ -70,11 +70,6 @@ jobs:
     name: App on Android emulator (Olm in the build)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    # TEMPORARY while measuring the runner shutdowns: three samples per push.
-    strategy:
-      fail-fast: false
-      matrix:
-        sample: [1, 2, 3]
     env:
       FLUTTER_VERSION: 3.47.7
       FLUTTER_SHA256: af7455f540df951184c7953fbe3cf884766e7541dacf8571f9f582db03dd6230
@@ -151,7 +146,7 @@ jobs:
       - name: Rust toolchain used by cargokit
         run: rustup run stable rustc --version
 
-      # The runner has 7.9 GB RAM and 3 GB swap. With the project's
+      # The runner has 7.9 GB RAM and 0-3 GB swap (both seen). With the project's
       # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.9 GB
       # while the emulator held 2-3.4 GB and rustc ran: swap filled up and
       # the runner was shut down ("The runner has received a shutdown
@@ -170,7 +165,7 @@ jobs:
 
       # Build first, while the emulator is not running yet: the Rust part
       # and the Java/Kotlin compile are the memory peak. The test step below
-      # reuses that build.
+      # reuses most of that build (73 s instead of 344 s, run for e0745db).
       - name: Build the APK before starting the emulator
         run: |
           "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
@@ -194,7 +189,7 @@ jobs:
             --force -n app -k "$SYSTEM_IMAGE" --device pixel_6
           emulator -list-avds | grep -qx app
           nohup emulator -avd app -no-window -no-audio -no-boot-anim \
-            -gpu swiftshader_indirect -no-snapshot -memory 2048 > "$RUNNER_TEMP/emulator.log" 2>&1 &
+            -gpu swiftshader_indirect -no-snapshot > "$RUNNER_TEMP/emulator.log" 2>&1 &
           emulator_pid=$!
           for _ in $(seq 1 60); do
             adb devices | grep -q '^emulator-5554' && break
@@ -222,6 +217,8 @@ jobs:
                "android=$(adb shell getprop ro.build.version.release | tr -d '\r')" \
                "sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
+      # -memory 2048 did not lower the emulator's RAM (hardware-qemu.ini still
+      # said 2560, run for e0745db), so no flag is set. This prints what it got.
       - name: Emulator memory settings
         run: |
           grep -i -E "ram|heap|dataPartition|cpu.ncore" \
