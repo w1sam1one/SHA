@@ -19,6 +19,7 @@ void main() {
       ('LOCKED', CryptoErrorKind.deviceLocked),
       ('INVALIDATED', CryptoErrorKind.keyInvalidated),
       ('CORRUPT', CryptoErrorKind.corrupt),
+      ('WRITE_FAILED', CryptoErrorKind.unavailable),
       ('ANYTHING', CryptoErrorKind.unavailable),
     ]) {
       respond((_) => throw PlatformException(code: code, message: 'secret?'));
@@ -31,6 +32,18 @@ void main() {
         ),
       );
     }
+  });
+
+  test('a failed write has its own fixed message', () async {
+    respond((_) => throw PlatformException(code: 'WRITE_FAILED', message: 'x'));
+    await expectLater(
+      vault.write('p3.entry', Uint8List(1)),
+      throwsA(
+        isA<CryptoException>()
+            .having((e) => e.kind, 'kind', CryptoErrorKind.unavailable)
+            .having((e) => e.message, 'message', 'Saving to the vault failed'),
+      ),
+    );
   });
 
   test('reset calls the native "reset" method and maps its errors', () async {

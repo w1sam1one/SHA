@@ -241,6 +241,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P3, första delen: valvet görs säkert enligt 0005. Skrivningen
+  fsyncar filen och mappen och ger fel i stället för att bara logga, och
+  `reset()` raderar nyckeln först. Nytt emulatortest
+  `integration_test/vault_test.dart`. P3 fortsätter med Olm-tillståndet.
 - 2026-11-16 – Färdplanen utökad enligt ägarens instruktion: fas 2 (F1–F8,
   G6–G8) och fas 3 (F9–F12, G9–G11) med "Klart när", och "Efter version 1".
   Historiken (F3), raderingen av sessioner (F2) och det interna testet (G11)
