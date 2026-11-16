@@ -17,7 +17,9 @@ tillagt.
   mätningen stannar Claude och tar frågan tillbaka till ägaren.
 
 Resten av dokumentet är underlaget som beslutet bygger på. Därifrån är
-bara status, inledningen och en rad under "Ägaren beslutar" ändrade.
+bara status, inledningen och en rad under "Ägaren beslutar" ändrade, och
+efter G5 ([0006](0006-sessionsregeln.md), 2026-11-16) punkterna 2 och 3
+och mätningen.
 
 ## Varför ett beslut behövs
 
@@ -35,11 +37,13 @@ Från "Klart när" i färdplanen (punkt 2), 0004 §2, §6, §8 och §10, och P6 
 färdplanen (punkt 9):
 
 1. Olm-kontot, som pickle.
-2. Sessionerna per kontakt, som pickles. För varje session: när den först
-   tog emot ett meddelande från kontakten, som raderingsregeln i 0004 §2
-   behöver. G5 kan ändra det.
+2. Sessionerna per kontakt, som pickles. För varje session: dess nummer
+   från räknaren, som sessionsregeln i 0004 §2 behöver (0006 (b)).
+   Räknaren sparas också.
 3. Kontakterna: identitetsnyckel, adresseringsnyckel (0004 §3), namn och
-   när ni träffades.
+   när ni träffades. För varje kontakt också de engångsnycklar från
+   kontaktens QR-koder som har gett en session, så att samma nyckel inte
+   ger en till (0006).
 4. Visade engångsnycklar och när de visades (0004 §8).
 5. Hashar av behandlade paket, i minst 48 timmar (0004 §6).
 6. Utkorgen: paketens byte, texten och om paketet är skickat (0004 §6).
@@ -145,6 +149,9 @@ sådan kod än.
   läsning vid start. Tillståndet har 20 kontakter med 3 sessioner var, 5
   paket i utkorgen på största storlek (cirka 65 kB) och 20 mottagna
   meddelanden.
+- **Efter G5** raderas inga sessioner i prototypen (0006 (iii)), så det
+  finns ingen övre gräns per kontakt. P4 mäter därför också en skrivning
+  med många sessioner för en kontakt, med samma gräns.
 - **Gräns:** tar en skrivning mer än 300 ms stannar Claude och tar frågan
   tillbaka till ägaren. 300 ms är vald så att det ska kännas omedelbart att
   skicka; ägaren kan ändra gränsen.
