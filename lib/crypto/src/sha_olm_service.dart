@@ -45,6 +45,10 @@ final class ShaOlmService implements OlmService {
   /// for 48 hours (`relay/limits.go`); the margin covers a wrong clock.
   static const Duration keepHashes = Duration(hours: 72);
 
+  /// Shown one-time keys that no session has used are removed after this
+  /// long (0004 §8 (a)); the owner may choose another number of days.
+  static const Duration keepUnusedOneTimeKeys = Duration(days: 30);
+
   final KeyVault _vault;
   final MixedEntropy _entropy;
   final DateTime Function() _clock;
@@ -89,7 +93,16 @@ final class ShaOlmService implements OlmService {
   });
 
   @override
-  Future<Uint8List> createAccount() => _serial(() async {
+  Future<Uint8List> ensureAccount() => _serial(() async {
+    final state = await _load();
+    if (state != null) return base64.decode(state.identityKey);
+    return _createAccount();
+  });
+
+  @override
+  Future<Uint8List> createAccount() => _serial(_createAccount);
+
+  Future<Uint8List> _createAccount() async {
     await _init();
     if (await _load() != null) {
       throw const CryptoException('An Olm account already exists');
@@ -102,17 +115,30 @@ final class ShaOlmService implements OlmService {
     );
     await _save(state);
     return base64.decode(state.identityKey);
-  });
+  }
 
   @override
   Future<OlmContactBundle> publishBundle() => _serial(() async {
     final (state, key) = await _require();
     final account = _account(state, key);
+    final next = state.copy();
+    // Clean up shown keys nobody used in time (0004 §8 (a)). A key that a
+    // session already used is gone from the account; removing it fails and
+    // only its record is dropped.
+    final cutoff = _now() - keepUnusedOneTimeKeys.inMilliseconds;
+    for (final old in [...next.shown.entries.where((e) => e.value < cutoff)]) {
+      try {
+        account.removeOneTimeKey(old.key);
+      } catch (_) {}
+      next.shown.remove(old.key);
+    }
     account.generateOneTimeKeys(1);
     final oneTimeKey = account.oneTimeKeys.values.single;
     account.markKeysAsPublished();
+    next
+      ..account = account.toPickleEncrypted(key)
+      ..shown[oneTimeKey.toBase64()] = _now();
     // Save before the key is shown (0004 §6): a shown key must survive.
-    final next = state.copy()..account = account.toPickleEncrypted(key);
     await _save(next);
     return OlmContactBundle(
       identityKey: base64.decode(state.identityKey),
@@ -121,10 +147,91 @@ final class ShaOlmService implements OlmService {
   });
 
   @override
-  Future<void> startSession(OlmContactBundle peer) => _serial(() async {
+  Future<void> startSession(OlmContactBundle peer) =>
+      _serial(() => _startSession(peer, null));
+
+  @override
+  Future<OlmContact> addContact({
+    required OlmContactBundle bundle,
+    required List<int> addressingKey,
+    required String name,
+    required DateTime metAt,
+  }) => _serial(() async {
+    if (addressingKey.length != olmKeyLength) {
+      throw const CryptoException('Addressing keys must be 32 bytes');
+    }
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw const CryptoException('A contact needs a name');
+    await _startSession(
+      bundle,
+      _Profile(
+        addressingKey: _b64(addressingKey),
+        name: trimmed,
+        metAt: metAt.toUtc().millisecondsSinceEpoch,
+      ),
+    );
+    final saved = _saved!.contacts[_b64(bundle.identityKey)]!;
+    return (await _contactOf(_b64(bundle.identityKey), saved))!;
+  });
+
+  @override
+  Future<List<OlmContact>> contacts() => _serial(() async {
+    final state = await _load();
+    if (state == null) return const [];
+    final out = <OlmContact>[];
+    for (final e in state.contacts.entries) {
+      final c = await _contactOf(e.key, e.value);
+      if (c != null) out.add(c);
+    }
+    return out
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  });
+
+  @override
+  Future<String> verificationCode(List<int> peerIdentityKey) =>
+      _serial(() async {
+        final (state, _) = await _require();
+        return verificationDigits(
+          await _hasher.hash([
+            ...utf8.encode('SHA/v2/verification-code'),
+            ...sortedConcat(
+              base64.decode(state.identityKey),
+              _keyBytes(peerIdentityKey),
+            ),
+          ]),
+        );
+      });
+
+  /// Starts an outbound session from [peer]'s bundle, and records [profile]
+  /// when the contact is added from a scan. One one-time key gives at most
+  /// one session (0006, 0004 §2): the same QR display scanned twice gives
+  /// no second session.
+  Future<void> _startSession(OlmContactBundle peer, _Profile? profile) async {
     final (state, key) = await _require();
-    if (_b64(peer.identityKey) == state.identityKey) {
+    final peerKey = _b64(peer.identityKey);
+    if (peerKey == state.identityKey) {
       throw const CryptoException('Cannot start a session with yourself');
+    }
+    final known = state.contacts[peerKey]?.profile;
+    if (profile != null &&
+        known != null &&
+        known.addressingKey != profile.addressingKey) {
+      // The addressing key only changes with a new identity, and then the
+      // Olm key changes too. A different one here is not the same person's
+      // code (0004 §3).
+      throw const CryptoException(
+        'The scanned code does not match the contact',
+      );
+    }
+    final oneTimeKey = _b64(peer.oneTimeKey);
+    if (state.contacts[peerKey]?.usedOneTimeKeys.contains(oneTimeKey) ??
+        false) {
+      if (profile != null && known == null) {
+        final next = state.copy();
+        next.contact(peerKey).profile = profile;
+        await _save(next);
+      }
+      return;
     }
     final account = _account(state, key);
     final Session session;
@@ -137,18 +244,18 @@ final class ShaOlmService implements OlmService {
       throw const CryptoException('The scanned keys are not usable');
     }
     final next = state.copy();
-    next
-        .contact(_b64(peer.identityKey))
-        .sessions
-        .add(
-          _Session(
-            id: session.sessionId,
-            pickle: session.toPickleEncrypted(key),
-            number: next.nextNumber(),
-          ),
-        );
+    final contact = next.contact(peerKey)
+      ..usedOneTimeKeys.add(oneTimeKey)
+      ..sessions.add(
+        _Session(
+          id: session.sessionId,
+          pickle: session.toPickleEncrypted(key),
+          number: next.nextNumber(),
+        ),
+      );
+    if (profile != null) contact.profile ??= profile;
     await _save(next);
-  });
+  }
 
   @override
   Future<OlmOutgoing> encrypt(List<int> peer, String text) => _serial(() async {
@@ -444,6 +551,53 @@ final class ShaOlmService implements OlmService {
     return OlmReceiveFailure.unreadable;
   }
 
+  Future<OlmContact?> _contactOf(String peer, _Contact c) async {
+    final p = c.profile;
+    if (p == null) return null;
+    final identityKey = base64.decode(peer);
+    return OlmContact(
+      id: _hex(await _hasher.hash(identityKey)),
+      identityKey: identityKey,
+      addressingKey: base64.decode(p.addressingKey),
+      name: p.name,
+      metAt: DateTime.fromMillisecondsSinceEpoch(p.metAt, isUtc: true),
+    );
+  }
+
+  /// The 20-digit code both people compare (0004 §1): the app's existing
+  /// function, unchanged, with the two Olm identity keys as input.
+  /// OGRANSKAT (0004 §1).
+  static String verificationDigits(List<int> digest) {
+    // Four groups of five digits, each from 5 bytes (as in Signal's safety
+    // numbers); the modulo bias is below 2^-20 per group.
+    final buffer = StringBuffer();
+    for (var g = 0; g < 4; g++) {
+      var value = 0;
+      for (var i = 0; i < 5; i++) {
+        value = value * 256 + digest[g * 5 + i];
+      }
+      buffer.write((value % 100000).toString().padLeft(5, '0'));
+    }
+    return buffer.toString();
+  }
+
+  /// `min(a, b) || max(a, b)` in byte order, as `X25519KeyAgreement` does.
+  static Uint8List sortedConcat(List<int> a, List<int> b) {
+    var cmp = 0;
+    for (var i = 0; i < a.length && i < b.length && cmp == 0; i++) {
+      cmp = a[i] - b[i];
+    }
+    if (cmp == 0) cmp = a.length - b.length;
+    return Uint8List.fromList(cmp <= 0 ? [...a, ...b] : [...b, ...a]);
+  }
+
+  List<int> _keyBytes(List<int> key) {
+    if (key.length != olmKeyLength) {
+      throw const CryptoException('Olm keys must be 32 bytes');
+    }
+    return key;
+  }
+
   String _peerKey(List<int> peer) {
     if (peer.length != olmKeyLength) {
       throw const CryptoException('Olm keys must be 32 bytes');
@@ -472,10 +626,12 @@ final class _State {
     Map<String, int>? seen,
     List<_Outgoing>? outbox,
     List<_Incoming>? inbox,
+    Map<String, int>? shown,
   }) : contacts = contacts ?? {},
        seen = seen ?? {},
        outbox = outbox ?? [],
-       inbox = inbox ?? [];
+       inbox = inbox ?? [],
+       shown = shown ?? {};
 
   factory _State.decode(Uint8List bytes) {
     final j = jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
@@ -497,6 +653,7 @@ final class _State {
         for (final m in j['inbox']! as List<Object?>)
           _Incoming.fromJson(m! as Map<String, Object?>),
       ],
+      shown: Map<String, int>.from(j['shown']! as Map<String, Object?>),
     );
   }
 
@@ -512,6 +669,9 @@ final class _State {
   final List<_Outgoing> outbox;
   final List<_Incoming> inbox;
 
+  /// One-time keys shown in a QR code (base64) -> when, in ms (0004 §8).
+  final Map<String, int> shown;
+
   int nextNumber() => ++counter;
 
   _Contact contact(String peer) => contacts.putIfAbsent(peer, _Contact.new);
@@ -525,6 +685,7 @@ final class _State {
     'seen': seen,
     'outbox': [for (final o in outbox) o.toJson()],
     'inbox': [for (final m in inbox) m.toJson()],
+    'shown': shown,
   };
 
   Uint8List encode() => Uint8List.fromList(utf8.encode(jsonEncode(toJson())));
@@ -539,13 +700,20 @@ final class _Contact {
     this.tooLate = 0,
     this.gapTooBig = 0,
     this.malformed = 0,
-  }) : sessions = sessions ?? [];
+    this.profile,
+    List<String>? usedOneTimeKeys,
+  }) : sessions = sessions ?? [],
+       usedOneTimeKeys = usedOneTimeKeys ?? [];
 
   factory _Contact.fromJson(Map<String, Object?> j) => _Contact(
     sessions: [
       for (final s in j['sessions']! as List<Object?>)
         _Session.fromJson(s! as Map<String, Object?>),
     ],
+    profile: j['profile'] == null
+        ? null
+        : _Profile.fromJson(j['profile']! as Map<String, Object?>),
+    usedOneTimeKeys: List<String>.from(j['usedOneTimeKeys']! as List<Object?>),
     unreadable: j['unreadable']! as int,
     tooLate: j['tooLate']! as int,
     gapTooBig: j['gapTooBig']! as int,
@@ -557,6 +725,13 @@ final class _Contact {
   int tooLate;
   int gapTooBig;
   int malformed;
+
+  /// Set when the contact was added from a scan (P4); null for a peer that
+  /// only appears in packets.
+  _Profile? profile;
+
+  /// The contact's one-time keys (base64) that already gave a session here.
+  final List<String> usedOneTimeKeys;
 
   /// The session to send on: the highest number (0006 (b)).
   _Session get chosen => byNumber.first;
@@ -570,6 +745,33 @@ final class _Contact {
     'tooLate': tooLate,
     'gapTooBig': gapTooBig,
     'malformed': malformed,
+    'profile': profile?.toJson(),
+    'usedOneTimeKeys': usedOneTimeKeys,
+  };
+}
+
+/// What the QR code and the meeting gave: kept with the contact (0005, 3).
+final class _Profile {
+  _Profile({
+    required this.addressingKey,
+    required this.name,
+    required this.metAt,
+  });
+
+  factory _Profile.fromJson(Map<String, Object?> j) => _Profile(
+    addressingKey: j['addressingKey']! as String,
+    name: j['name']! as String,
+    metAt: j['metAt']! as int,
+  );
+
+  final String addressingKey;
+  final String name;
+  final int metAt;
+
+  Map<String, Object?> toJson() => {
+    'addressingKey': addressingKey,
+    'name': name,
+    'metAt': metAt,
   };
 }
 

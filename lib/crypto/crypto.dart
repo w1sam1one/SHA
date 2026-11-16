@@ -12,6 +12,7 @@ export 'src/entropy.dart' show EntropySource;
 export 'src/key_vault.dart' show KeyVault;
 export 'src/olm_service.dart'
     show
+        OlmContact,
         OlmContactBundle,
         OlmFailureCounts,
         OlmIncoming,

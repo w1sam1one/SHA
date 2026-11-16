@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart' show Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -60,26 +61,35 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     setState(() => _busy = true);
     try {
       final crypto = ref.read(cryptoServiceProvider);
-      final PublicIdentity peer;
+      final ScannedCode scanned;
       try {
-        peer = ContactCode.parse(raw);
+        scanned = ContactCode.parse(raw);
       } on ContactCodeException catch (e) {
         _showError(e.message);
         return;
       }
-      if (peer == ref.read(ownIdentityProvider)) {
-        _showError('Det där är din egen kod.');
-        return;
-      }
-      final existing = ref.read(contactsProvider.notifier).byId(peer.hash.hex);
-      if (existing != null) {
-        _showError('${existing.name} finns redan bland dina kontakter.');
-        return;
-      }
-      // Derive once to reject invalid (e.g. low-order) keys before the user
-      // is asked to trust them; the keys are destroyed straight away.
+      final Uint8List ownOlmKey;
+      final Contact? existing;
       try {
-        crypto.forget(await crypto.conversationKeys(peer));
+        ownOlmKey = await crypto.olm.ensureAccount();
+        if (_sameKey(scanned.bundle.identityKey, ownOlmKey) ||
+            scanned.addressingKey == ref.read(ownIdentityProvider)) {
+          _showError('Det där är din egen kod.');
+          return;
+        }
+        existing = ref
+            .read(contactsProvider.notifier)
+            .byId(_hex(await crypto.sha256(scanned.bundle.identityKey)));
+        if (existing != null) {
+          // A new scan starts a new session, which is sent on at once
+          // (0006 (b)). The same QR display gives none (0004 §2).
+          await crypto.olm.startSession(scanned.bundle);
+          _showError('${existing.name} finns redan bland dina kontakter.');
+          return;
+        }
+        // Derive once to reject invalid (e.g. low-order) addressing keys
+        // before the user is asked to trust them; destroyed straight away.
+        crypto.forget(await crypto.conversationKeys(scanned.addressingKey));
       } on CryptoException catch (e) {
         _showError(
           e.kind == CryptoErrorKind.invalidInput
@@ -88,15 +98,31 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         );
         return;
       }
-      final code = await crypto.verificationCode(peer);
+      final code = await crypto.olm.verificationCode(
+        scanned.bundle.identityKey,
+      );
       if (!mounted) return;
-      final contact = await showAddContactSheet(
+      final accepted = await showAddContactSheet(
         context,
-        peer: peer,
+        peer: scanned.addressingKey,
         verificationCode: code,
       );
-      if (contact == null || !mounted) return;
-      ref.read(contactsProvider.notifier).add(contact);
+      if (accepted == null || !mounted) return;
+      final Contact contact;
+      try {
+        contact = await ref
+            .read(contactsProvider.notifier)
+            .addScanned(
+              bundle: scanned.bundle,
+              addressingKey: scanned.addressingKey,
+              name: accepted.name,
+              metAt: accepted.verifiedAt,
+            );
+      } on CryptoException catch (e) {
+        _showError(describeError(e));
+        return;
+      }
+      if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       final screenReader = MediaQuery.accessibleNavigationOf(context);
       final navigator = Navigator.of(context)..pop();
@@ -308,3 +334,14 @@ class _CameraError extends StatelessWidget {
     );
   }
 }
+
+bool _sameKey(List<int> a, List<int> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
+}
+
+String _hex(List<int> bytes) =>
+    bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();

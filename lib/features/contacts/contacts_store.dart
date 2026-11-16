@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/providers.dart';
 import '../../crypto/crypto.dart';
 
 class Contact {
@@ -7,21 +8,48 @@ class Contact {
     required this.identity,
     required this.name,
     required this.verifiedAt,
+    this.olm,
   });
 
+  /// From the contact's saved Olm state (P4).
+  factory Contact.fromOlm(OlmContact c) => Contact(
+    identity: PublicIdentity(c.addressingKey),
+    name: c.name,
+    verifiedAt: c.metAt,
+    olm: c,
+  );
+
+  /// The contact's addressing key (0004 §3 (A)): mailbox IDs only.
   final PublicIdentity identity;
   final String name;
 
   /// When the two people met and confirmed matching verification codes.
   final DateTime verifiedAt;
 
-  String get id => identity.hash.hex;
+  /// The contact as saved with Olm. Null only in older tests.
+  final OlmContact? olm;
+
+  /// SHA-256 of the Olm identity key (0004 §1); before Olm, of the X25519
+  /// key.
+  String get id => olm?.id ?? identity.hash.hex;
 }
 
-/// In-memory contact list (no persistence in the MVP).
+/// The contact list. Saved contacts are read from the Olm state, which is
+/// the vault's single state entry (0005 (A)).
 class ContactsStore extends Notifier<List<Contact>> {
   @override
-  List<Contact> build() => const [];
+  List<Contact> build() {
+    Future(_load);
+    return const [];
+  }
+
+  Future<void> _load() async {
+    final saved = await ref.read(cryptoServiceProvider).olm.contacts();
+    if (saved.isEmpty) return;
+    for (final c in saved) {
+      _put(Contact.fromOlm(c));
+    }
+  }
 
   Contact? byId(String id) {
     for (final contact in state) {
@@ -30,7 +58,31 @@ class ContactsStore extends Notifier<List<Contact>> {
     return null;
   }
 
-  void add(Contact contact) {
+  /// Keeps [contact] in the list only (tests and older code).
+  void add(Contact contact) => _put(contact);
+
+  /// Saves a contact from a scanned code with its Olm session, then lists it.
+  Future<Contact> addScanned({
+    required OlmContactBundle bundle,
+    required PublicIdentity addressingKey,
+    required String name,
+    required DateTime metAt,
+  }) async {
+    final saved = await ref
+        .read(cryptoServiceProvider)
+        .olm
+        .addContact(
+          bundle: bundle,
+          addressingKey: addressingKey.publicKey,
+          name: name,
+          metAt: metAt,
+        );
+    final contact = Contact.fromOlm(saved);
+    _put(contact);
+    return contact;
+  }
+
+  void _put(Contact contact) {
     state = [
       for (final c in state)
         if (c.id != contact.id) c,
