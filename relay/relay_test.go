@@ -114,9 +114,14 @@ func packetOf(size int, fill byte) []byte {
 }
 
 func TestMaxPacketSizeMatchesWireFormat(t *testing.T) {
-	// 1 + 16 + 12 + 65536 + 16, see limits.go.
-	if maxPacketSize != 65581 {
-		t.Fatalf("maxPacketSize = %d, want 65581", maxPacketSize)
+	// 18 + 65692 + 2 (0004 §5), see limits.go and PacketV3.maxPacketSize.
+	if maxPacketSize != 65712 {
+		t.Fatalf("maxPacketSize = %d, want 65712", maxPacketSize)
+	}
+	// The pieces match the size table in 0004 §4 (chain index under 128,
+	// so 2 bytes less than the largest).
+	if olmMaxNormal-2 != 65585 || olmMaxPreKey-2 != 65692 {
+		t.Fatalf("olm sizes %d, %d, want 65587 and 65694", olmMaxNormal, olmMaxPreKey)
 	}
 }
 

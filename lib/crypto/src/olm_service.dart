@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'olm_padding.dart';
 import 'types.dart';
 
 /// Bytes in a Curve25519 public key.
@@ -192,6 +193,10 @@ abstract interface class OlmService {
   /// Encrypts [text] for [peer] and saves the session and the packet in the
   /// outbox before returning (0004 §6). Send [OlmOutgoing.packet] only after
   /// this returns.
+  ///
+  /// The text is padded with spaces to a fixed size first (0004 §4 (A),
+  /// [OlmPadding]), and [receive] removes spaces at the end again. Throws
+  /// [CryptoException] for more than [OlmPadding.maxBytes] bytes of UTF-8.
   Future<OlmOutgoing> encrypt(List<int> peer, String text);
 
   /// Messages saved but not yet accepted by the relay.

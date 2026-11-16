@@ -347,13 +347,18 @@ void olmServiceCases() {
     },
   );
 
-  test('R7 packet size: one type byte plus the Olm message', () async {
+  test('R7 packet size: one type byte plus the Olm message, padded to the '
+      'bucket (0004 §4 (A))', () async {
     final (alice, bob) = await established();
-    var previous = 0;
-    for (final length in [0, 100, 1000, 10000]) {
+    // The spike's R7 lengths. 0 and 100 share a bucket and a size.
+    for (final (length, size) in [
+      (0, 1 + 304),
+      (100, 1 + 304),
+      (1000, 1 + 1072),
+      (10000, 1 + 16433),
+    ]) {
       final out = await alice.olm.encrypt(bob.key, 'x' * length);
-      expect(out.packet.length, greaterThan(previous + length ~/ 2));
-      previous = out.packet.length;
+      expect(out.packet.length, size, reason: '$length characters');
       expect(await deliver(bob, alice, out), 'x' * length);
     }
   });

@@ -28,9 +28,9 @@ Prova med curl:
 
 ```sh
 ID=00112233445566778899aabbccddeeff
-head -c 301 /dev/urandom > paket.bin
+head -c 322 /dev/urandom > paket.bin
 curl -i --data-binary @paket.bin http://127.0.0.1:8080/v1/mailbox/$ID   # 204
-curl -s http://127.0.0.1:8080/v1/mailbox/$ID | wc -c                    # 305 (4 + 301)
+curl -s http://127.0.0.1:8080/v1/mailbox/$ID | wc -c                    # 326 (4 + 322)
 curl http://127.0.0.1:8080/healthz                                      # ok
 ```
 
@@ -57,7 +57,7 @@ Allt annat ger `404`, eller `405` för fel metod på en känd sökväg, även
 `HEAD`.
 
 - **`{id}`** är brevlåde-ID:t som hex: exakt 32 tecken (16 byte, se
-  `lib/crypto/src/wire_format.dart`). Stora och små bokstäver betyder samma
+  `lib/crypto/src/olm_wire_format.dart`). Stora och små bokstäver betyder samma
   brevlåda.
 - **Svarsformat för `GET`** (`application/octet-stream`): för varje paket
   4 byte längd (big-endian), sedan paketets byte. Inga paket ger en tom kropp.
@@ -72,8 +72,8 @@ Allt annat ger `404`, eller `405` för fel metod på en känd sökväg, även
 
 | Gräns | Värde | Varför |
 | --- | --- | --- |
-| Brevlåde-ID | 32 hextecken | `WireFormat.mailboxIdLength = 16` byte. |
-| Största paket | 65 581 byte | Huvud 1 + 16, nonce 12, största utfyllda innehåll 65 536 (`MessagePadding.buckets.last`), GCM-tagg 16. Appen skickar bara 301, 1 069, 4 141, 16 429 eller 65 581 byte, men relayn kontrollerar bara största längd. Härledningen står i `limits.go`. |
+| Brevlåde-ID | 32 hextecken | `PacketV3.mailboxIdLength = 16` byte. |
+| Största paket | 65 712 byte | Paketformat 3 (0004 §5): huvud 1 + 16 + 1 och det största Olm-meddelandet, 65 694 byte (hinken 65 536, typ 0 och ett kedjeindex på upp till 3 byte). Storleken beror på hinken, Olm-typen och kedjeindex (0004 §4), men relayn kontrollerar bara största längd. Härledningen står i `limits.go`. |
 | Tom kropp | avvisas | Ett paket är aldrig tomt. |
 | Livslängd | 48 timmar | Appen hämtar dagens och gårdagens brevlåda (`inboxMailboxes`). Paketen raderas automatiskt; städningen körs var 30:e sekund, och utgångna paket lämnas aldrig ut. |
 | Paket per brevlåda | 1 000 | En brevlåda är en riktning i en konversation under ett dygn. |
@@ -172,8 +172,8 @@ server {
 
     # Största paket, se relay/limits.go. Bufferten lika stor, så att nginx
     # håller kroppen i minnet i stället för att skriva den till en temporär fil.
-    client_max_body_size    65581;
-    client_body_buffer_size 65581;
+    client_max_body_size    65712;
+    client_body_buffer_size 65712;
     # Skriv inte heller svar till temporära filer på disk.
     proxy_max_temp_file_size 0;
 
@@ -198,8 +198,9 @@ anslutningar: brandvägg, lastbalanserare, leverantörens nätloggar.
 ### Vad som är provat lokalt
 
 Exemplet ovan provades 2026-11-13 med nginx 1.24 och ett självsignerat
-certifikat på samma maskin. Ändringarna var lokala portar och sökvägar, och
-fellogg till en fil på nivå `crit` för att kunna läsa den. Resultat:
+certifikat på samma maskin, då med gränsen 65 581 byte (paketformat 2).
+Ändringarna var lokala portar och sökvägar, och fellogg till en fil på nivå
+`crit` för att kunna läsa den. Resultat:
 - TLS, `POST`, `GET` (även 2 × 65 581 byte), `/healthz` och `404` för okänd
   sökväg fungerade.
 - `413` för 65 582 byte stoppades redan i nginx.
@@ -207,12 +208,22 @@ fellogg till en fil på nivå `crit` för att kunna läsa den. Resultat:
   `X-Forwarded-For` från klienten skrevs över och hjälpte inte.
 - Båda nginx-loggarna var tomma (0 byte). Relayns logg innehöll varken
   adresser eller brevlåde-ID.
-- **Kroppen hålls i minnet:** utan `client_body_buffer_size 65581` försökte
-  nginx skriva paketet till en temporär fil på disk. Det syntes i felloggen,
-  och raden innehöll klientens adress trots nivån `crit`.
+- **Kroppen hålls i minnet:** utan `client_body_buffer_size` lika stor som
+  gränsen försökte nginx skriva paketet till en temporär fil på disk. Det
+  syntes i felloggen, och raden innehöll klientens adress trots nivån
+  `crit`.
 - **`proxy_max_temp_file_size 0` är ej verifierat:** testet kunde inte visa
   någon skillnad med eller utan inställningen. Den är kvar enligt nginx
   dokumentation.
+
+**Den nya gränsen 65 712 byte** (paketformat 3) provades 2026-11-16 på samma
+sätt, med nginx 1.24 och exemplet ovan. Spamgränsen provades inte om.
+- Två `POST` med 65 712 byte gav `204`. `GET` gav 131 432 byte
+  (2 × (4 + 65 712)), lika med de två paketen.
+- `413` för 65 713 byte stoppades redan i nginx: relayn såg inte anropet.
+- `/healthz` och `404` fungerade.
+- Båda nginx-loggarna var tomma (0 byte), och nginx skrev inga temporära
+  filer.
 
 **Inte provat:**
 - en riktig server, ett riktigt certifikat och IPv6 utifrån;
