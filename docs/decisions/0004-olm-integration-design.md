@@ -30,9 +30,9 @@ Rättat 2026-11-14 efter fyra oberoende granskningar:
 - felet för en utträngd kedja (§10);
 - två saknade märkningar (§1, §6).
 
-Rekommendationerna är desamma. Förtydligat för prototypen: Olm version 1
-(§5) och 30 dagar för oanvända engångsnycklar (§8). Inga sessioner raderas
-i prototypen (§2, 0006).
+Rekommendationerna var då desamma. Förtydligat för prototypen: Olm version
+1 (§5) och 30 dagar för oanvända engångsnycklar (§8). Sessionsregeln i §2
+ändrades 2026-11-16, se nedan.
 
 **Lagring (ägarens beslut 2026-11-14,
 [0005](0005-lagring-i-prototypen.md)):** för prototypen gäller §6 (c) på
@@ -163,6 +163,8 @@ koden visas (punkt 6 och 8).
 **Krav:**
 - Båda skannar varandra (D1), så båda kan starta en session.
 - Båda måste till slut skicka på samma session utan att prata om det.
+  Med 0006 (b) gäller det inte alltid, men inget går förlorat, eftersom
+  båda kan läsa båda sessionerna.
 - Inget meddelande får gå förlorat vid bytet.
 
 **Vad som händer** (spiken, R5, `olm_spike_test.dart:335-401`):
@@ -197,9 +199,10 @@ första meddelande inte kunde läsas.
   meddelande från kontakten. Appen skickar på sessionen med högst nummer.
   - Vid mottagning sätts numret bara efter en lyckad avkryptering, bara för
     den session som lyckades, och i samma skrivning som sessionens pickle
-    (punkt 6, steg 3). Ett paket som ingen session kan läsa ändrar inget.
-- **Sidorna kan skicka på olika sessioner en tid,** när båda skriver innan
-  de har läst den andras senaste meddelande. Inget går förlorat, eftersom
+    (punkt 6, steg 3). Ett paket som ingen session kan läsa ändrar inget
+    nummer.
+- **Sidorna kan skicka på olika sessioner länge,** så länge båda skriver
+  innan de har läst den andras senaste meddelande. Inget går förlorat, eftersom
   båda kan läsa båda sessionerna. De väljer samma session när ett
   meddelande har lästs innan den andra skriver igen.
 - **Skannar någon igen** blir det en ny session, med en ny engångsnyckel,
@@ -218,7 +221,9 @@ första meddelande inte kunde läsas.
 - en tredje skanning;
 - omstart mitt i bytet;
 - testerna och de två mutationerna i 0006, "Om ägaren väljer (b) och
-  (iii)".
+  (iii)";
+- en tredje mutation: att samma engångsnyckel får ge en andra session ska
+  få minst ett test att falla.
 
 ## 3. Brevlåde-ID:n — **Kräver granskning av kryptoexpert**
 
@@ -766,7 +771,8 @@ fortfarande öppen.
   visas. Appen gör om varje fel till en fast feltyp och visar bara texterna
   nedan.
 - **Dubbletter tas bort före avkrypteringen** (punkt 6), så de syns aldrig.
-- **`<namn>`** i tabellen är kontaktens namn, och **`<n>`** antalet.
+- **`<namn>`** i tabellen är kontaktens namn, och **`<n>`** antalet
+  meddelanden, 2 eller fler.
 - **"Servern", aldrig "relayn",** i allt användaren ser. "Relayn" i
   kolumnen "Fall" och i resten av dokumentet är bara för utvecklare.
 
@@ -782,7 +788,10 @@ Texten krockar inte med regeln i punkt 6: ett ändrat eller sent typ
 0-meddelande hamnar i den här raden, som punkt 6 säger. Men vem som helst
 som kan kontaktens brevlåde-ID kan lämna ett trasigt paket där (0002,
 fråga i). Raden kan alltså visas även om `<namn>` inte har skickat något,
-och "Händer det igen" kan då leda till ett möte i onödan.
+och "Händer det igen" kan då leda till ett möte i onödan. Den som kan hämta
+ett riktigt paket kan också lämna en ändrad kopia av det, med en annan hash,
+så raden kan komma tillbaka med varje riktigt meddelande. Samma risk fanns
+med den tidigare texten.
 
 | Fall | Vad biblioteket säger (0003) | Vad användaren ser |
 | --- | --- | --- |
@@ -815,7 +824,8 @@ paket där, eftersom relayn inte kontrollerar avsändaren (0002, fråga i). En
 rad per trasigt paket skulle kunna fylla chatten.
 
 **Testa:**
-- varje rad i tabellen ger rätt text;
+- varje rad i tabellen ger rätt text, och raden "går inte att läsa" med
+  ett och med flera meddelanden;
 - ingen text innehåller nyckelmaterial, genom att utöka
   `test/security/no_logging_test.dart`;
 - vid `507` och `429` försöker appen igen med samma byte.
