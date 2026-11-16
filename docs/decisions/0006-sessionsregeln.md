@@ -24,10 +24,10 @@ beslutet. Ingen kod är ändrad.
   - En ny skanning hjälper bara om den nya sessionen råkar få lägre id.
     Sessions-id är SHA-256 av sessionens nycklar
     (`vodozemac-0.11.2/src/olm/session_keys.rs:46-56`), alltså slumpmässigt.
-- **Det vanligaste fallet går inte att rädda utan ett nytt möte.** Skriver
-  ingen av er inom 30 dagar efter mötet har båda engångsnycklarna städats
-  (0004 §8), och båda sessionerna är döda. Då hjälper bara en ny skanning,
-  med alla alternativ nedan.
+- **Ett vanligt fall går inte att rädda utan ett nytt möte.** Skriver
+  ingen av användarna inom 30 dagar efter mötet har båda engångsnycklarna
+  städats (0004 §8), och båda sessionerna är döda. Då hjälper bara en ny
+  skanning, oavsett alternativ nedan.
 
 ## Krav
 
@@ -53,7 +53,9 @@ beslutet. Ingen kod är ändrad.
   kan läsa det som skickas på den.
 - **En engångsnyckel per QR-visning** (0004 §8). Skannar någon samma
   visning två gånger blir det två sessioner på samma engångsnyckel. Bara
-  den som används först går att läsa hos kontakten.
+  den som används först går att läsa hos kontakten, eftersom kontakten
+  raderar engångsnyckeln när den första sessionen skapas
+  (`vodozemac-0.11.2/src/olm/account/mod.rs:251,324`).
 - **matrix-js-sdk v30.0.0** (`src/crypto/OlmDevice.ts`,
   <https://github.com/matrix-org/matrix-js-sdk/blob/v30.0.0/src/crypto/OlmDevice.ts>,
   hämtad 2026-11-14, SHA-256 `41db12a1…`), Matrix äldre kryptokod:
@@ -77,13 +79,13 @@ beslutet. Ingen kod är ändrad.
   har en räknare. En session får nästa nummer från räknaren när den skapas,
   som utgående eller inkommande, och när den har läst ett meddelande från
   kontakten. Appen skickar på sessionen med högst nummer.
-  - Numret sätts bara efter en lyckad avkryptering, bara för den session
-    som lyckades, och i samma skrivning som sessionens pickle (0004 §6,
-    steg 3). Ett paket som ingen session kan läsa ändrar alltså inget.
-    Annars skulle vem som helst som lägger ett paket på relayn kunna flytta
-    valet.
-  - En räknare i stället för klockan, som Matrix använder: ordningen blir
-    rätt även om klockan ställs om.
+  - Vid mottagning sätts numret bara efter en lyckad avkryptering, bara för
+    den session som lyckades, och i samma skrivning som sessionens pickle
+    (0004 §6, steg 3). Ett paket som ingen session kan läsa ändrar alltså
+    inget. Annars skulle vem som helst som lägger ett paket på relayn kunna
+    flytta valet.
+  - Matrix använder klockan. Här används en räknare, så ordningen blir rätt
+    även om klockan ställs om, och två sessioner får aldrig samma nummer.
   - Fördelar:
     - Så fort kontakten skriver på en session byter appen till den, och den
       sessionen vet appen att kontakten har.
@@ -95,9 +97,10 @@ beslutet. Ingen kod är ändrad.
     - Ingen kryptografi: appen jämför bara nummer.
   - Nackdelar:
     - **Sidorna kan skicka på olika sessioner länge.** Skriver båda innan
-      de har läst den andras senaste meddelande, byter båda till den
-      sessionen den andra skrev på. Det kan upprepas så länge ni skriver
-      samtidigt, vilket är vanligt när appen bara hämtar var 1–60 minut.
+      de har läst den andras senaste meddelande, byter båda till den session
+      som den andra skrev på. Det kan upprepas så länge användarna skriver
+      samtidigt, vilket är vanligt när appen bara hämtar med 1–60 minuters
+      mellanrum.
       Sidorna väljer samma session först när ett meddelande har lästs innan
       den andra skriver igen. Inget går förlorat, eftersom båda kan läsa
       båda sessionerna.
@@ -114,7 +117,7 @@ beslutet. Ingen kod är ändrad.
   meddelande** (`hasReceivedMessage`), annars den nyaste.
   - Fördelar:
     - Sidorna väljer samma session så fort var och en har läst ett
-      meddelande på båda sessionerna, oavsett när ni skriver.
+      meddelande på båda sessionerna, oavsett när användarna skriver.
     - En död utgående session tar aldrig emot något, så den väljs bort så
       fort kontakten skriver på en annan.
   - Nackdelar:
@@ -126,9 +129,10 @@ beslutet. Ingen kod är ändrad.
     - Ingen klient som använder regeln är hittad.
     - "Den nyaste" behöver ändå en räknare, som i (b).
 
-**Rekommendation: (b).** Bara (b) ger alltid användarna en väg ut: en ny
-skanning väljs direkt. (d) får sidorna att välja samma session snabbare,
-men det spelar ingen roll för om meddelanden kommer fram.
+**Rekommendation: (b).** Bland alternativen som håller krav 3 är (b) det
+enda där en ny skanning alltid väljs direkt. (d) får sidorna att välja
+samma session snabbare, men det spelar ingen roll för om meddelanden kommer
+fram.
 
 ## Radering av sessioner
 
@@ -153,17 +157,18 @@ kan veta vilken session kontakten skickar på just nu.
 - **(ii) Radera en session som varit inaktiv i 30 dagar**, om en annan
   session för kontakten har högre nummer.
   - Fördelar: färre sessioner.
-  - Nackdelar: har kontakten varit tyst längre än så, och har kontakten
-    fortfarande den raderade som sin senaste, går nästa meddelande
-    förlorat (krav 3).
+  - Nackdelar:
+    - Har kontakten varit tyst längre än så, och har kontakten fortfarande
+      den raderade som sin senaste, går nästa meddelande förlorat (krav 3).
+    - Behöver klockan, och en tid per session utöver numret.
 - **(iii) Radera inga sessioner i prototypen.**
   - Fördelar:
     - Inget meddelande går förlorat genom att en session raderas.
     - Minst kod, och ingen klocka behövs.
   - Nackdelar:
-    - Tillståndet växer med varje ny skanning, med högst två sessioner per
-      skanning. Med två telefoner som sällan skannar om är det lite, men
-      storleken är inte mätt (se Fakta).
+    - Tillståndet växer med varje nytt möte, med högst två sessioner per
+      möte där båda skannar. Med två telefoner som sällan skannar om är det
+      lite, men storleken är inte mätt (se Fakta).
     - Gamla sessioners nycklar ligger kvar i telefonen.
     - En raderingsregel måste tas fram efter prototypen.
 
@@ -179,13 +184,26 @@ säkert håller krav 3. (i) är utgångspunkten när raderingen tas upp igen.
   - "regeln jämför bara text" blir "regeln jämför bara nummer";
   - testet "radering efter 48 timmar" byts mot testerna nedan;
   - den öppna frågan stängs.
+- **0004, "Beslut":** att det är förtydligat när den andra sessionen får
+  raderas (§2) byts mot att inga sessioner raderas i prototypen (0006).
+- **0004 §6, steg 3:** sessionens nummer sparas i samma skrivning som dess
+  pickle.
 - **0004 §8 (a):** meningarna om att kontaktens meddelanden inte går att
   läsa och att en ny skanning inte säkert hjälper ändras: med (b) byter
   kontakten så fort appen skriver på en session som kontakten kan läsa,
   och en ny skanning väljs direkt.
+- **0004 §10, "QR-koden visas igen":** skannar någon samma visning två
+  gånger blir det ingen ny session. Användaren ser inget särskilt, som
+  förut.
 - **0005, punkt 2:** varje session sparar sitt nummer, i stället för "när
-  den först tog emot ett meddelande". Mätningen i P3 (3 sessioner per
-  kontakt) gäller som förut.
+  den först tog emot ett meddelande".
+- **0005, punkt 3:** för varje kontakt sparas också de engångsnycklar från
+  kontaktens QR-koder som har gett en session, så att samma nyckel inte
+  ger en till.
+- **Mätning:** mätningen i P3 (3 sessioner per kontakt) gäller som förut.
+  Med (iii) finns ingen övre gräns per kontakt, så P4 mäter också en
+  skrivning med många sessioner för en kontakt. Tar den mer än 300 ms
+  stannar Claude, som i 0005.
 - **Färdplanen:** G5 bockas av. P4 bygger sessionsregeln enligt 0006 (b)
   och (iii). Under "Efter prototypen" läggs en raderingsregel för gamla
   sessioner till.
@@ -211,4 +229,4 @@ säkert håller krav 3. (i) är utgångspunkten när raderingen tas upp igen.
 ## Ägaren beslutar
 
 1. (a), (b), (c) eller (d).
-2. Radering: (i), (ii) eller (iii).
+2. Med (b) eller (d): radering (i), (ii) eller (iii).
