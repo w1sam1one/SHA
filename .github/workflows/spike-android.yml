@@ -10,6 +10,7 @@ on:
     paths:
       - spike/vodozemac/**
       - .github/workflows/spike-android.yml
+      - .github/scripts/resource-monitor.sh
 
 permissions:
   contents: read
@@ -54,6 +55,13 @@ jobs:
           fi
           df -h /
 
+      - name: Runner resources
+        run: |
+          echo "cpus=$(nproc)"
+          free -m
+          swapon --show || true
+          df -h /
+
       - name: Install Flutter ${{ env.FLUTTER_VERSION }} (checksum verified)
         working-directory: .
         run: |
@@ -86,6 +94,49 @@ jobs:
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      - name: Get packages (lockfile must match)
+        run: |
+          flutter config --no-analytics
+          flutter pub get --enforce-lockfile
+
+      # cargokit builds with `rustup run stable` (flutter_vodozemac 0.9.1,
+      # cargokit/build_tool/lib/src/builder.dart), not with the toolchain
+      # installed above. Print the one it will use.
+      - name: Rust toolchain used by cargokit
+        run: rustup run stable rustc --version
+
+      # The runner has 7.9 GB RAM and 0-3 GB swap (both seen). With the project's
+      # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.8 GB
+      # while the emulator held 2-3.4 GB and rustc ran: swap filled up and
+      # the runner was shut down ("The runner has received a shutdown
+      # signal"), seen in ci.yml's app-android job; the same settings are
+      # used here. Settings in ~/.gradle/gradle.properties win over the
+      # project's: no daemon left running, Kotlin in the same process, and a
+      # smaller heap.
+      - name: Gradle memory limits for CI
+        run: |
+          mkdir -p "$HOME/.gradle"
+          cat > "$HOME/.gradle/gradle.properties" <<'PROPS'
+          org.gradle.daemon=false
+          org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError
+          kotlin.compiler.execution.strategy=in-process
+          PROPS
+          cat "$HOME/.gradle/gradle.properties"
+
+      # Build first, while the emulator is not running yet: the Rust part
+      # and the Java/Kotlin compile are the memory peak. The test step below
+      # reuses most of that build.
+      - name: Build the APK before starting the emulator
+        run: |
+          "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
+          monitor=$!
+          status=0
+          flutter build apk --debug --target-platform android-x64 --target integration_test/olm_spike_test.dart || status=$?
+          kill "$monitor" 2>/dev/null || true
+          echo "Gradle and Kotlin processes left after the build:"
+          ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
+          exit "$status"
 
       - name: Start emulator
         timeout-minutes: 15
@@ -129,19 +180,34 @@ jobs:
                "android=$(adb shell getprop ro.build.version.release | tr -d '\r')" \
                "sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
-      - name: Get packages (lockfile must match)
+      # -memory 2048 did not lower the emulator's RAM (hardware-qemu.ini still
+      # said 2560 in ci.yml, run for e0745db), so no flag is set. This prints
+      # what it got.
+      - name: Emulator memory settings
         run: |
-          flutter config --no-analytics
-          flutter pub get --enforce-lockfile
-
-      # cargokit builds with `rustup run stable` (flutter_vodozemac 0.9.1,
-      # cargokit/build_tool/lib/src/builder.dart), not with the toolchain
-      # installed above. Print the one it will use.
-      - name: Rust toolchain used by cargokit
-        run: rustup run stable rustc --version
+          grep -i -E "ram|heap|dataPartition|cpu.ncore" \
+            "$HOME/.android/avd/spike.avd/config.ini" \
+            "$HOME/.android/avd/spike.avd/hardware-qemu.ini" || true
+          free -m
 
       - name: flutter test integration_test on the emulator (R1-R8)
-        run: flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded
+        run: |
+          "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
+          monitor=$!
+          status=0
+          flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded || status=$?
+          kill "$monitor" 2>/dev/null || true
+          exit "$status"
+
+      # Covers the build step too, and runs also when a step failed.
+      - name: Kernel out-of-memory messages
+        if: always()
+        run: |
+          if out="$(sudo dmesg 2>&1)"; then
+            printf '%s\n' "$out" | grep -i -E "out of memory|oom-kill|killed process" || echo "dmesg: no OOM lines"
+          else
+            echo "dmesg could not be read"
+          fi
 
       - name: Emulator log (on failure)
         if: failure()

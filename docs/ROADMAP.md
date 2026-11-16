@@ -126,6 +126,10 @@ Nyast först. En rad per paket eller körning som ändrar något.
   rättat efter granskning. Rekommendation: senast aktiva sessionen, som i
   matrix-js-sdk v30, och ingen radering av sessioner i prototypen. P4
   väntar på G5.
+- 2026-11-16 – CI: emulatorjobben föll för att runnern fick slut på minne
+  (Gradle-daemonen upp till 3,8 GB samtidigt som emulatorn och rustc, 235 MB
+  ledigt före avbrottet). APK:n byggs nu innan emulatorn startar, Gradle får
+  2 GB och lämnar ingen daemon kvar. Minst 2,7 GB ledigt i mätningen efteråt.
 - 2026-11-14 – G4 klar: ägaren valde (A) och (i) i 0005, med gränsen
   300 ms. 0005 har status "Accepted by owner". 0004 §6 och §7 och P3 här
   är uppdaterade.
