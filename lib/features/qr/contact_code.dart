@@ -31,6 +31,9 @@ final class ScannedCode {
 /// The 96 bytes are the Olm identity key, one new one-time key and the
 /// addressing key, 32 bytes each: 8 + 128 = 136 characters. There is no hash
 /// in the code (0004 §1 (a)): the two people compare the verification code.
+///
+/// OGRANSKAT (0004 §3): the addressing key is a static X25519 key kept beside
+/// Olm, and the verification code does not cover it.
 abstract final class ContactCode {
   static const String scheme = 'shaid';
   static const int version = 2;

@@ -34,6 +34,28 @@ void main() {
     },
   );
 
+  test('the addressing key from the code gives the same mailbox IDs on both '
+      'sides (0004 §3 (A))', () async {
+    final alice = ShaCryptoService(vault: InMemoryVault());
+    final bob = ShaCryptoService(vault: InMemoryVault());
+    final aliceId = await alice.createIdentity();
+    final bobId = await bob.createIdentity();
+    // Bob scans Alice's code; Alice scans Bob's.
+    final aliceSeen = ContactCode.parse(ContactCode.encode(bundle, aliceId));
+    final bobSeen = ContactCode.parse(ContactCode.encode(bundle, bobId));
+    final bobKeys = await bob.conversationKeys(aliceSeen.addressingKey);
+    final aliceKeys = await alice.conversationKeys(bobSeen.addressingKey);
+    const epoch = 20000;
+    expect(
+      await bob.mailboxId(bobKeys, MessageDirection.outgoing, epoch),
+      await alice.mailboxId(aliceKeys, MessageDirection.incoming, epoch),
+    );
+    expect(
+      await bob.mailboxId(bobKeys, MessageDirection.outgoing, epoch),
+      isNot(await bob.mailboxId(bobKeys, MessageDirection.incoming, epoch)),
+    );
+  });
+
   test('a shaid:1 code asks the contact to update the app', () {
     expect(
       () => ContactCode.parse('shaid:1:${addressing.hash.hex}:AAAA'),
