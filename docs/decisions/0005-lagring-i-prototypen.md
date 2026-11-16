@@ -16,7 +16,8 @@ tillagt.
 - **Gränsen 300 ms** för en skrivning gäller. Tar en skrivning längre tid i
   mätningen stannar Claude och tar frågan tillbaka till ägaren.
 
-Resten av dokumentet är underlaget som beslutet bygger på, oförändrat.
+Resten av dokumentet är underlaget som beslutet bygger på. Därifrån är
+bara status, inledningen och en rad under "Ägaren beslutar" ändrade.
 
 ## Varför ett beslut behövs
 

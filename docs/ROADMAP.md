@@ -33,10 +33,13 @@ Prototypen är klar när allt detta gäller:
   tester mot appens klasser. Enligt 0005 (A) och (i):
   - Först görs valvet säkert: skrivningen ger fel om fsync eller namnbytet
     misslyckas, mappen fsyncas, och `reset()` raderar nyckeln först.
-  - Valvet får ett emulatortest: skriva, läsa, återställa, en stor post, en
-    misslyckad skrivning och en avbruten återställning.
+  - Valvet får ett emulatortest: skriva, läsa, återställa och en stor post.
+    En misslyckad skrivning ger fel, och poster som blev kvar efter en
+    avbruten återställning går inte att läsa.
   - Hela tillståndet sparas som en enda valvpost, och meddelanden bara
     tills de har visats.
+  - Tester: krasch efter varje steg i §6, och att `resetIdentity()` lämnar
+    inget kvar.
   - Skrivning och läsning mäts på emulatorn. Tar en skrivning mer än
     300 ms stannar Claude och frågar ägaren.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
@@ -44,7 +47,7 @@ Prototypen är klar när allt detta gäller:
   Sessionsregeln (§2): väntar på G5. Texterna i §10 som P4 behöver
   godkänns av ägaren först.
   Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
-  väljer antal dagar. Kontakter sparas krypterade via valvet.
+  väljer antal dagar. Kontakterna sparas i tillståndets valvpost (0005 (A)).
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
 - [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).

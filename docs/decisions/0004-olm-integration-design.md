@@ -524,6 +524,10 @@ vilken typ av Olm-meddelande det är.
    - paketets hash.
 4. **Visa meddelandet** först därefter.
 
+I prototypen finns ingen historik (§7). Där ligger meddelandet i
+tillståndet tills det har visats, och utkorgens paket tills relayn har
+svarat `204` (0005 (i)).
+
 Vad som händer vid en krasch:
 - **Före steg 3** har inget ändrats på disk. Nästa hämtning gör om allt från
   det gamla läget, som fortfarande stämmer, så inget försvinner.
