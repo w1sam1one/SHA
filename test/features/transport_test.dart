@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sha/core/providers.dart';
 import 'package:sha/crypto/crypto.dart';
 import 'package:sha/features/chat/chat_controller.dart';
+import 'package:sha/features/chat/message_payload.dart';
 import 'package:sha/features/chat/message_store.dart';
 import 'package:sha/features/chat/messaging_service.dart';
 import 'package:sha/features/contacts/contacts_store.dart';
@@ -32,11 +33,15 @@ final class FakeRelay implements RelayClient {
   RelayException? failFetch;
   int fetches = 0;
 
+  /// Mailboxes (hex) that answer 507 to every drop.
+  final Set<String> full = {};
+
   @override
   Future<void> drop(Uint8List mailboxId, Uint8List packet) async {
     final e = failDrop;
     failDrop = null;
     if (e != null) throw e;
+    if (full.contains(hex(mailboxId))) throw const RelayFull();
     dropped.add(packet);
     boxes.putIfAbsent(hex(mailboxId), () => []).add(packet);
   }
@@ -152,6 +157,18 @@ final class App {
 /// A vault whose writes fail while [failWrites] is set.
 final class FailingVault extends InMemoryVault {
   bool failWrites = false;
+
+  /// The next read throws, once.
+  bool failNextRead = false;
+
+  @override
+  Future<Uint8List?> read(String name) async {
+    if (failNextRead) {
+      failNextRead = false;
+      throw const CryptoException('locked', CryptoErrorKind.deviceLocked);
+    }
+    return super.read(name);
+  }
 
   @override
   Future<void> write(String name, Uint8List value) async {
@@ -309,7 +326,10 @@ void main() {
     final (alice, bob) = await met();
     await alice.send('x');
     final box = bob.relay.boxes.values.single;
-    box.add(Uint8List.fromList([2, ...box[0].sublist(1)]));
+    // Version bytes 2, 0 and 1: 0 and 1 are also Olm types.
+    for (final v in [2, 0, 1]) {
+      box.add(Uint8List.fromList([v, ...box[0].sublist(1)]));
+    }
     final ticks = bob.container.read(failureTickProvider);
     await bob.fetchAll();
     await bob.fetchAll();
@@ -318,7 +338,8 @@ void main() {
     final counts = await bob.crypto.olm.failureCounts(
       bob.peer.olm!.identityKey,
     );
-    expect(counts.malformed, 1, reason: 'counted once, not per fetch');
+    expect(counts.malformed, 3, reason: 'counted once each, not per fetch');
+    expect(counts.unreadable, 0);
   });
 
   test('an open chat marks messages shown; until then they survive a '
@@ -428,6 +449,137 @@ void main() {
     bobVault.failWrites = false;
     await bob.fetchAll();
     expect(bob.texts, ['viktigt']);
+  });
+
+  test('a round that fails still plans the next one, and the saved '
+      'messages are restored then (review S2)', () async {
+    final relay = FakeRelay();
+    final alice = await App(relay).start();
+    final bobVault = FailingVault();
+    final bob = await App(relay, bobVault).start();
+    await exchange(alice, bob);
+    await alice.send('sparat');
+    await bob.fetchAll(); // in Bob's inbox, not shown
+    await bob.restart();
+
+    // The round's first vault read (the mailbox keys) fails.
+    bobVault.failNextRead = true;
+    bob.transport.resume();
+    await pumpEventQueue();
+    final active = bob.timers.where((t) => t.isActive).toList();
+    expect(active, hasLength(1), reason: 'no fetches, but the next round');
+    expect(bob.texts, ['sparat'], reason: 'restored before the failure');
+
+    active.single.fire(); // the next round works
+    await pumpEventQueue();
+    expect(bob.timers.where((t) => t.isActive), hasLength(3));
+  });
+
+  test('contacts that could not be read are read again', () async {
+    final relay = FakeRelay();
+    final alice = await App(relay).start();
+    final bobVault = FailingVault();
+    final bob = await App(relay, bobVault).start();
+    await exchange(alice, bob);
+    bob.container.dispose();
+    bob.newContainer();
+    bobVault.failNextRead = true;
+    final store = bob.container.read(contactsProvider.notifier);
+    await expectLater(store.ready, throwsA(isA<CryptoException>()));
+    await store.ready;
+    expect(bob.contacts.single.name, 'Alice');
+  });
+
+  test('a pause and resume during a round gives one set of timers', () async {
+    final (alice, _) = await met();
+    alice.transport
+      ..resume()
+      ..pause()
+      ..resume();
+    await pumpEventQueue();
+    expect(alice.timers.where((t) => t.isActive), hasLength(3));
+  });
+
+  test('a full mailbox for one contact does not stop the others', () async {
+    final relay = FakeRelay();
+    final alice = await App(relay).start();
+    final bob = await App(relay).start();
+    final carol = await App(relay).start();
+    await exchange(alice, bob);
+    // Alice meets Carol too.
+    final aliceCode = await alice.crypto.olm.publishBundle();
+    final carolCode = await carol.crypto.olm.publishBundle();
+    await alice.container
+        .read(contactsProvider.notifier)
+        .addScanned(
+          bundle: carolCode,
+          addressingKey: carol.identity,
+          name: 'Carol',
+          metAt: alice.now,
+        );
+    await carol.container
+        .read(contactsProvider.notifier)
+        .addScanned(
+          bundle: aliceCode,
+          addressingKey: alice.identity,
+          name: 'Alice',
+          metAt: carol.now,
+        );
+    final toBob = alice.contacts.firstWhere((c) => c.name == 'Bob');
+    final toCarol = alice.contacts.firstWhere((c) => c.name == 'Carol');
+    relay.full.add(hex(await alice.messaging.outgoingMailbox(toBob)));
+
+    for (final (c, text) in [(toBob, 'b1'), (toBob, 'b2'), (toCarol, 'c1')]) {
+      final (_, m) = await alice.messaging.send(contact: c, text: text);
+      alice.container.read(messageStoreProvider.notifier).add(c.id, m);
+    }
+    await alice.transport.sendPending();
+    expect(alice.status, ServerStatus.full);
+    expect(
+      (await alice.crypto.olm.outbox()).map((o) => o.text.length),
+      hasLength(2),
+      reason: 'both of Bob\'s wait, in order',
+    );
+    await carol.fetchAll();
+    expect(carol.texts, ['c1']);
+  });
+
+  test('a second message with the same ID is not kept on disk', () async {
+    final (alice, bob) = await met();
+    final json = MessagePayload(
+      id: 'same',
+      sentAt: alice.now,
+      text: 'två gånger',
+    ).encode();
+    for (var i = 0; i < 2; i++) {
+      final out = await alice.crypto.olm.encrypt(
+        alice.peer.olm!.identityKey,
+        json,
+      );
+      await alice.transport.sendPending();
+      expect(out.packet, isNotEmpty);
+    }
+    await bob.fetchAll();
+    expect(bob.texts, ['två gånger']);
+    expect(await bob.crypto.olm.inbox(), hasLength(1));
+  });
+
+  test('a text that is too long is refused before anything is saved', () async {
+    final (alice, _) = await met();
+    await expectLater(
+      alice.messaging.send(
+        contact: alice.peer,
+        text: 'x' * (MessagingService.maxTextLength + 1),
+      ),
+      throwsA(isA<MessageTooLongException>()),
+    );
+    expect(await alice.crypto.olm.outbox(), isEmpty);
+  });
+
+  test('the status is neutral until the server answers', () async {
+    final (alice, _) = await met();
+    await alice.restart();
+    expect(alice.status, ServerStatus.ok);
   });
 
   test('without a server address nothing is sent or fetched', () async {

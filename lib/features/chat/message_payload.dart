@@ -16,6 +16,9 @@ final class MessagePayload {
 
   static const int version = 3;
 
+  /// The largest time DateTime can hold, in microseconds.
+  static const int _maxMicroseconds = 8640000000000000000;
+
   final String id;
 
   /// In UTC after [decode].
@@ -44,6 +47,8 @@ final class MessagePayload {
     if (v != version || id is! String || t is! int || m is! String) {
       return null;
     }
+    // DateTime throws outside ±8.64e15 ms; such a time is not a payload.
+    if (t.abs() > _maxMicroseconds) return null;
     return MessagePayload(
       id: id,
       sentAt: DateTime.fromMicrosecondsSinceEpoch(t, isUtc: true),

@@ -89,7 +89,8 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                       'brevlåde-id, paketets storlek, när paketet kom fram och '
                       'din IP-adress.',
                   'Appen hämtar bara när den är öppen, varje brevlåda vid en '
-                      'egen slumpad tid inom det intervall du har valt.',
+                      'egen slumpad tid i varje runda. En runda är det intervall '
+                      'du har valt, eller längre om du har många kontakter.',
                 ],
               ),
               _Section(

@@ -41,12 +41,12 @@ class ChatController extends Notifier<ChatView> {
   ChatView build() {
     ref.listen(messageStoreProvider.select((all) => all[contactId]), (_, list) {
       state = ChatView(messages: list ?? const [], notices: state.notices);
-      unawaited(_markShown());
+      _quietly(_markShown());
     });
-    ref.listen(failureTickProvider, (_, _) => unawaited(_readFailures()));
+    ref.listen(failureTickProvider, (_, _) => _quietly(_readFailures()));
     scheduleMicrotask(() {
-      unawaited(_markShown());
-      unawaited(_readFailures());
+      _quietly(_markShown());
+      _quietly(_readFailures());
     });
     return ChatView(
       messages: ref.read(messageStoreProvider.notifier).forContact(contactId),
@@ -81,8 +81,14 @@ class ChatController extends Notifier<ChatView> {
   }
 
   /// One read at a time, so the same counts are never added twice.
+  /// A failure (a locked phone) leaves the message or counter saved, and
+  /// the next change tries again. The text is not kept.
+  static void _quietly(Future<void> work) => unawaited(work.catchError((_) {}));
+
+  /// One read at a time, so the same counts are never added twice. A failed
+  /// read does not stop the next one.
   Future<void> _readFailures() =>
-      _reading = _reading.then((_) => _readFailuresNow());
+      _reading = _reading.then((_) => _readFailuresNow()).catchError((_) {});
   Future<void> _reading = Future.value();
 
   Future<void> _readFailuresNow() async {

@@ -17,32 +17,34 @@ class TransportLifecycle extends ConsumerStatefulWidget {
 
 class _TransportLifecycleState extends ConsumerState<TransportLifecycle> {
   late final AppLifecycleListener _listener;
+  late final Transport _transport;
 
   @override
   void initState() {
     super.initState();
+    _transport = ref.read(transportProvider);
     _listener = AppLifecycleListener(onStateChange: _changed);
     // After the first frame: providers may not change while building.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final now = WidgetsBinding.instance.lifecycleState;
       if (mounted && (now == null || now == AppLifecycleState.resumed)) {
-        ref.read(transportProvider).resume();
+        _transport.resume();
       }
     });
   }
 
   void _changed(AppLifecycleState state) {
-    final transport = ref.read(transportProvider);
     if (state == AppLifecycleState.resumed) {
-      transport.resume();
+      _transport.resume();
     } else {
-      transport.pause();
+      _transport.pause();
     }
   }
 
   @override
   void dispose() {
     _listener.dispose();
+    _transport.pause();
     super.dispose();
   }
 

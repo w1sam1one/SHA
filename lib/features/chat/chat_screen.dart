@@ -76,6 +76,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
     final view = ref.watch(chatProvider(widget.contactId));
     final status = ref.watch(serverStatusProvider);
+    final settings = ref.watch(transportSettingsProvider).value;
+    final statusText = _statusText(
+      noServer: settings != null && settings.server == null,
+      status: status,
+      waiting: view.messages.any((m) => m.pending),
+    );
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -124,7 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ],
             ),
           ),
-          if (_statusText(status) case final text?) _StatusNotice(text: text),
+          if (statusText != null) _StatusNotice(text: statusText),
           SafeArea(
             top: false,
             child: Padding(
@@ -175,17 +181,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
-/// What the chat says about the server (0004 §10). Nothing when all is
-/// well or when there is no answer: messages then wait in the outbox, and
-/// each one says it is not sent yet.
-String? _statusText(ServerStatus status) => switch (status) {
-  ServerStatus.notConfigured =>
-    'Ingen server är inställd än. Meddelanden sparas och skickas när du har '
-        'skrivit in serverns adress under Inställningar.',
-  ServerStatus.busy => NoticeTexts.serverBusy,
-  ServerStatus.full => NoticeTexts.serverFull,
-  ServerStatus.ok || ServerStatus.unavailable => null,
-};
+/// What the chat says about the server (0004 §10). "No server" comes from
+/// the settings. "Full" is shown only in a chat with a message waiting.
+/// Nothing when all is well or when there is no answer: messages then wait
+/// in the outbox, and each one says it is not sent yet.
+String? _statusText({
+  required bool noServer,
+  required ServerStatus status,
+  required bool waiting,
+}) {
+  if (noServer) {
+    return 'Ingen server är inställd än. Meddelanden sparas och skickas när '
+        'du har skrivit in serverns adress under Inställningar.';
+  }
+  return switch (status) {
+    ServerStatus.busy => NoticeTexts.serverBusy,
+    ServerStatus.full when waiting => NoticeTexts.serverFull,
+    _ => null,
+  };
+}
 
 Widget? _hideCounter(
   BuildContext context, {
