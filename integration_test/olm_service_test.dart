@@ -8,6 +8,10 @@
 //   with 20 contacts and 3 sessions each, 5 packets of the largest size in
 //   the outbox and 20 received messages. A write over 300 ms means Claude
 //   stops and asks the owner, so the numbers are printed, not asserted.
+//
+// WARNING: the measurement resets the vault, so it deletes the identity and
+// every key on the device it runs on. Run it only on an emulator or a test
+// phone.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sha/crypto/crypto.dart';
