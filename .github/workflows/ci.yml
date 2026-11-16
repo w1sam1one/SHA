@@ -7,8 +7,9 @@
 #   in Flutter's releases_linux.json. Move to a newer Flutter in its own PR.
 # - Go 1.27.4: the newest Go release when this was written. relay/go.mod
 #   requires 1.26 or later; relay tests have also been run with 1.26.11.
-# - Rust 1.97.0 for the spike's host build of flutter_vodozemac's native
-#   library (spike/vodozemac, cargo --locked). The Android builds are
+# - Rust 1.97.0 for the host builds of flutter_vodozemac's native library
+#   (cargo --locked): the spike's (spike/vodozemac) and the app's
+#   (tool/build_native_host.sh, for the Olm unit tests). The Android builds are
 #   different: the plugin's cargokit runs `rustup run stable cargo build`
 #   without --locked, so they use the runner's preinstalled stable Rust.
 #   Its version is printed in the log (app-android, spike-android.yml).
