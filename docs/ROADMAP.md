@@ -75,8 +75,9 @@ Prototypen är klar när allt detta gäller:
   för en skrivning.
 - **G5 – Sessionsregeln (före P4).** 0004 §2 har en öppen fråga: en session
   vars första meddelande aldrig kan läsas väljs aldrig bort av regeln om
-  minsta id. Claude skriver ett beslutsunderlag med alternativ, och ägaren
-  avgör.
+  minsta id. Beslutsunderlaget är
+  [0006](decisions/0006-sessionsregeln.md) ("Proposed – owner decides").
+  Ägaren väljer regel och hur sessioner raderas.
 
 ## Före första utdelning
 
@@ -121,6 +122,10 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – G5: beslutsunderlag 0006 (sessionsregeln) skrivet och
+  rättat efter granskning. Rekommendation: senast aktiva sessionen, som i
+  matrix-js-sdk v30, och ingen radering av sessioner i prototypen. P4
+  väntar på G5.
 - 2026-11-16 – CI: emulatorjobben föll för att runnern fick slut på minne
   (Gradle-daemonen upp till 3,8 GB samtidigt som emulatorn och rustc, 235 MB
   ledigt före avbrottet). APK:n byggs nu innan emulatorn startar, Gradle får
