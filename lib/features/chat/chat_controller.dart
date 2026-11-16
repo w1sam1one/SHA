@@ -60,7 +60,7 @@ class ChatController extends Notifier<ChatView> {
         .read(messagingServiceProvider)
         .send(contact: _contact, text: trimmed);
     ref.read(messageStoreProvider.notifier).add(contactId, message);
-    unawaited(ref.read(transportProvider).sendPending());
+    ref.read(transportProvider).sendSoon();
   }
 
   Future<void> _markShown() async {

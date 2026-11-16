@@ -242,7 +242,7 @@ class Transport {
       return;
     }
     await restoreSaved();
-    unawaited(sendPending());
+    _quietly(sendPending());
     final mailboxes = <({Contact contact, Uint8List mailbox})>[];
     // The first round after start waits for the saved contacts.
     await _ref.read(contactsProvider.notifier).ready;
@@ -261,11 +261,19 @@ class Transport {
     final timer = _ref.read(transportTimerProvider);
     for (final r in round.requests) {
       _timers.add(
-        timer(r.at, () => unawaited(fetch(r.item.contact, r.item.mailbox))),
+        timer(r.at, () => _quietly(fetch(r.item.contact, r.item.mailbox))),
       );
     }
     _timers.add(timer(round.length, _restart));
   }
+
+  /// Runs [work] in the background. A failure (for example a locked phone
+  /// or a failed vault write) leaves everything saved as it was (0004 §6),
+  /// and the next round tries again. Its text is not kept.
+  static void _quietly(Future<void> work) => unawaited(work.catchError((_) {}));
+
+  /// [sendPending] in the background, for the chat.
+  void sendSoon() => _quietly(sendPending());
 
   RelayClient? _client() {
     final server = _ref.read(transportSettingsProvider).value?.server;

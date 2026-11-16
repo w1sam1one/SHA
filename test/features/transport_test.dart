@@ -149,11 +149,29 @@ final class App {
   List<String?> get texts => [for (final m in messages) m.text];
 }
 
+/// A vault whose writes fail while [failWrites] is set.
+final class FailingVault extends InMemoryVault {
+  bool failWrites = false;
+
+  @override
+  Future<void> write(String name, Uint8List value) async {
+    if (failWrites) {
+      throw const CryptoException('crash', CryptoErrorKind.unavailable);
+    }
+    await super.write(name, value);
+  }
+}
+
 /// Alice and Bob meet and scan each other's codes.
 Future<(App, App)> met() async {
   final relay = FakeRelay();
   final alice = await App(relay).start();
   final bob = await App(relay).start();
+  await exchange(alice, bob);
+  return (alice, bob);
+}
+
+Future<void> exchange(App alice, App bob) async {
   final aliceCode = await alice.crypto.olm.publishBundle();
   final bobCode = await bob.crypto.olm.publishBundle();
   await alice.container
@@ -172,7 +190,6 @@ Future<(App, App)> met() async {
         name: 'Alice',
         metAt: bob.now,
       );
-  return (alice, bob);
 }
 
 void main() {
@@ -388,6 +405,29 @@ void main() {
       FetchInterval.sixty.duration,
     );
     expect(alice.timers.take(3).where((t) => t.isActive), isEmpty);
+  });
+
+  test('a failed save while fetching is not lost: the next round reads the '
+      'packet again (0004 §6)', () async {
+    final relay = FakeRelay();
+    final alice = await App(relay).start();
+    final bobVault = FailingVault();
+    final bob = await App(relay, bobVault).start();
+    await exchange(alice, bob);
+    await alice.send('viktigt');
+
+    bob.transport.resume();
+    await pumpEventQueue();
+    bobVault.failWrites = true;
+    for (final t in [...bob.timers.take(2)]) {
+      t.fire(); // must not throw out of the timer
+    }
+    await pumpEventQueue();
+    expect(bob.texts, isEmpty);
+
+    bobVault.failWrites = false;
+    await bob.fetchAll();
+    expect(bob.texts, ['viktigt']);
   });
 
   test('without a server address nothing is sent or fetched', () async {
