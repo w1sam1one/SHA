@@ -23,9 +23,13 @@ final class AndroidKeystoreVault implements KeyVault {
 
   final MethodChannel _channel;
 
+  /// The platform channel gives a read-only view of its message buffer.
+  /// Callers wipe what they read (`wipe`), so they get their own copy.
   @override
-  Future<Uint8List?> read(String name) =>
-      _call<Uint8List>('read', {'name': _checkName(name)});
+  Future<Uint8List?> read(String name) async {
+    final bytes = await _call<Uint8List>('read', {'name': _checkName(name)});
+    return bytes == null ? null : Uint8List.fromList(bytes);
+  }
 
   @override
   Future<void> write(String name, Uint8List value) =>
@@ -50,7 +54,8 @@ final class AndroidKeystoreVault implements KeyVault {
         CryptoErrorKind.entropy,
       );
     }
-    return bytes;
+    // Our own copy, which MixedEntropy can wipe (see [read]).
+    return Uint8List.fromList(bytes);
   }
 
   @override
