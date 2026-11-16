@@ -7,9 +7,13 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
-import android.util.AtomicFile
+import android.system.ErrnoException
+import android.system.Os
+import android.system.OsConstants
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
 import java.security.KeyStore
 import java.security.ProviderException
 import java.security.SecureRandom
@@ -30,6 +34,12 @@ import javax.crypto.spec.GCMParameterSpec
  *   `noBackupFilesDir/sha_keys/`, which is private to the app and never
  *   backed up. The entry name is GCM associated data, so blobs cannot be
  *   swapped between entries.
+ * - A write either completes or throws: the blob is written to a temporary
+ *   file, fsynced, renamed over the entry and the directory is fsynced, and
+ *   any failure raises [VaultException.WRITE_FAILED]. (Android's AtomicFile,
+ *   used before, only logs a failed fsync or rename: 0005, "Fakta".)
+ * - [reset] deletes the wrapping key first, so blobs left behind by an
+ *   interrupted reset can never be decrypted (0004 §6, 0005).
  * - Nothing here logs, and errors carry fixed codes only.
  */
 class KeystoreVault(context: Context) {
@@ -39,7 +49,7 @@ class KeystoreVault(context: Context) {
 
     fun read(name: String): ByteArray? {
         val bytes = try {
-            AtomicFile(fileFor(name)).readFully()
+            fileFor(name).readBytes()
         } catch (_: FileNotFoundException) {
             return null
         }
@@ -75,39 +85,60 @@ class KeystoreVault(context: Context) {
         iv.copyInto(blob, 2)
         sealed.copyInto(blob, 2 + iv.size)
 
-        if (!dir.isDirectory && !dir.mkdirs()) throw VaultException(VaultException.UNAVAILABLE)
-        val file = AtomicFile(fileFor(name))
-        val out = file.startWrite()
+        val target = fileFor(name)
+        val temporary = File(dir, "$name$TEMPORARY_SUFFIX")
         try {
-            out.write(blob)
-            file.finishWrite(out)
-        } catch (e: Exception) {
-            file.failWrite(out)
+            if (!dir.isDirectory && !dir.mkdirs()) throw IOException("no directory")
+            FileOutputStream(temporary).use { out ->
+                out.write(blob)
+                out.flush()
+                // Throws SyncFailedException if the data did not reach the disk.
+                out.fd.sync()
+            }
+            // rename(2) replaces the old entry in one step; throws ErrnoException.
+            Os.rename(temporary.path, target.path)
+            // Make the rename itself survive a power cut.
+            syncDirectory()
+        } catch (e: VaultException) {
+            temporary.delete()
             throw e
+        } catch (_: Exception) {
+            temporary.delete()
+            throw VaultException(VaultException.WRITE_FAILED)
         }
     }
 
+    /** Deletes one entry. Throws [VaultException.WRITE_FAILED] if it stays. */
     fun delete(name: String) {
-        AtomicFile(fileFor(name)).delete()
+        val target = fileFor(name)
+        File(dir, "$name$TEMPORARY_SUFFIX").delete()
+        if (!target.delete() && target.exists()) throw VaultException(VaultException.WRITE_FAILED)
+        if (dir.isDirectory) syncDirectorySafely()
     }
 
     /**
-     * Deletes every stored blob (including AtomicFile's temporary/backup
-     * files), then the wrapping key. The directory itself is kept. Safe to
-     * call when nothing exists.
+     * Deletes the wrapping key first, then every file in the directory
+     * (blobs and temporary files, including leftovers from Android's
+     * AtomicFile in older builds). The directory itself is kept. Safe to call
+     * when nothing exists.
+     *
+     * The order matters: if the reset is interrupted after the key is gone,
+     * the files that are left cannot be decrypted by anyone. Files are
+     * deleted in name order, so an interruption is reproducible in tests.
      */
     fun reset() {
-        dir.listFiles()?.forEach { file ->
-            if (file.isFile && !file.delete() && file.exists()) {
-                throw VaultException(VaultException.UNAVAILABLE)
-            }
-        }
         try {
             val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
             if (keyStore.containsAlias(KEY_ALIAS)) keyStore.deleteEntry(KEY_ALIAS)
         } catch (_: Exception) {
             throw VaultException(VaultException.UNAVAILABLE)
         }
+        dir.listFiles()?.sortedBy { it.name }?.forEach { file ->
+            if (file.isFile && !file.delete() && file.exists()) {
+                throw VaultException(VaultException.WRITE_FAILED)
+            }
+        }
+        if (dir.isDirectory) syncDirectorySafely()
     }
 
     /** Bytes from the platform CSPRNG (Conscrypt/BoringSSL, kernel-seeded). */
@@ -124,6 +155,23 @@ class KeystoreVault(context: Context) {
             "deviceSecure" to (keyguard?.isDeviceSecure == true),
             "unlockedDeviceRequired" to (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P),
         )
+    }
+
+    private fun syncDirectory() {
+        val fd = Os.open(dir.path, OsConstants.O_RDONLY, 0)
+        try {
+            Os.fsync(fd)
+        } finally {
+            Os.close(fd)
+        }
+    }
+
+    private fun syncDirectorySafely() {
+        try {
+            syncDirectory()
+        } catch (_: ErrnoException) {
+            throw VaultException(VaultException.WRITE_FAILED)
+        }
     }
 
     private fun fileFor(name: String): File {
@@ -192,6 +240,7 @@ class KeystoreVault(context: Context) {
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val GCM_TAG_BYTES = 16
         private const val FORMAT_VERSION: Byte = 1
+        private const val TEMPORARY_SUFFIX = ".bin.tmp"
         private val NAME = Regex("^[a-z0-9][a-z0-9._-]{0,63}$")
     }
 }
@@ -202,5 +251,6 @@ class VaultException(val code: String) : Exception(code) {
         const val INVALIDATED = "INVALIDATED"
         const val INVALID = "INVALID"
         const val UNAVAILABLE = "UNAVAILABLE"
+        const val WRITE_FAILED = "WRITE_FAILED"
     }
 }

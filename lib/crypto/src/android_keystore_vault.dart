@@ -94,6 +94,12 @@ final class AndroidKeystoreVault implements KeyVault {
           'Stored key failed authentication',
           CryptoErrorKind.corrupt,
         ),
+        // The native write, delete or reset did not complete (0005): the
+        // caller must not assume anything was saved.
+        'WRITE_FAILED' => const CryptoException(
+          'Saving to the vault failed',
+          CryptoErrorKind.unavailable,
+        ),
         _ => const CryptoException(
           'Keystore unavailable',
           CryptoErrorKind.unavailable,

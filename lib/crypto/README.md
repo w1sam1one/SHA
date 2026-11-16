@@ -40,6 +40,15 @@ Kotlin: AES-256-GCM med Keystore-nyckeln "se.sha.vault.wrap.v1"
 noBackupFilesDir/sha_keys/<namn>.bin   (atomisk skrivning)
 ```
 
+- **Skrivningen är klar eller ger fel.** Posten skrivs till en tillfällig
+  fil, som fsyncas och sedan döps om över den gamla med `rename(2)`. Sist
+  fsyncas mappen. Misslyckas något steg ger `write` felet `WRITE_FAILED`, och
+  den gamla posten finns kvar (0005). Androids `AtomicFile`, som användes
+  förut, loggar bara ett misslyckat fsync eller namnbyte.
+- **`reset()` raderar nyckeln först** och filerna sedan. Avbryts det, går
+  filerna som blev kvar inte att läsa (0004 §6, 0005).
+- **Testat på emulatorn** i `integration_test/vault_test.dart`.
+
 - **Omslagsnyckeln skapas inne i Android Keystore** och kan aldrig exporteras.
   Den hamnar i **StrongBox** (separat säkerhetschip) om telefonen har det,
   annars i **TEE**. Den är bunden till appens UID, så andra appar och tjänster

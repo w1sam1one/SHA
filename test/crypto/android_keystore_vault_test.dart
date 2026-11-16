@@ -19,6 +19,7 @@ void main() {
       ('LOCKED', CryptoErrorKind.deviceLocked),
       ('INVALIDATED', CryptoErrorKind.keyInvalidated),
       ('CORRUPT', CryptoErrorKind.corrupt),
+      ('WRITE_FAILED', CryptoErrorKind.unavailable),
       ('ANYTHING', CryptoErrorKind.unavailable),
     ]) {
       respond((_) => throw PlatformException(code: code, message: 'secret?'));

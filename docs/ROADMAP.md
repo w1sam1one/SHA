@@ -132,6 +132,10 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P3, första delen: valvet görs säkert enligt 0005. Skrivningen
+  fsyncar filen och mappen och ger fel i stället för att bara logga, och
+  `reset()` raderar nyckeln först. Nytt emulatortest
+  `integration_test/vault_test.dart`. P3 fortsätter med Olm-tillståndet.
 - 2026-11-16 – G5 klar: ägaren valde (b) och (iii) i 0006, som har status
   "Accepted by owner". Raderingsregeln för gamla sessioner står under "Före
   första utdelning". Texterna i 0004 §10 är godkända, med antal meddelanden
