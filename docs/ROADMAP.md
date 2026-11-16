@@ -1,10 +1,22 @@
-# Färdplan: intern prototyp
+# Färdplan: från prototyp till version 1.0
 
 Den här filen styr vad Claude bygger härnäst, enligt [`CLAUDE.md`](../CLAUDE.md).
-Paketen görs i ordning. En grind betyder att ägaren måste göra något innan
-arbetet fortsätter.
+Paketen görs i ordning, fas för fas. En grind betyder att ägaren måste göra
+något innan arbetet med det som beror på grinden fortsätter.
 
-## Klart när
+Arbetssätt (ägarens instruktion 2026-11-16, utöver `CLAUDE.md`):
+- `CLAUDE.md` gäller i allt. Inget här ändrar "Aldrig", utom PR:en vid G8,
+  som Claude förbereder när ägaren ber om det och som bara ägaren mergar.
+- Vid varje grind skriver Claude steg för steg, på enkel svenska, vad ägaren
+  ska göra.
+- Nya val som ändrar säkerheten blir beslutsunderlag och grindar, som
+  hittills.
+- Medan Claude väntar på ägaren vid en grind får Claude göra andra paket som
+  inte beror på den.
+
+## Fas 1 – Intern prototyp
+
+### Klart när
 
 Prototypen är klar när allt detta gäller:
 
@@ -18,7 +30,7 @@ Prototypen är klar när allt detta gäller:
 5. `docs/prototyp.md` beskriver hur ägaren sätter upp relayn och provar med
    två telefoner.
 
-## Paket
+### Paket
 
 - [x] **P0 – Styrning.** `CLAUDE.md` och den här filen.
 - [x] **P1 – 0004 godkänd.** Merga PR #8. Skriv in ägarens beslut i 0004:
@@ -67,7 +79,7 @@ Prototypen är klar när allt detta gäller:
 - [ ] **P8 – Leverans till ägaren.** Debug-APK som CI-artefakt och
   `docs/prototyp.md`.
 
-## Grindar (bara ägaren)
+### Grindar (bara ägaren)
 
 - **G1 – Aktivera.** Merga PR:en med `CLAUDE.md`. Innan dess gör den
   schemalagda körningen ingenting.
@@ -83,6 +95,66 @@ Prototypen är klar när allt detta gäller:
   (iii) i [0006](decisions/0006-sessionsregeln.md): appen skickar på den
   senast aktiva sessionen, ordnad med en räknare, och inga sessioner raderas
   i prototypen.
+
+## Fas 2 – Klar för första utdelning (bara till testare)
+
+### Klart när
+
+Fas 2 är klar när allt detta gäller:
+
+1. Alla OGRANSKAT-punkter är granskade av en kryptoexpert (G6), och fynden är
+   rättade (F8).
+2. Telefontesterna (G3, med protokollet i F6) är godkända av ägaren.
+3. `LICENSE` är AGPL-3.0 (G8).
+4. CI är grön.
+
+Allt under "Före första utdelning" nedan ska då också vara gjort.
+
+### Paket
+
+- [ ] **F1 – Granskningspaket.** `docs/granskning/` med:
+  - en hotmodell;
+  - alla OGRANSKAT-punkter, med fil och rad;
+  - vad som är testat och hur;
+  - öppna frågor till kryptoexperten.
+
+  Ett motsvarande paket för granskningen av Flutter/Dart-lagret och bygget.
+- [ ] **F2 – Radering av gamla sessioner,** med 0006 (i) som utgångspunkt.
+  Först ett beslutsunderlag och en grind, sedan kod och tester.
+- [ ] **F3 – Historik i version 1** (0004 §7, 0005 (C) eller (ii)). Först ett
+  beslutsunderlag och en grind, sedan bygget om ägaren vill ha det.
+- [ ] **F4 – App-lås med PIN eller biometri** (README, "Nästa steg"). Först
+  ett beslutsunderlag och en grind, sedan bygget.
+- [ ] **F5 – Ärliga texter för en fungerande app:**
+  - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
+    tas bort när transporten fungerar;
+  - en enkel förklaring i appen av vad servern ser, och rekommendationen om
+    VPN (0002, "Formuleringar i appen");
+  - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
+    Apache-paketen.
+- [ ] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
+  steg, förväntat resultat och en ruta för ägarens resultat. Med farten i
+  StrongBox och TalkBack.
+- [ ] **F7 – Relayn i drift:**
+  - härdning och driftinstruktioner för en riktig VPS: förnyelse av TLS,
+    uppdateringar och övervakning utan IP-adresser;
+  - svar eller beslutsunderlag för de öppna frågorna i 0002 som påverkar
+    version 1.
+- [ ] **F8 – Rätta alla fynd** från granskningarna (G6) och telefontesterna
+  (G3).
+
+### Grindar (bara ägaren)
+
+- **G6 – Kryptoexperten.** Hitta en kryptoexpert och låt hen granska F1.
+  Fynden blir F8.
+- **G7 – Säkerhetsuppdateringar.** Slå på Dependency graph, Dependabot alerts
+  och security updates, och godkänn planen i 0004 §12.
+- **G8 – AGPL och öppen källkod.** När ägaren säger till förbereder Claude en
+  PR som byter `LICENSE` till AGPL-3.0, uppdaterar README och 0002, och lägger
+  till CONTRIBUTING med ett förslag på CLA. Bara ägaren mergar den och gör
+  repot publikt.
+- **Besluten i F2, F3 och F4.** Ägaren beslutar i varje beslutsunderlag innan
+  bygget börjar, som vid G4 och G5.
 
 ## Före första utdelning
 
@@ -107,31 +179,67 @@ någon annan än ägaren (0003, 0004 §13):
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
     alternativ C, §7 (historiken) och ett yttre lager.
 - En raderingsregel för gamla sessioner (0004 §2, 0006; (i) är
-  utgångspunkten). I prototypen raderas inga sessioner, och utan en regel
+  utgångspunkten, F2). I prototypen raderas inga sessioner, och utan en regel
   ligger gamla sessioners nycklar kvar i riktiga användares telefoner.
-- Flutter/Dart-lagret och bygget är granskade.
+- Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
-  alerts och security updates är påslagna.
-- `LICENSE` är bytt till AGPL-3.0.
-- Spiken och appen är körda på en riktig arm64-telefon.
+  alerts och security updates är påslagna (G7).
+- `LICENSE` är bytt till AGPL-3.0 (G8).
+- Spiken och appen är körda på en riktig arm64-telefon (G3, F6).
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
   ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
   §12, §13). I
   dag bygger cargokit med CI-maskinens `stable`, och att ändra det kräver
   ett ändrat plugin.
 
-## Efter prototypen (inte nu)
+## Fas 3 – Version 1.0 på Google Play
 
-- Historik i appen (0004 §7).
-- En raderingsregel för gamla sessioner (0006). Den måste vara klar före
-  första utdelningen, se ovan.
-- Internt test på Google Play.
-- Tor eller liknande, flera relays.
+### Klart när
+
+Version 1.0 är publicerad i produktion på Google Play.
+
+### Paket
+
+- [ ] **F9 – Play-kraven.** Kontrollera kraven mot Googles egna sidor, med
+  datum:
+  - målnivån (target SDK);
+  - testkraven för nya konton;
+  - Data safety och integritetspolicyn.
+
+  Höj Flutter-versionen i en egen PR om det behövs.
+- [ ] **F10 – Integritetspolicy och Data safety.** Ett utkast till
+  integritetspolicy på svenska och engelska, och svaren till Data safety.
+  Bara det koden faktiskt gör, med fil som källa.
+- [ ] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
+  än appen gör. Ett sätt att ta skärmbilder som bara finns i debug och aldrig
+  i release, där `FLAG_SECURE` alltid gäller.
+- [ ] **F12 – Version och ändringslogg.** Versionsnummer, ändringslogg och
+  `docs/release.md` uppdaterade.
+
+### Grindar (bara ägaren)
+
+- **G9 – Utvecklarkonto och nyckel.** Skapa utvecklarkontot,
+  uppladdningsnyckeln och `key.properties`.
+- **G10 – Integritetspolicyn på webben.** Publicera integritetspolicyn på en
+  webbadress.
+- **G11 – Släppet.** Internt test, sedan stängt test (med kraven från F9),
+  sedan ansökan om produktion och släpp.
+
+## Efter version 1
+
+- iOS.
+- Tor eller liknande, och flera relays.
+- Gruppchattar.
+- Ett kvantsäkert lager (frågan till kryptoexperten i 0003).
 
 ## Logg
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – Färdplanen utökad enligt ägarens instruktion: fas 2 (F1–F8,
+  G6–G8) och fas 3 (F9–F12, G9–G11) med "Klart när", och "Efter version 1".
+  Historiken (F3), raderingen av sessioner (F2) och det interna testet (G11)
+  har flyttats från "Efter prototypen". Inget är bockat som inte är gjort.
 - 2026-11-16 – G5 klar: ägaren valde (b) och (iii) i 0006, som har status
   "Accepted by owner". Raderingsregeln för gamla sessioner står under "Före
   första utdelning". Texterna i 0004 §10 är godkända, med antal meddelanden
