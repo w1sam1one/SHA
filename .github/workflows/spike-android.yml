@@ -10,6 +10,7 @@ on:
     paths:
       - spike/vodozemac/**
       - .github/workflows/spike-android.yml
+      - .github/scripts/resource-monitor.sh
 
 permissions:
   contents: read
@@ -60,7 +61,6 @@ jobs:
           free -m
           swapon --show || true
           df -h /
-          grep -n jvmargs android/gradle.properties
 
       - name: Install Flutter ${{ env.FLUTTER_VERSION }} (checksum verified)
         working-directory: .
@@ -107,10 +107,11 @@ jobs:
         run: rustup run stable rustc --version
 
       # The runner has 7.9 GB RAM and 0-3 GB swap (both seen). With the project's
-      # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.9 GB
+      # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.8 GB
       # while the emulator held 2-3.4 GB and rustc ran: swap filled up and
       # the runner was shut down ("The runner has received a shutdown
-      # signal"). Settings in ~/.gradle/gradle.properties win over the
+      # signal"), seen in ci.yml's app-android job; the same settings are
+      # used here. Settings in ~/.gradle/gradle.properties win over the
       # project's: no daemon left running, Kotlin in the same process, and a
       # smaller heap.
       - name: Gradle memory limits for CI
@@ -196,8 +197,17 @@ jobs:
           status=0
           flutter test integration_test/olm_spike_test.dart -d emulator-5554 --reporter expanded || status=$?
           kill "$monitor" 2>/dev/null || true
-          sudo dmesg | grep -i -E "out of memory|oom-kill|killed process" || echo "dmesg: no OOM lines"
           exit "$status"
+
+      # Covers the build step too, and runs also when a step failed.
+      - name: Kernel out-of-memory messages
+        if: always()
+        run: |
+          if out="$(sudo dmesg 2>&1)"; then
+            printf '%s\n' "$out" | grep -i -E "out of memory|oom-kill|killed process" || echo "dmesg: no OOM lines"
+          else
+            echo "dmesg could not be read"
+          fi
 
       - name: Emulator log (on failure)
         if: failure()
