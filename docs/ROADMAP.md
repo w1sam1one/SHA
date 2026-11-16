@@ -30,13 +30,24 @@ Prototypen är klar när allt detta gäller:
 - [ ] **P3 – Olm bakom `CryptoService`.** Konto, sessioner och pickles, med
   pickle-nyckeln i `KeyVault` (0003 R6, 0004 §6). Ordningen vid krascher
   enligt §6, OGRANSKAT. `resetIdentity()` raderar allt. Spikens R1–R7 som
-  tester mot appens klasser. Väntar på G4.
+  tester mot appens klasser. Enligt 0005 (A) och (i):
+  - Först görs valvet säkert: skrivningen ger fel om fsync eller namnbytet
+    misslyckas, mappen fsyncas, och `reset()` raderar nyckeln först.
+  - Valvet får ett emulatortest: skriva, läsa, återställa och en stor post.
+    En misslyckad skrivning ger fel, och poster som blev kvar efter en
+    avbruten återställning går inte att läsa.
+  - Hela tillståndet sparas som en enda valvpost, och meddelanden bara
+    tills de har visats.
+  - Tester: krasch efter varje steg i §6, och att `resetIdentity()` lämnar
+    inget kvar.
+  - Skrivning och läsning mäts på emulatorn. Tar en skrivning mer än
+    300 ms stannar Claude och frågar ägaren.
 - [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
   Sessionsregeln (§2): väntar på G5. Texterna i §10 som P4 behöver
   godkänns av ägaren först.
   Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
-  väljer antal dagar. Kontakter sparas krypterade via valvet.
+  väljer antal dagar. Kontakterna sparas i tillståndets valvpost (0005 (A)).
 - [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
 - [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
@@ -58,12 +69,10 @@ Prototypen är klar när allt detta gäller:
   enligt `relay/README.md`. Claude kan hjälpa till steg för steg.
 - **G3 – Två riktiga telefoner.** Prova prototypen. Kör även spiken på en
   arm64-telefon (villkor 1 i 0003).
-- **G4 – Lagring (före P3).** 0004 §6 (a) behöver en lokal databas med
-  transaktioner, och §6 sparar mottagna meddelanden och utkorgen krypterade
-  i vila, alltså §7 (a). Inget databasberoende är godkänt än, och §7 står
-  under "Efter prototypen". Beslutsunderlaget är
-  [0005](decisions/0005-lagring-i-prototypen.md) ("Proposed – owner
-  decides"). Ägaren väljer lagring och hur mycket av meddelandena som sparas.
+- **G4 – Lagring (före P3). Klar 2026-11-14.** Ägaren valde (A) och (i) i
+  [0005](decisions/0005-lagring-i-prototypen.md): hela tillståndet i en enda
+  valvpost, meddelanden sparas bara tills de har visats, och gränsen 300 ms
+  för en skrivning.
 - **G5 – Sessionsregeln (före P4).** 0004 §2 har en öppen fråga: en session
   vars första meddelande aldrig kan läsas väljs aldrig bort av regeln om
   minsta id. Claude skriver ett beslutsunderlag med alternativ, och ägaren
@@ -87,11 +96,10 @@ någon annan än ägaren (0003, 0004 §13):
     1 med 8 byte MAC används (P5).
   - **§6** – ordningen vid krascher, pickles och pickle-nyckeln, att typ 0
     först provas mot sparade sessioner, och att varje försök börjar från den
-    sparade pickeln (P3).
-  - **§7 (a)** – kryptering i vila av mottagna meddelanden och utkorgen,
-    om ägaren väljer det vid G4 (P3).
+    sparade pickeln (P3). Prototypen använder §6 (c) på valvet: hela
+    tillståndet i en enda valvpost (0005).
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
-    alternativ C, resten av §7 (historiken) och ett yttre lager.
+    alternativ C, §7 (historiken) och ett yttre lager.
 - Flutter/Dart-lagret och bygget är granskade.
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna.
@@ -117,6 +125,9 @@ Nyast först. En rad per paket eller körning som ändrar något.
   (Gradle-daemonen upp till 3,8 GB samtidigt som emulatorn och rustc, 235 MB
   ledigt före avbrottet). APK:n byggs nu innan emulatorn startar, Gradle får
   2 GB och lämnar ingen daemon kvar. Minst 2,7 GB ledigt i mätningen efteråt.
+- 2026-11-14 – G4 klar: ägaren valde (A) och (i) i 0005, med gränsen
+  300 ms. 0005 har status "Accepted by owner". 0004 §6 och §7 och P3 här
+  är uppdaterade.
 - 2026-11-14 – G4: beslutsunderlag 0005 (lagring i prototypen) skrivet.
   Ny grind G5 för den öppna frågan i 0004 §2. P3 väntar på G4.
 - 2026-11-14 – Rättelser efter granskningarna av P1 och P2 (PR #11, #12):
