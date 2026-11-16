@@ -1,12 +1,15 @@
 # Färdplan: från prototyp till version 1.0
 
 Den här filen styr vad Claude bygger härnäst, enligt [`CLAUDE.md`](../CLAUDE.md).
-Paketen görs i ordning, fas för fas. En grind betyder att ägaren måste göra
-något innan arbetet med det som beror på grinden fortsätter.
+Paketen görs i ordning, fas för fas, utom enligt sista punkten nedan. En
+grind betyder att ägaren måste göra något innan arbetet med det som beror på
+grinden fortsätter. "Klart när" i `CLAUDE.md` ("Målet") betyder fas 1.
 
 Arbetssätt (ägarens instruktion 2026-11-16, utöver `CLAUDE.md`):
 - `CLAUDE.md` gäller i allt. Inget här ändrar "Aldrig", utom PR:en vid G8,
   som Claude förbereder när ägaren ber om det och som bara ägaren mergar.
+- PR:er som rör utdelning, till exempel butikstexter och versionsnummer i
+  fas 3, mergar bara ägaren (`CLAUDE.md`, "Aldrig").
 - Vid varje grind skriver Claude steg för steg, på enkel svenska, vad ägaren
   ska göra.
 - Nya val som ändrar säkerheten blir beslutsunderlag och grindar, som
@@ -127,14 +130,16 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   ett beslutsunderlag och en grind, sedan bygget.
 - [ ] **F5 – Ärliga texter för en fungerande app:**
   - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
-    tas bort när transporten fungerar;
+    tas bort när transporten fungerar, liksom de andra texterna som då
+    inte stämmer: "Finns inte än" i `lib/ui/technical_info_sheet.dart` och
+    §7 i `docs/release.md`;
   - en enkel förklaring i appen av vad servern ser, och rekommendationen om
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
     Apache-paketen.
 - [ ] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
-  steg, förväntat resultat och en ruta för ägarens resultat. Med farten i
-  StrongBox och TalkBack.
+  steg, förväntat resultat och en ruta för ägarens resultat. Med en mätning
+  av farten i StrongBox och ett test med TalkBack.
 - [ ] **F7 – Relayn i drift:**
   - härdning och driftinstruktioner för en riktig VPS: förnyelse av TLS,
     uppdateringar och övervakning utan IP-adresser;
@@ -240,6 +245,8 @@ Nyast först. En rad per paket eller körning som ändrar något.
   G6–G8) och fas 3 (F9–F12, G9–G11) med "Klart när", och "Efter version 1".
   Historiken (F3), raderingen av sessioner (F2) och det interna testet (G11)
   har flyttats från "Efter prototypen". Inget är bockat som inte är gjort.
+  Ägaren skrev README "Saknas" för app-låset; avsnittet heter "Nästa steg".
+  `docs/schemalagd-korning.md` följer de nya faserna.
 - 2026-11-16 – G5 klar: ägaren valde (b) och (iii) i 0006, som har status
   "Accepted by owner". Raderingsregeln för gamla sessioner står under "Före
   första utdelning". Texterna i 0004 §10 är godkända, med antal meddelanden
