@@ -10,6 +10,9 @@
 //
 // The test runs inside the app's process, so it can reach the vault's
 // directory with dart:io and break it on purpose.
+//
+// WARNING: it resets the vault, so it deletes the identity and every key on
+// the device it runs on. Run it only on an emulator or a test phone.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -111,13 +114,17 @@ void main() {
     expect(
       Directory(vaultDirectory).listSync().map((e) => e.path.split('/').last),
       ['p3.keep.bin'],
-      reason: 'no temporary file is left behind',
+      reason: 'the old entry is the only file',
     );
   });
 
   test('a rename that fails throws instead of being ignored', () async {
     // A directory where the entry's file should go: rename(2) onto it fails.
-    Directory('$vaultDirectory/p3.blocked.bin').createSync();
+    // reset() only deletes files, so remove the directory even if we fail.
+    final blocked = Directory('$vaultDirectory/p3.blocked.bin')..createSync();
+    addTearDown(() {
+      if (blocked.existsSync()) blocked.deleteSync(recursive: true);
+    });
 
     await expectLater(
       vault.write('p3.blocked', bytes(64, 10)),
@@ -128,7 +135,6 @@ void main() {
       isFalse,
       reason: 'no temporary file is left behind',
     );
-    Directory('$vaultDirectory/p3.blocked.bin').deleteSync();
   });
 
   test('entries left by an interrupted reset cannot be read', () async {
