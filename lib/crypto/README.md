@@ -153,6 +153,35 @@ utdelningen.
 - **Testat:** `test/crypto/olm_contacts_test.dart` (0006:s tester och
   mutationer) och `test/features/contact_code_test.dart`.
 
+### Paketformat 3 och utfyllnad (P5)
+
+```
+paket  = 3 (1) || brevlåde-id (16) || Olm-typ (1) || Olm-meddelande
+klartext i Olm = utfyllnad( {"v":3,"id","t","m"} )
+```
+
+- **Utfyllnad innanför Olm** (`OlmPadding`, 0004 §4 (A)): texten fylls ut
+  med mellanslag till exakt B − 1 byte UTF-8, där B är 256, 1 024, 4 096,
+  16 384 eller 65 536. Då blir Olms chiffertext exakt B. `encrypt` fyller ut
+  och `receive` tar bort mellanslagen i slutet, efter att Olm har kontrollerat
+  MAC. Texten i utkorgen och inkorgen är inte utfylld.
+- **Paketet** (`PacketV3`, 0004 §5 (a)): `[Olm-typ] || Olm-meddelande` är
+  precis det som `encrypt` ger och `receive` tar. Brevlåde-ID:t läggs till när
+  paketet skickas. Största paket är 65 712 byte, samma som relayns gräns.
+- **JSON-texten** (`lib/features/chat/message_payload.dart`) är version 3 och
+  slutar alltid med `}`, så utfyllnaden går att ta bort.
+- **OGRANSKAT (0004 §4 och §5):** storleken visar hinken, ett första
+  meddelande (typ 0) och långa kedjor utan svar, och huvudet är inte skyddat.
+- **Testat:**
+  - varje rad i storlekstabellen i 0004 §4 med riktiga Olm-meddelanden, och
+    kedjeindex 127, 128 och 16 384: `test/crypto/olm_sizes_test.dart`;
+  - utfyllnaden med å och emoji vid gränsen:
+    `test/crypto/olm_padding_test.dart`;
+  - paketets fält, för korta paket och okänd version eller typ:
+    `test/crypto/olm_wire_format_test.dart`;
+  - R7 med exakta storlekar körs också på Android.
+- **Appen skickar fortfarande paketformat 2.** P6 kopplar in formatet.
+
 ## Konversationer
 
 ```
