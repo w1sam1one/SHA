@@ -34,6 +34,16 @@ void main() {
     expect(read.text, 'slut  ');
   });
 
+  test('the largest time DateTime can hold is read', () {
+    final json = jsonEncode({
+      'v': 3,
+      'id': 'x',
+      't': 8640000000000000000,
+      'm': 'a',
+    });
+    expect(MessagePayload.decode(json)?.text, 'a');
+  });
+
   test('a time given in local time is sent as UTC', () {
     final local = sentAt.toLocal();
     final read = MessagePayload.decode(
@@ -59,6 +69,9 @@ void main() {
       j({'v': 3, 'id': 'x', 't': 1.5, 'm': 'a'}),
       j({'v': 3, 'id': 'x', 't': t}),
       j({'v': 3, 'id': 'x', 't': t, 'm': null}),
+      // Outside what DateTime can hold: null, not an error.
+      j({'v': 3, 'id': 'x', 't': 8640000000000000001, 'm': 'a'}),
+      j({'v': 3, 'id': 'x', 't': -9000000000000000000, 'm': 'a'}),
     ]) {
       expect(MessagePayload.decode(raw), isNull, reason: raw);
     }
