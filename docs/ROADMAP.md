@@ -77,7 +77,7 @@ Prototypen är klar när allt detta gäller:
   `lib/ui/technical_info_sheet.dart` ("reläer", "Ett relä"). `INTERNET` i
   release-manifestet, med motivering i README. Serverns adress går att
   ställa in.
-- [ ] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
+- [x] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
   204, 507 och 429, dubbletter, krascher och mutationer (§11).
 - [ ] **P8 – Leverans till ägaren.** Debug-APK som CI-artefakt och
   `docs/prototyp.md`.
@@ -241,6 +241,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P7 klar: `test/chain/relay_chain_test.dart` kör två appar
+  mot den riktiga relayn i CI (`tool/build_relay.sh`, Go i Flutter-jobbet):
+  204, 507 och 429, dubbletter, och en krasch före och efter att relayn tog
+  paketet. Mutationer: fel brevlåda och ingen kontroll av dubbletter fångas.
 - 2026-11-16 – P6 klar: appen skickar och hämtar via servern. En
   relay-klient med `dart:io`, varje brevlåda vid en egen slumpad tid i
   intervallet (§9 (b)), bara när appen är öppen, och `Retry-After` vid 429.
