@@ -20,8 +20,8 @@ import javax.crypto.AEADBadTagException
  */
 class KeystoreChannel(context: Context) : MethodChannel.MethodCallHandler {
     private val vault = KeystoreVault(context)
-    private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
+    private val worker: ExecutorService get() = WORKER
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         worker.execute {
@@ -85,5 +85,12 @@ class KeystoreChannel(context: Context) : MethodChannel.MethodCallHandler {
 
     companion object {
         const val NAME = "se.sha/keystore"
+
+        /**
+         * One thread for the whole process, not one per channel: if the
+         * activity is recreated while a write is running, the next call
+         * still waits for it, so two writes never share a temporary file.
+         */
+        private val WORKER: ExecutorService = Executors.newSingleThreadExecutor()
     }
 }
