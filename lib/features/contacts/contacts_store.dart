@@ -37,15 +37,19 @@ class Contact {
 /// The contact list. Saved contacts are read from the Olm state, which is
 /// the vault's single state entry (0005 (A)).
 class ContactsStore extends Notifier<List<Contact>> {
+  /// Completes when the saved contacts have been read.
+  late Future<void> ready;
+
   @override
   List<Contact> build() {
-    Future(_load);
+    ready = Future(_load);
     return const [];
   }
 
   Future<void> _load() async {
+    if (!ref.mounted) return; // rebuilt or disposed before the load ran
     final saved = await ref.read(cryptoServiceProvider).olm.contacts();
-    if (saved.isEmpty) return;
+    if (!ref.mounted || saved.isEmpty) return;
     for (final c in saved) {
       _put(Contact.fromOlm(c));
     }

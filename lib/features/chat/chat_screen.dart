@@ -3,14 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/errors.dart';
-import '../../core/providers.dart';
 import '../../ui/avatar.dart';
 import '../../ui/technical_info_sheet.dart';
 import '../../ui/time_format.dart';
 import '../../ui/trust_display.dart';
 import '../contacts/contacts_store.dart';
+import '../transport/transport.dart';
 import 'chat_controller.dart';
+import 'message_store.dart';
 import 'messaging_service.dart';
+import 'notice_texts.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.contactId});
@@ -72,8 +74,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (contact == null) {
       return const Scaffold(body: Center(child: Text('Kontakten finns inte.')));
     }
-    final messages = ref.watch(chatProvider(widget.contactId));
-    final transportAvailable = ref.watch(transportAvailableProvider);
+    final view = ref.watch(chatProvider(widget.contactId));
+    final status = ref.watch(serverStatusProvider);
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -111,37 +113,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: messages.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(describeError(error), textAlign: TextAlign.center),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () =>
-                            ref.invalidate(chatProvider(widget.contactId)),
-                        child: const Text('Försök igen'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              data: (list) => ListView(
-                reverse: true,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                children: [
-                  for (final m in list.reversed) _Bubble(message: m),
-                  const SizedBox(height: 8),
-                  _E2eNotice(name: contact.name),
-                ],
-              ),
+            child: ListView(
+              reverse: true,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              children: [
+                for (final m in view.messages.reversed) _Bubble(message: m),
+                for (final n in view.notices.reversed) _ChatNotice(text: n),
+                const SizedBox(height: 8),
+                _E2eNotice(name: contact.name),
+              ],
             ),
           ),
-          if (!transportAvailable) _PreviewNotice(name: contact.name),
+          if (_statusText(status) case final text?) _StatusNotice(text: text),
           SafeArea(
             top: false,
             child: Padding(
@@ -192,6 +175,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
+/// What the chat says about the server (0004 §10). Nothing when all is
+/// well or when there is no answer: messages then wait in the outbox, and
+/// each one says it is not sent yet.
+String? _statusText(ServerStatus status) => switch (status) {
+  ServerStatus.notConfigured =>
+    'Ingen server är inställd än. Meddelanden sparas och skickas när du har '
+        'skrivit in serverns adress under Inställningar.',
+  ServerStatus.busy => NoticeTexts.serverBusy,
+  ServerStatus.full => NoticeTexts.serverFull,
+  ServerStatus.ok || ServerStatus.unavailable => null,
+};
+
 Widget? _hideCounter(
   BuildContext context, {
   required int currentLength,
@@ -199,12 +194,12 @@ Widget? _hideCounter(
   required bool isFocused,
 }) => null;
 
-/// Says plainly that nothing is sent yet. Neutral (not a warning): it is the
-/// state of the app, not a problem with the phone.
-class _PreviewNotice extends StatelessWidget {
-  const _PreviewNotice({required this.name});
+/// The server's state, above the text field. Neutral (not a warning): the
+/// app keeps the message and tries again by itself.
+class _StatusNotice extends StatelessWidget {
+  const _StatusNotice({required this.text});
 
-  final String name;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -226,8 +221,7 @@ class _PreviewNotice extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Förhandsversion: meddelanden skickas inte till $name än och '
-              'finns bara kvar tills du stänger appen.',
+              text,
               style: const TextStyle(
                 fontSize: 13,
                 height: 18 / 13,
@@ -236,6 +230,37 @@ class _PreviewNotice extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A collected line about messages that could not be read (0004 §10).
+class _ChatNotice extends StatelessWidget {
+  const _ChatNotice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        margin: const EdgeInsets.only(top: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: ShaColors.navBar,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 12.5,
+            height: 18 / 12.5,
+            color: ShaColors.textSecondary,
+          ),
+        ),
       ),
     );
   }
@@ -326,7 +351,7 @@ class _Bubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              failed ? 'Meddelandet kunde inte verifieras' : message.text!,
+              failed ? 'Meddelandet kunde inte läsas.' : message.text!,
               style: TextStyle(
                 fontSize: 15,
                 height: 21 / 15,
@@ -336,7 +361,9 @@ class _Bubble extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              formatTime(message.sentAt),
+              message.pending
+                  ? 'Inte skickat än · ${formatTime(message.sentAt)}'
+                  : formatTime(message.sentAt),
               style: TextStyle(
                 fontSize: 11,
                 color: out

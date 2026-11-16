@@ -217,4 +217,17 @@ abstract interface class OlmService {
 
   /// Packets from [peer] that gave no message.
   Future<OlmFailureCounts> failureCounts(List<int> peer);
+
+  /// The app has shown [shown] for [peer] (0004 §10): takes them off the
+  /// saved counters. Failures counted after [shown] was read stay.
+  Future<void> clearFailureCounts(List<int> peer, OlmFailureCounts shown);
+
+  /// The app's settings (0005, item 9): the server address and the fetch
+  /// interval, as text. They are kept in the same vault entry as everything
+  /// else (0005 (A)). Empty if none are saved or there is no account.
+  Future<Map<String, String>> appSettings();
+
+  /// Saves [settings] in place of the old ones. Throws if there is no
+  /// account: call [ensureAccount] first.
+  Future<void> saveAppSettings(Map<String, String> settings);
 }

@@ -8,8 +8,8 @@ import '../contacts/contacts_store.dart';
 import 'chat_screen.dart';
 import 'message_store.dart';
 
-/// Conversations that have at least one message. Shows metadata only: nothing
-/// is decrypted until a chat is opened.
+/// Conversations that have at least one message. Shows only the name, the
+/// number of messages and the time, never the text.
 class ChatsScreen extends ConsumerWidget {
   const ChatsScreen({super.key});
 
@@ -17,15 +17,11 @@ class ChatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contacts = ref.watch(contactsProvider);
     final messages = ref.watch(messageStoreProvider);
-    final threads =
-        [
-          for (final c in contacts)
-            if (messages[c.id]?.isNotEmpty ?? false)
-              (contact: c, messages: messages[c.id]!),
-        ]..sort(
-          (a, b) =>
-              b.messages.last.storedAt.compareTo(a.messages.last.storedAt),
-        );
+    final threads = [
+      for (final c in contacts)
+        if (messages[c.id]?.isNotEmpty ?? false)
+          (contact: c, messages: messages[c.id]!),
+    ]..sort((a, b) => b.messages.last.sentAt.compareTo(a.messages.last.sentAt));
 
     return Scaffold(
       appBar: AppBar(
@@ -66,7 +62,7 @@ class ChatsScreen extends ConsumerWidget {
                           : '${t.messages.length} meddelanden',
                     ),
                     trailing: Text(
-                      formatTime(t.messages.last.storedAt),
+                      formatTime(t.messages.last.sentAt),
                       style: const TextStyle(
                         fontSize: 12,
                         color: ShaColors.textMuted,

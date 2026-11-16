@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../chat/chat_controller.dart';
 import '../chat/message_store.dart';
 import '../chat/messaging_service.dart';
+import '../transport/transport.dart';
 import '../contacts/contacts_store.dart';
 import 'identity_controller.dart';
 
@@ -50,6 +51,9 @@ class _IdentityRecoveryScreenState
     }
     container
       ..invalidate(chatProvider)
+      ..invalidate(transportProvider)
+      ..invalidate(transportSettingsProvider)
+      ..invalidate(serverStatusProvider)
       ..invalidate(messagingServiceProvider)
       ..invalidate(messageStoreProvider)
       ..invalidate(contactsProvider)

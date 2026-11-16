@@ -10,11 +10,6 @@ final cryptoServiceProvider = Provider<CryptoService>(
   (ref) => ShaCryptoService(vault: ref.watch(keyVaultProvider)),
 );
 
-/// Whether messages actually leave this phone. There is no transport yet:
-/// messages are only kept in memory here. Flip to true only when a real
-/// transport sends and receives.
-final transportAvailableProvider = Provider<bool>((ref) => false);
-
 /// How this phone protects the identity key (StrongBox, TEE, …).
 final keyProtectionProvider = FutureProvider<KeyProtection>(
   (ref) => ref.watch(cryptoServiceProvider).keyProtection(),

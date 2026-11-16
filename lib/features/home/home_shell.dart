@@ -7,8 +7,11 @@ import '../../core/providers.dart';
 import '../chat/chats_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../qr/my_qr_screen.dart';
+import '../settings/settings_screen.dart';
+import '../transport/transport_lifecycle.dart';
 
-/// Bottom navigation: Chattar · Kontakter · Min QR.
+/// Bottom navigation: Chattar · Kontakter · Min QR · Inställningar. The
+/// transport runs only while this is in front ([TransportLifecycle]).
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -32,6 +35,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         ? 'Telefonen saknar säkerhetshårdvara för nycklar. Din nyckel '
               'skyddas bara av mjukvara.'
         : null;
+    return TransportLifecycle(child: _scaffold(warning));
+  }
+
+  Widget _scaffold(String? warning) {
     return Scaffold(
       body: Column(
         children: [
@@ -69,7 +76,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               removeTop: warning != null,
               child: IndexedStack(
                 index: _index,
-                children: const [ChatsScreen(), ContactsScreen(), MyQrScreen()],
+                children: const [
+                  ChatsScreen(),
+                  ContactsScreen(),
+                  MyQrScreen(),
+                  SettingsScreen(),
+                ],
               ),
             ),
           ),
@@ -90,6 +102,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.qr_code_2_rounded),
             label: 'Min QR',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            label: 'Inställningar',
           ),
         ],
       ),
