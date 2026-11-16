@@ -121,21 +121,32 @@ final class ShaOlmService implements OlmService {
   @override
   Future<OlmContactBundle> publishBundle() => _serial(() async {
     final (state, key) = await _require();
-    final account = _account(state, key);
     final next = state.copy();
     // Clean up shown keys nobody used in time (0004 §8 (a)). A key that a
-    // session already used is gone from the account; removing it fails and
-    // only its record is dropped.
+    // session already used is gone from the account, and removing it makes
+    // the library panic and leaves that account object unusable. So each
+    // removal is tried on a fresh account from the pickle, and only one
+    // that worked is kept.
     final cutoff = _now() - keepUnusedOneTimeKeys.inMilliseconds;
     for (final old in [...next.shown.entries.where((e) => e.value < cutoff)]) {
+      final candidate = _accountFrom(next.account, key);
       try {
-        account.removeOneTimeKey(old.key);
-      } catch (_) {}
+        wipe(candidate.removeOneTimeKey(old.key)); // the removed private key
+        next.account = candidate.toPickleEncrypted(key);
+      } catch (_) {
+        // Already used: nothing to remove. The object is dropped.
+      }
       next.shown.remove(old.key);
     }
-    account.generateOneTimeKeys(1);
-    final oneTimeKey = account.oneTimeKeys.values.single;
-    account.markKeysAsPublished();
+    final account = _accountFrom(next.account, key);
+    final Curve25519PublicKey oneTimeKey;
+    try {
+      account.generateOneTimeKeys(1);
+      oneTimeKey = account.oneTimeKeys.values.single;
+      account.markKeysAsPublished();
+    } catch (_) {
+      throw const CryptoException('Could not make a one-time key');
+    }
     next
       ..account = account.toPickleEncrypted(key)
       ..shown[oneTimeKey.toBase64()] = _now();
@@ -529,9 +540,12 @@ final class ShaOlmService implements OlmService {
     _saved = next;
   }
 
-  Account _account(_State state, Uint8List key) {
+  Account _account(_State state, Uint8List key) =>
+      _accountFrom(state.account, key);
+
+  Account _accountFrom(String pickle, Uint8List key) {
     try {
-      return Account.fromPickleEncrypted(pickle: state.account, pickleKey: key);
+      return Account.fromPickleEncrypted(pickle: pickle, pickleKey: key);
     } catch (_) {
       throw const CryptoException(
         'Saved Olm account cannot be read',
