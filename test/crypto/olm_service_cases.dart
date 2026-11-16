@@ -73,6 +73,16 @@ final class Person {
   ];
 }
 
+/// The saved number of each of [me]'s sessions with [peer] (0006 (b)).
+List<int> sessionNumbers(Person me, Person peer) {
+  final contacts = me.savedState['contacts']! as Map<String, Object?>;
+  final c = contacts[base64.encode(peer.key)] as Map<String, Object?>?;
+  return [
+    for (final s in (c?['sessions'] as List?) ?? const [])
+      (s as Map)['number'] as int,
+  ];
+}
+
 /// [a] scans [b]'s QR code and starts a session.
 Future<void> scan(Person a, Person b) async =>
     a.olm.startSession(await b.olm.publishBundle());
@@ -230,11 +240,10 @@ void olmServiceCases() {
 
       now = now.add(const Duration(hours: 73));
       await bob.olm.receive(alice.key, Uint8List.fromList([7, 7])); // prunes
-      final account = bob.savedState['account'];
-      final pickles = bob.savedPickles;
+      bob.restart(); // also after a restart
+      final pickles = bob.savedPickles; // the account and every session
       final replay = await bob.olm.receive(alice.key, first.packet);
       expect(replay.failure, OlmReceiveFailure.unreadable);
-      expect(bob.savedState['account'], account);
       expect(bob.savedPickles, pickles);
     });
 
@@ -463,6 +472,57 @@ void olmServiceCases() {
       },
     );
 
+    test('a packet no session can read gives no session a new number '
+        '(0006 (b))', () async {
+      // Alice has two sessions: the one Bob answered on, and a new scan
+      // with the highest number, which she sends on (type 0).
+      final (alice, bob) = await established();
+      await scan(alice, bob);
+      final numbers = sessionNumbers(alice, bob);
+      expect(numbers, hasLength(2));
+      final counter = alice.savedState['counter'];
+      // A changed copy of a real packet from Bob: every session fails.
+      final real = await bob.olm.encrypt(alice.key, 'från Bob');
+      final changed = flipped(real.packet, real.packet.length - 1);
+      expect(
+        (await alice.olm.receive(bob.key, changed)).failure,
+        isNot(isNull),
+      );
+      expect(sessionNumbers(alice, bob), numbers);
+      expect(alice.savedState['counter'], counter);
+      final next = await alice.olm.encrypt(bob.key, 'efter');
+      expect(next.packet[0], 0, reason: 'still the newest session');
+    });
+
+    test('a changed first message (type 0) is unreadable, the account is '
+        'unchanged, and the real one is still read', () async {
+      final alice = await Person().start();
+      final bob = await Person().start();
+      await scan(alice, bob);
+      final first = await alice.olm.encrypt(bob.key, 'första');
+      expect(first.packet[0], 0);
+      final pickles = bob.savedPickles;
+      final changed = flipped(first.packet, first.packet.length - 1);
+      expect(
+        (await bob.olm.receive(alice.key, changed)).failure,
+        OlmReceiveFailure.unreadable,
+      );
+      expect(bob.savedPickles, pickles, reason: 'account and sessions');
+      expect(await deliver(bob, alice, first), 'första');
+    });
+
+    test('two first messages in a row give one inbound session', () async {
+      final alice = await Person().start();
+      final bob = await Person().start();
+      await scan(alice, bob);
+      final a = await alice.olm.encrypt(bob.key, 'ett');
+      final b = await alice.olm.encrypt(bob.key, 'två');
+      expect([a.packet[0], b.packet[0]], [0, 0]);
+      expect(await deliver(bob, alice, a), 'ett');
+      expect(await deliver(bob, alice, b), 'två');
+      expect(sessionNumbers(bob, alice), hasLength(1));
+    });
+
     test(
       'a failed attempt on the wrong session changes nothing saved',
       () async {
@@ -480,9 +540,13 @@ void olmServiceCases() {
         await scan(stranger, bob);
         final foreign = await stranger.olm.encrypt(bob.key, 'främmande');
         final pickles = bob.savedPickles;
+        final numbers = sessionNumbers(bob, alice);
+        final counter = bob.savedState['counter'];
         final result = await bob.olm.receive(alice.key, foreign.packet);
         expect(result.failure, OlmReceiveFailure.unreadable);
         expect(bob.savedPickles, pickles);
+        expect(sessionNumbers(bob, alice), numbers);
+        expect(bob.savedState['counter'], counter);
 
         // The session still works afterwards.
         final next = await alice.olm.encrypt(bob.key, 'sedan');
@@ -498,7 +562,7 @@ void olmServiceCases() {
       await alice.service.createIdentity();
       await alice.olm.encrypt(bob.key, 'i utkorgen');
       await alice.service.resetIdentity();
-      expect(alice.vault.values, isEmpty);
+      expect(alice.vault.values.keys, isEmpty);
       expect(await alice.olm.identityKey(), isNull);
       expect(await alice.olm.outbox(), isEmpty);
       final fresh = await alice.olm.createAccount();

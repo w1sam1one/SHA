@@ -190,7 +190,9 @@ final class ShaOlmService implements OlmService {
 
   @override
   Future<void> markSent(String id) => _serial(() async {
-    final (state, _) = await _require();
+    // No pickle key needed: the outbox can be cleared even if it is lost.
+    final state = await _load();
+    if (state == null) return;
     final next = state.copy()..outbox.removeWhere((o) => o.id == id);
     if (next.outbox.length != state.outbox.length) await _save(next);
   });
@@ -311,7 +313,8 @@ final class ShaOlmService implements OlmService {
 
   @override
   Future<void> markShown(String id) => _serial(() async {
-    final (state, _) = await _require();
+    final state = await _load();
+    if (state == null) return;
     final next = state.copy()..inbox.removeWhere((m) => m.id == id);
     if (next.inbox.length != state.inbox.length) await _save(next);
   });
