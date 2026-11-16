@@ -102,7 +102,11 @@ class KeystoreVault(context: Context) {
                 out.fd.sync()
             }
             // rename(2) replaces the old entry in one step; throws ErrnoException.
-            Os.rename(temporary.path, target.path)
+            // MUTATION (reverted in the next commit): a failed rename is ignored.
+            try {
+                Os.rename(temporary.path, target.path)
+            } catch (_: ErrnoException) {
+            }
             // Make the rename itself survive a power cut.
             syncDirectory(dir)
         } catch (_: Exception) {
@@ -136,6 +140,12 @@ class KeystoreVault(context: Context) {
      * deleted in name order, so an interruption is reproducible in tests.
      */
     fun reset() {
+        // MUTATION (reverted in the next commit): files before the key.
+        dir.listFiles()?.sortedBy { it.name }?.forEach { file ->
+            if (file.isFile && !file.delete() && file.exists()) {
+                throw VaultException(VaultException.WRITE_FAILED)
+            }
+        }
         try {
             val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
             if (keyStore.containsAlias(KEY_ALIAS)) keyStore.deleteEntry(KEY_ALIAS)
