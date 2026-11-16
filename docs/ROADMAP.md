@@ -66,8 +66,9 @@ Prototypen är klar när allt detta gäller:
   decides"). Ägaren väljer lagring och hur mycket av meddelandena som sparas.
 - **G5 – Sessionsregeln (före P4).** 0004 §2 har en öppen fråga: en session
   vars första meddelande aldrig kan läsas väljs aldrig bort av regeln om
-  minsta id. Claude skriver ett beslutsunderlag med alternativ, och ägaren
-  avgör.
+  minsta id. Beslutsunderlaget är
+  [0006](decisions/0006-sessionsregeln.md) ("Proposed – owner decides").
+  Ägaren väljer regel och hur sessioner raderas.
 
 ## Före första utdelning
 
@@ -113,6 +114,9 @@ någon annan än ägaren (0003, 0004 §13):
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – G5: beslutsunderlag 0006 (sessionsregeln) skrivet.
+  Rekommendation: senast aktiva sessionen, som i Matrix, och högst 5
+  sessioner per kontakt. P4 väntar på G5.
 - 2026-11-14 – G4: beslutsunderlag 0005 (lagring i prototypen) skrivet.
   Ny grind G5 för den öppna frågan i 0004 §2. P3 väntar på G4.
 - 2026-11-14 – Rättelser efter granskningarna av P1 och P2 (PR #11, #12):
