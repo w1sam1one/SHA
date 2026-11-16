@@ -42,7 +42,7 @@ Prototypen är klar när allt detta gäller:
 - [x] **P2 – Olm i bygget.** `flutter_vodozemac` med exakt samma version som
   spiken i appens `pubspec.yaml`. Rust i CI. Ett Android-emulatorjobb för
   appen, som `spike-android.yml`. Ingen funktion i appen ändras.
-- [ ] **P3 – Olm bakom `CryptoService`.** Konto, sessioner och pickles, med
+- [x] **P3 – Olm bakom `CryptoService`.** Konto, sessioner och pickles, med
   pickle-nyckeln i `KeyVault` (0003 R6, 0004 §6). Ordningen vid krascher
   enligt §6, OGRANSKAT. `resetIdentity()` raderar allt. Spikens R1–R7 som
   tester mot appens klasser. Enligt 0005 (A) och (i):
@@ -241,6 +241,11 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P3 klar: Olm bakom `CryptoService.olm` (OGRANSKAT, 0004 §6).
+  Hela tillståndet i valvposten `olm.state.v1` och pickle-nyckeln i en egen
+  post. Ordningen vid mottagning, sändning och QR-koden följer §6. R1–R7 som
+  tester mot appens klasser, krascher och `resetIdentity()`, på datorn och
+  på emulatorn. Mätningen i 0005 skrivs ut av emulatortestet.
 - 2026-11-16 – P3, första delen: valvet görs säkert enligt 0005. Skrivningen
   fsyncar filen och mappen och ger fel i stället för att bara logga, och
   `reset()` raderar nyckeln först. Nytt emulatortest

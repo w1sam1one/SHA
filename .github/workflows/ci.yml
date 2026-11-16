@@ -7,8 +7,9 @@
 #   in Flutter's releases_linux.json. Move to a newer Flutter in its own PR.
 # - Go 1.27.4: the newest Go release when this was written. relay/go.mod
 #   requires 1.26 or later; relay tests have also been run with 1.26.11.
-# - Rust 1.97.0 for the spike's host build of flutter_vodozemac's native
-#   library (spike/vodozemac, cargo --locked). The Android builds are
+# - Rust 1.97.0 for the host builds of flutter_vodozemac's native library
+#   (cargo --locked): the spike's (spike/vodozemac) and the app's
+#   (tool/build_native_host.sh, for the Olm unit tests). The Android builds are
 #   different: the plugin's cargokit runs `rustup run stable cargo build`
 #   without --locked, so they use the runner's preinstalled stable Rust.
 #   Its version is printed in the log (app-android, spike-android.yml).
@@ -35,6 +36,9 @@ jobs:
     env:
       FLUTTER_VERSION: 3.47.7
       FLUTTER_SHA256: af7455f540df951184c7953fbe3cf884766e7541dacf8571f9f582db03dd6230
+      # P3: the Olm tests (test/crypto/olm_service_test.dart) need
+      # flutter_vodozemac's Rust library built for the host.
+      RUST_TOOLCHAIN: 1.97.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,6 +53,12 @@ jobs:
           tar -xf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+          rustc --version
+
       - name: Flutter version
         run: |
           flutter config --no-analytics
@@ -60,12 +70,17 @@ jobs:
       - name: flutter analyze
         run: flutter analyze
 
+      - name: Build the native library for the host
+        run: ./tool/build_native_host.sh
+
       - name: flutter test
         run: flutter test
 
   # P2 in docs/ROADMAP.md: the app's APK, with flutter_vodozemac built from
   # source, runs integration_test/olm_build_test.dart on an Android emulator.
-  # P3 adds integration_test/vault_test.dart: the Keystore vault (0005).
+  # P3 adds integration_test/vault_test.dart (the Keystore vault, 0005) and
+  # integration_test/olm_service_test.dart (Olm behind CryptoService, R8,
+  # and the 300 ms measurement in 0005).
   # The same steps as .github/workflows/spike-android.yml.
   app-android:
     name: App on Android emulator (Olm in the build)
@@ -232,6 +247,7 @@ jobs:
           monitor=$!
           status=0
           flutter test integration_test/olm_build_test.dart integration_test/vault_test.dart \
+            integration_test/olm_service_test.dart \
             -d emulator-5554 --reporter expanded || status=$?
           kill "$monitor" 2>/dev/null || true
           exit "$status"

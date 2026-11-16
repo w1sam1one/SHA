@@ -7,7 +7,8 @@ import 'types.dart';
 /// CSPRNG. Implementations must never write a secret in plain form to disk,
 /// preferences, backups or logs.
 abstract interface class KeyVault implements EntropySource {
-  /// Returns the stored value, or null if there is none.
+  /// Returns the stored value, or null if there is none. The bytes are the
+  /// caller's own, and the caller may wipe them.
   Future<Uint8List?> read(String name);
 
   /// Stores [value] under [name], replacing any old value in one step.

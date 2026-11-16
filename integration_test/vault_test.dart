@@ -67,6 +67,20 @@ void main() {
     expect(File('$vaultDirectory/p3.basic.bin').existsSync(), isFalse);
   });
 
+  test('what read and randomBytes give is the caller\'s own and can be '
+      'wiped', () async {
+    // The platform channel's bytes are a read-only view. The app wipes
+    // what it reads (ShaOlmService._load, MixedEntropy), which threw here
+    // before the vault copied them.
+    await vault.write('p3.wipe', bytes(64, 4));
+    final read = (await vault.read('p3.wipe'))!;
+    read.fillRange(0, read.length, 0);
+    expect(await vault.read('p3.wipe'), bytes(64, 4));
+    final random = await vault.randomBytes(64);
+    random.fillRange(0, random.length, 0);
+    expect(random, everyElement(0));
+  });
+
   test('a large entry, with the time it takes', () async {
     for (final size in [512 * 1024, 2 * 1024 * 1024]) {
       final value = bytes(size, 3);

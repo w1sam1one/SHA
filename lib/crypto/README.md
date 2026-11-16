@@ -17,6 +17,8 @@ primitiver i Dart, `javax.crypto` + Android Keystore i Kotlin. Inga primitiver
 | `crypto.dart` | Publikt gränssnitt – det enda appen importerar. |
 | `src/crypto_service.dart` | `CryptoService` – gränssnittet. |
 | `src/sha_crypto_service.dart` | Standardimplementationen. |
+| `src/olm_service.dart` | `OlmService` – Olm bakom `CryptoService` (P3). |
+| `src/sha_olm_service.dart` | Standardimplementationen: tillståndet i en valvpost. |
 | `src/key_vault.dart` | `KeyVault` – lagring av hemligheter + plattformens slumpkälla. |
 | `src/android_keystore_vault.dart` | `KeyVault` via plattformskanalen `se.sha/keystore`. |
 | `src/entropy.dart` | Blandad slumpkälla för långlivade nycklar. |
@@ -97,6 +99,40 @@ skyddar mot en bugg i en av implementationerna (som Androids SecureRandom-bugg
 entropi”. Källorna kontrolleras (fel längd, konstant värde eller identiska
 utdata ger fel). Nonces för AES-GCM tas från `Random.secure` för varje
 meddelande. Keystore väljer själv IV för omslagsnyckeln.
+
+## Olm (P3)
+
+Appen når Olm (vodozemac, 0003) bara via `CryptoService.olm`. Koden är märkt
+**OGRANSKAT (0004 §6)** och ska granskas av en kryptoexpert före första
+utdelningen.
+
+- **En valvpost, `olm.state.v1`,** innehåller hela tillståndet (0005 (A)):
+  kontots pickle, sessionernas pickles per kontakt med sitt nummer (0006
+  (b)), hashar av behandlade paket i 72 timmar, utkorgen, mottagna meddelanden
+  som inte har visats (0005 (i)) och räknarna för fel. Varje ändring är en
+  enda skrivning av hela posten.
+- **Pickle-nyckeln** är 32 byte från den blandade slumpkällan, i en egen post
+  `olm.pickle-key.v1` (0004 §6). Pickles krypteras av vodozemac med den, och
+  valvposten krypteras dessutom av Keystore.
+- **Ordningen i 0004 §6:**
+  - **Mottagning:** hoppa över ett paket vars hash finns. Försök sedan med
+    sessionerna, högst nummer först, och för typ 0 till sist
+    `createInboundSession` med kontaktens identitetsnyckel. Spara allt i en
+    skrivning, och lämna ut meddelandet först därefter.
+  - **Sändning:** kryptera, spara sessionen och paketet i utkorgen i en
+    skrivning, och skicka först därefter.
+  - **QR-koden:** den nya engångsnyckeln sparas innan den visas.
+- **Varje försök börjar från den sparade pickeln.** Ett misslyckat försök
+  kastas och sparas aldrig, så det kan inte ändra det som är sparat.
+- **Bibliotekets feltext sparas, visas eller loggas aldrig**, eftersom den kan
+  innehålla nycklar. Fel blir en fast `OlmReceiveFailure` eller ett fast
+  `CryptoException`.
+- **Testat:**
+  - R1–R7 från spiken mot appens klasser, krascher enligt §6 och
+    `resetIdentity()`: `test/crypto/olm_service_cases.dart`;
+  - samma tester på Android, plus mätningen i 0005:
+    `integration_test/olm_service_test.dart`;
+  - för värdtesterna bygger `tool/build_native_host.sh` biblioteket.
 
 ## Konversationer
 
