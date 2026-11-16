@@ -140,6 +140,48 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Get packages (lockfile must match)
+        run: |
+          flutter config --no-analytics
+          flutter pub get --enforce-lockfile
+
+      # cargokit builds with `rustup run stable` (flutter_vodozemac 0.9.1,
+      # cargokit/build_tool/lib/src/builder.dart), not with the toolchain
+      # installed above. Print the one it will use.
+      - name: Rust toolchain used by cargokit
+        run: rustup run stable rustc --version
+
+      # The runner has 7.9 GB RAM and 3 GB swap. With the project's
+      # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.9 GB
+      # while the emulator held 2-3.4 GB and rustc ran: swap filled up and
+      # the runner was shut down ("The runner has received a shutdown
+      # signal"). Settings in ~/.gradle/gradle.properties win over the
+      # project's: no daemon left running, Kotlin in the same process, and a
+      # smaller heap.
+      - name: Gradle memory limits for CI
+        run: |
+          mkdir -p "$HOME/.gradle"
+          cat > "$HOME/.gradle/gradle.properties" <<'PROPS'
+          org.gradle.daemon=false
+          org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError
+          kotlin.compiler.execution.strategy=in-process
+          PROPS
+          cat "$HOME/.gradle/gradle.properties"
+
+      # Build first, while the emulator is not running yet: the Rust part
+      # and the Java/Kotlin compile are the memory peak. The test step below
+      # reuses that build.
+      - name: Build the APK before starting the emulator
+        run: |
+          "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
+          monitor=$!
+          status=0
+          flutter build apk --debug --target-platform android-x64 --target integration_test/olm_build_test.dart || status=$?
+          kill "$monitor" 2>/dev/null || true
+          echo "Gradle and Kotlin processes left after the build:"
+          ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
+          exit "$status"
+
       - name: Start emulator
         timeout-minutes: 15
         run: |
@@ -152,7 +194,7 @@ jobs:
             --force -n app -k "$SYSTEM_IMAGE" --device pixel_6
           emulator -list-avds | grep -qx app
           nohup emulator -avd app -no-window -no-audio -no-boot-anim \
-            -gpu swiftshader_indirect -no-snapshot > "$RUNNER_TEMP/emulator.log" 2>&1 &
+            -gpu swiftshader_indirect -no-snapshot -memory 2048 > "$RUNNER_TEMP/emulator.log" 2>&1 &
           emulator_pid=$!
           for _ in $(seq 1 60); do
             adb devices | grep -q '^emulator-5554' && break
@@ -179,17 +221,6 @@ jobs:
           echo "abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')" \
                "android=$(adb shell getprop ro.build.version.release | tr -d '\r')" \
                "sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
-
-      - name: Get packages (lockfile must match)
-        run: |
-          flutter config --no-analytics
-          flutter pub get --enforce-lockfile
-
-      # cargokit builds with `rustup run stable` (flutter_vodozemac 0.9.1,
-      # cargokit/build_tool/lib/src/builder.dart), not with the toolchain
-      # installed above. Print the one it will use.
-      - name: Rust toolchain used by cargokit
-        run: rustup run stable rustc --version
 
       - name: Emulator memory settings
         run: |
