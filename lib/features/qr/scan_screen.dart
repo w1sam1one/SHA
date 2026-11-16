@@ -81,6 +81,15 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
             .read(contactsProvider.notifier)
             .byId(_hex(await crypto.sha256(scanned.bundle.identityKey)));
         if (existing != null) {
+          // The addressing key must be the saved one, as in addContact:
+          // otherwise the code is not this contact's.
+          if (existing.identity != scanned.addressingKey) {
+            _showError(
+              'Koden stämmer inte med den du har sparat som ${existing.name}. '
+              'Skanna igen när ni ses.',
+            );
+            return;
+          }
           // A new scan starts a new session, which is sent on at once
           // (0006 (b)). The same QR display gives none (0004 §2).
           await crypto.olm.startSession(scanned.bundle);

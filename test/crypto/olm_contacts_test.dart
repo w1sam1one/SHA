@@ -169,6 +169,24 @@ void main() {
       },
     );
 
+    test('after each new scan the next message goes on the newest session, '
+        'whatever its id (0006 (b))', () async {
+      final (alice, bob) = await established();
+      for (var i = 0; i < 10; i++) {
+        await scan(alice, bob);
+        final before = {
+          for (final s in _sessions(alice, bob)) s['id']: s['pickle'],
+        };
+        final newest = chosenSessionId(alice, bob);
+        await alice.olm.encrypt(bob.key, 'm$i');
+        final changed = [
+          for (final s in _sessions(alice, bob))
+            if (before[s['id']] != s['pickle']) s['id'],
+        ];
+        expect(changed, [newest], reason: 'round $i');
+      }
+    });
+
     test('the same QR display scanned twice gives no new session', () async {
       final alice = await Person().start();
       final bob = await Person().start();
@@ -237,6 +255,38 @@ void main() {
         (await bob.olm.receive(alice.key, first.packet)).failure,
         OlmReceiveFailure.unreadable,
       );
+    });
+
+    test('a used shown key that expires does not break the QR code, and an '
+        'unused one in the same pass is still removed', () async {
+      var now = DateTime.utc(2026, 11, 1);
+      final alice = await Person(null, () => now).start();
+      final bob = await Person(null, () => now).start();
+      final carol = await Person(null, () => now).start();
+      // Alice uses Bob's first key: Bob reads her message, so Olm has
+      // removed that key from his account.
+      await scan(alice, bob);
+      expect(
+        await deliver(bob, alice, await alice.olm.encrypt(bob.key, 'hej')),
+        'hej',
+      );
+      // Carol scans Bob's second code but does not write yet.
+      await scan(carol, bob);
+
+      now = now.add(const Duration(days: 31));
+      final third = await bob.olm.publishBundle(); // cleans both
+      expect(third.toBytes(), hasLength(64));
+      expect((await bob.olm.publishBundle()).toBytes(), hasLength(64));
+
+      final late = await carol.olm.encrypt(bob.key, 'för sent');
+      expect(
+        (await bob.olm.receive(carol.key, late.packet)).failure,
+        OlmReceiveFailure.unreadable,
+        reason: 'the unused key was removed',
+      );
+      // The cleanup did not touch the session with Alice.
+      final next = await alice.olm.encrypt(bob.key, 'efter');
+      expect(await deliver(bob, alice, next), 'efter');
     });
 
     test('a shown key is kept for 29 days', () async {
