@@ -70,14 +70,14 @@ Prototypen är klar när allt detta gäller:
   väljer antal dagar. Kontakterna sparas i tillståndets valvpost (0005 (A)).
 - [x] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
-- [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
+- [x] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
   Hämtning enligt §9 (b). Intervallet 1, 5, 15 eller 60 minuter i
   inställningarna. Felfall och texter enligt §10 (godkända 2026-11-16) och
   0002. I allt användaren ser heter relayn "servern", även i
   `lib/ui/technical_info_sheet.dart` ("reläer", "Ett relä"). `INTERNET` i
   release-manifestet, med motivering i README. Serverns adress går att
   ställa in.
-- [ ] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
+- [x] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
   204, 507 och 429, dubbletter, krascher och mutationer (§11).
 - [ ] **P8 – Leverans till ägaren.** Debug-APK som CI-artefakt och
   `docs/prototyp.md`.
@@ -241,6 +241,17 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P7 klar: `test/chain/relay_chain_test.dart` kör två appar
+  mot den riktiga relayn i CI (`tool/build_relay.sh`, Go i Flutter-jobbet):
+  204, 507 och 429, dubbletter, en krasch efter att relayn tog paketet och
+  en misslyckad skrivning hos mottagaren. Mutationer: fel brevlåda och ingen
+  kontroll av dubbletter fångas.
+- 2026-11-16 – P6 klar: appen skickar och hämtar via servern. En
+  relay-klient med `dart:io`, varje brevlåda vid en egen slumpad tid i
+  intervallet (§9 (b)), bara när appen är öppen, och `Retry-After` vid 429.
+  Chatten använder Olm, paketformat 3 och texterna i §10. Serverns adress
+  och intervallet (1, 5, 15 eller 60 minuter) ställs in i appen och sparas i
+  Olm-tillståndets valvpost (0005, punkt 9). `INTERNET` i release-manifestet.
 - 2026-11-16 – P5 klar: paketformat 3 och utfyllnad innanför Olm
   (OGRANSKAT, 0004 §4 (A) och §5 (a)). Alla rader i storlekstabellen stämmer
   med riktiga Olm-meddelanden, och kedjeindex 16 384 är nu mätt. Relayns

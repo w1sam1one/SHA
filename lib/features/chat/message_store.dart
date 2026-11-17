@@ -1,50 +1,92 @@
-import 'dart:typed_data';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// A message as stored: the relay packet exactly as sent or received, never
-/// plaintext. Message id and timestamp are also inside the ciphertext; the
-/// copies here are local-only bookkeeping and never leave the device.
-class EncryptedMessage {
-  const EncryptedMessage({
+/// A message in a conversation, as text.
+///
+/// Olm cannot read back what this phone sent, so the text is kept in memory
+/// while the app runs. On disk a message exists only until it has been sent
+/// or shown (0005 (i)): in the outbox or the inbox of the Olm state.
+class ChatMessage {
+  const ChatMessage({
     required this.id,
-    required this.contactId,
     required this.outgoing,
-    required this.storedAt,
-    required this.packet,
+    required this.sentAt,
+    required this.text,
+    this.savedId,
+    this.pending = false,
+    this.shown = true,
   });
 
+  /// The message ID inside the encryption (0004 §5). The same ID is kept
+  /// only once.
   final String id;
-  final String contactId;
   final bool outgoing;
-  final DateTime storedAt;
-  final Uint8List packet;
+  final DateTime sentAt;
+
+  /// Null if Olm read the message but it was not a message from SHA.
+  final String? text;
+
+  /// Its ID in the outbox (outgoing) or the inbox (incoming) while it is
+  /// still saved there.
+  final String? savedId;
+
+  /// Outgoing: still in the outbox, not yet taken by the server.
+  final bool pending;
+
+  /// Incoming: false until the chat has shown it.
+  final bool shown;
+
+  ChatMessage copyWith({
+    bool? pending,
+    bool? shown,
+    bool clearSavedId = false,
+  }) => ChatMessage(
+    id: id,
+    outgoing: outgoing,
+    sentAt: sentAt,
+    text: text,
+    savedId: clearSavedId ? null : savedId,
+    pending: pending ?? this.pending,
+    shown: shown ?? this.shown,
+  );
 }
 
-/// In-memory store of encrypted messages, keyed by contact id.
-class MessageStore extends Notifier<Map<String, List<EncryptedMessage>>> {
+/// The messages in memory, per contact ID, in time order.
+class MessageStore extends Notifier<Map<String, List<ChatMessage>>> {
   @override
-  Map<String, List<EncryptedMessage>> build() => const {};
+  Map<String, List<ChatMessage>> build() => const {};
 
-  List<EncryptedMessage> forContact(String contactId) =>
+  List<ChatMessage> forContact(String contactId) =>
       state[contactId] ?? const [];
 
-  bool contains(String contactId, String messageId) =>
-      forContact(contactId).any((m) => m.id == messageId);
-
-  /// Adds [message] unless one with the same id exists (replay protection).
-  /// Returns whether it was added.
-  bool add(EncryptedMessage message) {
-    if (contains(message.contactId, message.id)) return false;
+  /// Adds [message] unless one with the same ID is there. Returns whether
+  /// it was added.
+  bool add(String contactId, ChatMessage message) {
+    final list = forContact(contactId);
+    if (list.any((m) => m.id == message.id)) return false;
     state = {
       ...state,
-      message.contactId: [...forContact(message.contactId), message],
+      contactId: [...list, message]
+        ..sort((a, b) => a.sentAt.compareTo(b.sentAt)),
     };
     return true;
+  }
+
+  /// Changes the message with [id], if there is one.
+  void update(
+    String contactId,
+    String id,
+    ChatMessage Function(ChatMessage) change,
+  ) {
+    final list = forContact(contactId);
+    if (!list.any((m) => m.id == id)) return;
+    state = {
+      ...state,
+      contactId: [for (final m in list) m.id == id ? change(m) : m],
+    };
   }
 }
 
 final messageStoreProvider =
-    NotifierProvider<MessageStore, Map<String, List<EncryptedMessage>>>(
+    NotifierProvider<MessageStore, Map<String, List<ChatMessage>>>(
       MessageStore.new,
     );

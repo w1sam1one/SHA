@@ -180,7 +180,17 @@ klartext i Olm = utfyllnad( {"v":3,"id","t","m"} )
   - paketets fält, för korta paket och okänd version eller typ:
     `test/crypto/olm_wire_format_test.dart`;
   - R7 med exakta storlekar körs också på Android.
-- **Appen skickar fortfarande paketformat 2.** P6 kopplar in formatet.
+- **Appen skickar paketformat 3 sedan P6.** Det gamla formatet 2
+  (`WireFormat`, `seal`, `open`) används inte längre av appen.
+
+### Inställningar och felräknare (P6)
+
+- **Inställningarna** (serverns adress och intervallet) sparas i samma
+  valvpost som allt annat (0005 (A), punkt 9): `appSettings` och
+  `saveAppSettings`. De raderas av `resetIdentity()`.
+- **Felräknarna** visas samlade i chatten (0004 §10) och tas sedan bort med
+  `clearFailureCounts`. Den drar bara av det som visades, så ett fel som
+  kom under tiden finns kvar.
 
 ## Konversationer
 

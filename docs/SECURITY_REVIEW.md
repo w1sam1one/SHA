@@ -26,7 +26,8 @@ IP-adresser och tider.
 | 14 | Repriser av samma paket. | Låg | Meddelande-id i chiffertexten; dubbletter lagras inte. |
 
 Behållet från första versionen: `FLAG_SECURE`, ingen backup, inga loggar,
-inga nätverksbehörigheter i release, inbäddade typsnitt.
+inbäddade typsnitt. Release-bygget hade inga nätverksbehörigheter fram till
+P6, som lägger till `INTERNET` för servern (se README, "Android-härdning").
 
 ## Vad en angripare kan och inte kan
 

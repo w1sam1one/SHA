@@ -457,6 +457,39 @@ final class ShaOlmService implements OlmService {
     );
   });
 
+  @override
+  Future<void> clearFailureCounts(List<int> peer, OlmFailureCounts shown) =>
+      _serial(() async {
+        final (state, _) = await _require();
+        final c = state.contacts[_peerKey(peer)];
+        if (c == null) return;
+        int less(int now, int seen) => now > seen ? now - seen : 0;
+        final next = state.copy();
+        next.contacts[_peerKey(peer)]!
+          ..unreadable = less(c.unreadable, shown.unreadable)
+          ..tooLate = less(c.tooLate, shown.tooLate)
+          ..gapTooBig = less(c.gapTooBig, shown.gapTooBig)
+          ..malformed = less(c.malformed, shown.malformed);
+        await _save(next);
+      });
+
+  @override
+  Future<Map<String, String>> appSettings() => _serial(() async {
+    final state = await _load();
+    return {...?state?.settings};
+  });
+
+  @override
+  Future<void> saveAppSettings(Map<String, String> settings) =>
+      _serial(() async {
+        final (state, _) = await _require();
+        final next = state.copy();
+        next.settings
+          ..clear()
+          ..addAll(settings);
+        await _save(next);
+      });
+
   // ---------------------------------------------------------------------
 
   /// Loads the native library once per process (flutter_rust_bridge throws
@@ -652,11 +685,13 @@ final class _State {
     List<_Outgoing>? outbox,
     List<_Incoming>? inbox,
     Map<String, int>? shown,
+    Map<String, String>? settings,
   }) : contacts = contacts ?? {},
        seen = seen ?? {},
        outbox = outbox ?? [],
        inbox = inbox ?? [],
-       shown = shown ?? {};
+       shown = shown ?? {},
+       settings = settings ?? {};
 
   factory _State.decode(Uint8List bytes) {
     final j = jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
@@ -679,6 +714,10 @@ final class _State {
           _Incoming.fromJson(m! as Map<String, Object?>),
       ],
       shown: Map<String, int>.from(j['shown']! as Map<String, Object?>),
+      // Missing in states saved before P6.
+      settings: Map<String, String>.from(
+        (j['settings'] as Map<String, Object?>?) ?? const {},
+      ),
     );
   }
 
@@ -697,6 +736,9 @@ final class _State {
   /// One-time keys shown in a QR code (base64) -> when, in ms (0004 §8).
   final Map<String, int> shown;
 
+  /// The app's settings (0005, item 9).
+  final Map<String, String> settings;
+
   int nextNumber() => ++counter;
 
   _Contact contact(String peer) => contacts.putIfAbsent(peer, _Contact.new);
@@ -711,6 +753,7 @@ final class _State {
     'outbox': [for (final o in outbox) o.toJson()],
     'inbox': [for (final m in inbox) m.toJson()],
     'shown': shown,
+    'settings': settings,
   };
 
   Uint8List encode() => Uint8List.fromList(utf8.encode(jsonEncode(toJson())));

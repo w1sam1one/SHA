@@ -1,15 +1,35 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/providers.dart';
+import '../../crypto/crypto.dart';
 import '../contacts/contacts_store.dart';
+import '../transport/transport.dart';
 import 'message_store.dart';
 import 'messaging_service.dart';
+import 'notice_texts.dart';
 
-/// Decrypted history of one conversation. Auto-disposed, so plaintext is only
-/// kept in memory while the chat is on screen.
-class ChatController extends AsyncNotifier<List<ChatMessage>> {
+/// What an open chat shows: the messages and the collected failure lines
+/// (0004 §10).
+class ChatView {
+  const ChatView({required this.messages, this.notices = const []});
+
+  final List<ChatMessage> messages;
+  final List<String> notices;
+}
+
+/// One open conversation. Auto-disposed when the chat closes.
+///
+/// - A message counts as shown when it is in this view: it is then removed
+///   from the inbox on disk (0005 (i)).
+/// - The failure counters are read, shown while the chat is open, and then
+///   taken off the saved counters (0004 §10).
+class ChatController extends Notifier<ChatView> {
   ChatController(this.contactId);
 
   final String contactId;
+  OlmFailureCounts _shown = const OlmFailureCounts();
 
   Contact get _contact {
     final contact = ref.read(contactsProvider.notifier).byId(contactId);
@@ -18,39 +38,79 @@ class ChatController extends AsyncNotifier<List<ChatMessage>> {
   }
 
   @override
-  Future<List<ChatMessage>> build() async {
-    ref.watch(contactsProvider);
-    final messaging = ref.watch(messagingServiceProvider);
-    final contact = _contact;
-    final stored = ref
-        .read(messageStoreProvider.notifier)
-        .forContact(contactId);
-    return Future.wait([
-      for (final m in stored) messaging.open(contact: contact, message: m),
-    ]);
+  ChatView build() {
+    ref.listen(messageStoreProvider.select((all) => all[contactId]), (_, list) {
+      state = ChatView(messages: list ?? const [], notices: state.notices);
+      _quietly(_markShown());
+    });
+    ref.listen(failureTickProvider, (_, _) => _quietly(_readFailures()));
+    scheduleMicrotask(() {
+      _quietly(_markShown());
+      _quietly(_readFailures());
+    });
+    return ChatView(
+      messages: ref.read(messageStoreProvider.notifier).forContact(contactId),
+    );
   }
 
   Future<void> send(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
-    final store = ref.read(messageStoreProvider.notifier);
-    final sealed = await ref
+    final (_, message) = await ref
         .read(messagingServiceProvider)
-        .seal(contact: _contact, text: trimmed);
-    // Here the packet would be handed to the relay pool.
-    store.add(sealed);
+        .send(contact: _contact, text: trimmed);
+    ref.read(messageStoreProvider.notifier).add(contactId, message);
+    ref.read(transportProvider).sendSoon();
+  }
+
+  Future<void> _markShown() async {
+    final olm = ref.read(cryptoServiceProvider).olm;
+    for (final m in state.messages) {
+      final saved = m.savedId;
+      if (m.outgoing || m.shown || saved == null) continue;
+      await olm.markShown(saved);
+      if (!ref.mounted) return;
+      ref
+          .read(messageStoreProvider.notifier)
+          .update(
+            contactId,
+            m.id,
+            (m) => m.copyWith(shown: true, clearSavedId: true),
+          );
+    }
+  }
+
+  /// One read at a time, so the same counts are never added twice.
+  /// A failure (a locked phone) leaves the message or counter saved, and
+  /// the next change tries again. The text is not kept.
+  static void _quietly(Future<void> work) => unawaited(work.catchError((_) {}));
+
+  /// One read at a time, so the same counts are never added twice. A failed
+  /// read does not stop the next one.
+  Future<void> _readFailures() =>
+      _reading = _reading.then((_) => _readFailuresNow()).catchError((_) {});
+  Future<void> _reading = Future.value();
+
+  Future<void> _readFailuresNow() async {
+    final contact = ref.read(contactsProvider.notifier).byId(contactId);
+    final key = contact?.olm?.identityKey;
+    if (contact == null || key == null) return;
+    final olm = ref.read(cryptoServiceProvider).olm;
+    final counts = await olm.failureCounts(key);
     if (!ref.mounted) return;
-    state = AsyncData([
-      ...state.value ?? const [],
-      ChatMessage(
-        id: sealed.id,
-        outgoing: true,
-        sentAt: sealed.storedAt,
-        text: trimmed,
-      ),
-    ]);
+    if (counts.unreadable + counts.tooLate + counts.gapTooBig == 0) return;
+    _shown = OlmFailureCounts(
+      unreadable: _shown.unreadable + counts.unreadable,
+      tooLate: _shown.tooLate + counts.tooLate,
+      gapTooBig: _shown.gapTooBig + counts.gapTooBig,
+    );
+    state = ChatView(
+      messages: state.messages,
+      notices: NoticeTexts.failures(contact.name, _shown),
+    );
+    await olm.clearFailureCounts(key, counts);
   }
 }
 
-final chatProvider = AsyncNotifierProvider.autoDispose
-    .family<ChatController, List<ChatMessage>, String>(ChatController.new);
+final chatProvider = NotifierProvider.autoDispose
+    .family<ChatController, ChatView, String>(ChatController.new);

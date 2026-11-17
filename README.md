@@ -38,35 +38,38 @@ lib/
 ├── features/
 │   ├── onboarding/    Skapar identiteten vid första start
 │   ├── qr/            Min QR, Skanna, QR-formatet, "lägg till kontakt"
-│   ├── contacts/      Kontaktlista (i minnet)
-│   ├── chat/          Chattlista, chatt, kryptering av meddelanden (i minnet)
+│   ├── contacts/      Kontaktlistan (sparas i Olm-tillståndet)
+│   ├── chat/          Chattlista, chatt, meddelandets JSON-text, felraderna
+│   ├── transport/     Servern: klienten, hämtningen och inställningarna
+│   ├── settings/      Serverns adress och hur ofta appen hämtar
 │   └── home/          Bottennavigering
 └── ui/                Delade widgets (avatar, identicon) och formatering
 ```
 
 Appen pratar bara med kryptot via `CryptoService` (`lib/crypto/crypto.dart`).
-Meddelanden lagras endast som färdiga relä-paket (AES-256-GCM); klartext finns
-bara i minnet medan en chatt är öppen (`chatProvider` är `autoDispose`).
+Meddelanden krypteras med Olm. På disk finns ett meddelande bara tills det
+har skickats eller visats (0005 (i)); sedan finns texten bara i minnet tills
+appen stängs.
 
 Säkerhetsgranskning, hotmodell och nästa steg: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
 
 ## QR-format
 
 ```
-shaid:1:<identitetshash, 64 hex>:<X25519 publik nyckel, base64url>
+shaid:2:<96 byte, base64url utan "=">
 ```
 
-Allt i koden är publikt. Skannern kontrollerar att hashen är SHA-256 av nyckeln,
-avvisar din egen kod och ogiltiga nycklar, och visar en gemensam 20-siffrig
-kontrollkod som båda ska jämföra innan kontakten läggs till.
+De 96 byten är Olm-identitetsnyckeln, en ny engångsnyckel och
+X25519-nyckeln för brevlådorna (0004 §1). Allt i koden är publikt. Båda
+jämför en 20-siffrig kontrollkod innan kontakten läggs till.
 
-## Relä-paket
+## Paket till servern
 
-Meddelanden skickas (i nästa steg) till en pool av relä-servrar. Ett paket är
-`version || brevlåde-id || nonce || chiffertext || tagg`. Brevlåde-id:t är en
-pseudonym som byts varje dygn och skiljer sig per konversation och riktning;
-reläet ser aldrig vem som skickar till vem. Paketen fylls ut till fem fasta
-storlekar. Detaljer i `lib/crypto/README.md`.
+Ett paket är `3 || brevlåde-id || Olm-typ || Olm-meddelande` (0004 §5).
+Brevlåde-id:t är en pseudonym som byts varje dygn och skiljer sig per
+konversation och riktning; servern ser aldrig vem som skickar till vem.
+Texten fylls ut till fem fasta storlekar innan Olm krypterar den. Detaljer i
+`lib/crypto/README.md` och `relay/README.md`.
 
 ## Android-härdning
 
@@ -80,16 +83,21 @@ storlekar. Detaljer i `lib/crypto/README.md`.
 - `allowBackup="false"` och `data_extraction_rules.xml` – ingen moln-backup
   eller enhetsöverföring.
 - `FLAG_SECURE` – inga skärmdumpar eller förhandsvisning i "senaste appar".
-- Release-bygget begär bara `CAMERA`, inte `INTERNET`.
+- Release-bygget begär `CAMERA` och `INTERNET`, inget annat i appens eget
+  manifest.
+  - `CAMERA` behövs bara för att skanna QR-koder.
+  - `INTERNET` behövs bara för servern som du själv ställer in under
+    Inställningar (P6, 0002). Appen lämnar och hämtar krypterade paket där,
+    bara över `https` och bara medan appen är öppen. Inga notiser, inga
+    konton. Ingen annan kod i appen använder nätet.
 - Typsnitten (Manrope, JetBrains Mono, SIL OFL) är inbäddade i `assets/fonts/`,
   så appen hämtar ingenting från nätet.
 
 ## Nästa steg
 
-- Transport/backend och mottagna meddelanden.
-- Double Ratchet (libsignal) för forward secrecy.
-- Tor/mixnät och täcktrafik mot reläerna.
-- Persistent, krypterad lagring av kontakter och meddelanden.
+- Se [`docs/ROADMAP.md`](docs/ROADMAP.md). Olm, kontakter som sparas och
+  servern finns sedan P3–P6.
+- Tor/mixnät och täcktrafik mot servern.
 - App-lås med biometri/PIN.
 
 ## Licens
