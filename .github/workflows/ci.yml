@@ -14,6 +14,14 @@
 #   without --locked, so they use the runner's preinstalled stable Rust.
 #   Its version is printed in the log (app-android, spike-android.yml).
 # - Actions are pinned to full commit SHAs (tag in the comment).
+#
+# Actions minutes (docs/decisions/0013-ci-minuter.md):
+# - The job "changes" decides which jobs a change needs
+#   (.github/scripts/changed-jobs.sh). A change to documentation only runs
+#   just that job and its quick check.
+# - The pub, Cargo and Gradle downloads, and the Rust builds, are cached.
+#   Every run restores the caches; only pushes to main save them, so a pull
+#   request cannot change what main and other pull requests get.
 name: CI
 
 on:
@@ -24,13 +32,80 @@ on:
 permissions:
   contents: read
 
+# One run per branch: a new commit on a pull request cancels the run for the
+# older one. Runs on main are not cancelled: "changes" only looks at what each
+# push brought in, so a cancelled run on main would leave that push untested.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which of the jobs below this change needs, and the quick check every run
+  # gets: whitespace errors and conflict markers in the change, and relative
+  # links in changed Markdown files (.github/scripts/check-docs.py).
+  changes:
+    name: Changed files and quick check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      flutter: ${{ steps.jobs.outputs.flutter }}
+      android: ${{ steps.jobs.outputs.android }}
+      spike: ${{ steps.jobs.outputs.spike }}
+      relay: ${{ steps.jobs.outputs.relay }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The whole history, so that a push's "before" commit is there.
+          fetch-depth: 0
+
+      - name: Changed files
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # A pull request is checked out as GitHub's merge commit. Its first
+          # parent is the base branch, so the diff is what the merge brings in.
+          if [ "$EVENT" = pull_request ]; then
+            base="$(git rev-parse HEAD^1 2>/dev/null || true)"
+          else
+            base="$BEFORE"
+          fi
+          # If the diff cannot be made (a new branch, rewritten history), the
+          # list is empty and every job runs.
+          if [ -n "$base" ] && git diff --name-only "$base" HEAD > "$RUNNER_TEMP/changed.txt"; then
+            echo "BASE=$base" >> "$GITHUB_ENV"
+          else
+            : > "$RUNNER_TEMP/changed.txt"
+            echo "BASE=" >> "$GITHUB_ENV"
+          fi
+          echo "Changed files:"
+          cat "$RUNNER_TEMP/changed.txt"
+
+      - name: Test the scripts this job uses
+        run: .github/scripts/test-ci-scripts.sh
+
+      - name: Jobs to run
+        id: jobs
+        run: .github/scripts/changed-jobs.sh < "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+
+      # License texts under assets/ are kept exactly as their authors wrote
+      # them, trailing spaces included.
+      - name: Whitespace errors and conflict markers in the change
+        if: env.BASE != ''
+        run: git diff --check "$BASE" HEAD -- . ':(exclude)assets/'
+
+      - name: Relative links in changed Markdown files
+        run: |
+          { grep -E '\.md$' "$RUNNER_TEMP/changed.txt" || true; } \
+            | tr '\n' '\0' | xargs -0 -r python3 -I .github/scripts/check-docs.py
+
   flutter:
     name: Flutter analyze and test
+    needs: changes
+    # The other jobs run even if the quick check failed, so that its result
+    # does not hide theirs.
+    if: ${{ !cancelled() && needs.changes.outputs.flutter == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -71,11 +146,34 @@ jobs:
           flutter config --no-analytics
           flutter --version
 
+      - name: Restore the pub cache
+        id: pub-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-
+
       - name: Get packages (lockfile must match)
         run: flutter pub get --enforce-lockfile
 
       - name: flutter analyze
         run: flutter analyze
+
+      # The crates' downloads and the host build (tool/build_native_host.sh
+      # builds into build/rust). The crates come from flutter_vodozemac's
+      # Cargo.lock, which pubspec.lock decides.
+      - name: Restore the Cargo cache (host build)
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            build/rust
+          key: cargo-host-${{ runner.os }}-rust-${{ env.RUST_TOOLCHAIN }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: cargo-host-${{ runner.os }}-rust-${{ env.RUST_TOOLCHAIN }}-
 
       - name: Build the native library for the host
         run: ./tool/build_native_host.sh
@@ -89,6 +187,24 @@ jobs:
       - name: flutter test
         run: flutter test
 
+      - name: Save the pub cache
+        if: github.event_name == 'push' && steps.pub-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.pub-cache
+          key: ${{ steps.pub-cache.outputs.cache-primary-key }}
+
+      - name: Save the Cargo cache (host build)
+        if: github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            build/rust
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
+
   # P2 in docs/ROADMAP.md: the app's APK, with flutter_vodozemac built from
   # source, runs integration_test/olm_build_test.dart on an Android emulator.
   # P3 adds integration_test/vault_test.dart (the Keystore vault, 0005) and
@@ -97,6 +213,8 @@ jobs:
   # The same steps as .github/workflows/spike-android.yml.
   app-android:
     name: App on Android emulator (Olm in the build)
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.android == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -163,6 +281,16 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Its own key: during the APK build, cargokit's build tool fetches more
+      # packages into the pub cache than the Flutter job does.
+      - name: Restore the pub cache
+        id: pub-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.pub-cache
+          key: pub-android-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-android-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-
+
       - name: Get packages (lockfile must match)
         run: |
           flutter config --no-analytics
@@ -170,9 +298,47 @@ jobs:
 
       # cargokit builds with `rustup run stable` (flutter_vodozemac 0.9.1,
       # cargokit/build_tool/lib/src/builder.dart), not with the toolchain
-      # installed above. Print the one it will use.
+      # installed above. Print the one it will use; it is also part of the
+      # Cargo cache's key.
       - name: Rust toolchain used by cargokit
-        run: rustup run stable rustc --version
+        id: cargokit-rust
+        run: |
+          version="$(rustup run stable rustc --version)"
+          echo "$version"
+          echo "key=$(printf '%s' "$version" | tr -c 'A-Za-z0-9.' '-')" >> "$GITHUB_OUTPUT"
+
+      # Gradle's downloads and the Gradle distribution. ~/.gradle/gradle.properties
+      # is written by the next step and is not cached.
+      - name: Restore the Gradle cache
+        id: gradle-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+            !~/.gradle/caches/modules-2/modules-2.lock
+            !~/.gradle/caches/modules-2/gc.properties
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # The crates' downloads and cargokit's build for Android. cargokit
+      # builds into the plugin's Gradle build directory, build/flutter_vodozemac
+      # (CARGOKIT_TARGET_TEMP_DIR in cargokit/gradle/plugin.gradle): the target
+      # in x86_64-linux-android, build scripts and macros in debug, and its
+      # Dart build tool in build_tool.
+      - name: Restore the Cargo cache (Android build)
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            build/flutter_vodozemac/x86_64-linux-android
+            build/flutter_vodozemac/debug
+            build/flutter_vodozemac/build_tool
+          key: cargo-android-${{ runner.os }}-${{ steps.cargokit-rust.outputs.key }}-ndk-${{ env.NDK_VERSION }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: cargo-android-${{ runner.os }}-${{ steps.cargokit-rust.outputs.key }}-ndk-${{ env.NDK_VERSION }}-
 
       # The runner has 7.9 GB RAM and 0-3 GB swap (both seen). With the project's
       # -Xmx8G (android/gradle.properties) the Gradle daemon grew to 3.8 GB
@@ -204,6 +370,38 @@ jobs:
           echo "Gradle and Kotlin processes left after the build:"
           ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
           exit "$status"
+
+      # Saved right after the build, before the emulator needs the memory.
+      - name: Save the pub cache
+        if: github.event_name == 'push' && steps.pub-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.pub-cache
+          key: ${{ steps.pub-cache.outputs.cache-primary-key }}
+
+      - name: Save the Gradle cache
+        if: github.event_name == 'push' && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+            !~/.gradle/caches/modules-2/modules-2.lock
+            !~/.gradle/caches/modules-2/gc.properties
+          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
+
+      - name: Save the Cargo cache (Android build)
+        if: github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            build/flutter_vodozemac/x86_64-linux-android
+            build/flutter_vodozemac/debug
+            build/flutter_vodozemac/build_tool
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
 
       - name: Start emulator
         timeout-minutes: 15
@@ -297,6 +495,8 @@ jobs:
 
   spike-vodozemac:
     name: Spike vodozemac (host tests)
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.spike == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
@@ -328,6 +528,14 @@ jobs:
           rustup default "$RUST_TOOLCHAIN"
           rustc --version
 
+      - name: Restore the pub cache
+        id: pub-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.pub-cache
+          key: pub-spike-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('spike/vodozemac/pubspec.lock') }}
+          restore-keys: pub-spike-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-
+
       - name: Get packages (lockfile must match)
         run: |
           flutter config --no-analytics
@@ -336,14 +544,46 @@ jobs:
       - name: flutter analyze
         run: flutter analyze
 
+      - name: Restore the Cargo cache (host build)
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            spike/vodozemac/build/rust
+          key: cargo-spike-${{ runner.os }}-rust-${{ env.RUST_TOOLCHAIN }}-${{ hashFiles('spike/vodozemac/pubspec.lock') }}
+          restore-keys: cargo-spike-${{ runner.os }}-rust-${{ env.RUST_TOOLCHAIN }}-
+
       - name: Build the native library for the host
         run: ./tool/build_native_host.sh
 
       - name: flutter test (requirements R1-R8)
         run: flutter test
 
+      - name: Save the pub cache
+        if: github.event_name == 'push' && steps.pub-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.pub-cache
+          key: ${{ steps.pub-cache.outputs.cache-primary-key }}
+
+      - name: Save the Cargo cache (host build)
+        if: github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            spike/vodozemac/build/rust
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
+
   relay:
     name: Relay go vet and go test -race
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.relay == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:

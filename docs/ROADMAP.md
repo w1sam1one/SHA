@@ -248,6 +248,12 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – CI använder färre Actions-minuter
+  ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
+  10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade
+  filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
+  per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
+  (ett nytt beroende). Ägaren mergar.
 - 2026-11-17 – F10 klar (mergas av ägaren): utkast till integritetspolicy
   på svenska och engelska (`docs/integritetspolicy.md`) och underlaget till
   Data safety med fil som källa (`docs/data-safety.md`). Punkt 6 och 7 i
