@@ -268,12 +268,19 @@ jobs:
 
       # If the app process dies, flutter test only says "did not complete".
       # The crash buffer and the runtime's errors say why. The app itself
-      # never logs (test/security/no_logging_test.dart).
+      # never logs (test/security/no_logging_test.dart). If an earlier step
+      # failed before the emulator started, adb would wait for a device
+      # until the job timed out, so each call has a time limit.
       - name: App crash log (on failure)
         if: failure()
+        timeout-minutes: 3
         run: |
-          adb logcat -d -b crash | tail -n 150 || true
-          adb logcat -d -v brief AndroidRuntime:E DEBUG:I libc:F '*:S' | tail -n 150 || true
+          if ! timeout 10 adb get-state >/dev/null 2>&1; then
+            echo "No emulator is running: nothing to read."
+            exit 0
+          fi
+          timeout 60 adb logcat -d -b crash | tail -n 150 || true
+          timeout 60 adb logcat -d -v brief AndroidRuntime:E DEBUG:I libc:F '*:S' | tail -n 150 || true
 
   spike-vodozemac:
     name: Spike vodozemac (host tests)
