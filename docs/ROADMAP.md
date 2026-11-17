@@ -141,7 +141,7 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
     Apache-paketen.
-- [ ] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
+- [x] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
   steg, förväntat resultat och en ruta för ägarens resultat. Med en mätning
   av farten i StrongBox och ett test med TalkBack.
 - [ ] **F7 – Relayn i drift:**
@@ -245,6 +245,9 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F6 klar: `docs/testprotokoll.md` med steg, förväntat
+  resultat och en ruta för ägarens resultat, inklusive TalkBack och farten i
+  valvet på en riktig telefon. Ägaren fyller i det vid G3.
 - 2026-11-17 – F1 klar: granskningspaketet i `docs/granskning/`
   (hotmodell, alla OGRANSKAT-punkter med fil och rad, vad som är testat,
   frågor till kryptoexperten, och underlaget för granskningen av
