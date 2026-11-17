@@ -29,9 +29,9 @@ Numren följer listan "Kräver granskning av kryptoexpert" sist i 0004.
     kontakt?
 11. **Hashar rensas efter väggklockan** (72 timmar). Ett hopp i klockan kan
     ge fel felrad. Räcker det, eller behövs en monoton klocka?
-12. **Raden "kunde inte läsas"** kan visas av vem som helst som kan
-    brevlådans ID (0004 §10). Är rådet "träffas och skanna igen" rätt
-    då?
+12. **Raderna "kunde inte läsas", "saknas" och "kom fram för sent"** kan
+    visas av vem som helst som kan brevlådans ID (0004 §10, 0008 (i)). Är
+    råden i dem, till exempel "träffas och skanna igen", rätt då?
 13. **En översvämmad brevlåda** (1 000 paket) ger en valvskrivning per nytt
     paket. Behövs en gräns?
 14. **Raderingen av gamla sessioner** (0006 (iii) i prototypen): vilken regel

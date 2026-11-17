@@ -21,16 +21,15 @@ Allt står i [`relay/README.md`](../relay/README.md). Kort:
    RAM: starta relayn med `-max-total-mib 256`.
 2. Peka en domän till serverns IP-adress. Byt ut `relay.example.se` i
    nginx-exemplet och `server.example.se` här mot din domän.
-3. Installera Go (se `relay/go.mod`) och bygg relayn:
-   ```sh
-   cd relay && go build -trimpath -o relay .
-   ```
-4. Kör relayn som en tjänst som lyssnar på `127.0.0.1:8080`. Lägg nginx med
-   TLS framför, enligt exemplet i `relay/README.md` ("Exempel: nginx med TLS
-   och utan åtkomstlogg"), och starta relayn med
-   `-trusted-proxies 127.0.0.1`. Certifikatet måste komma från en publik
-   CA, till exempel Let's Encrypt med certbot: appen litar bara på
-   telefonens egna CA:er, så ett självsignerat certifikat fungerar inte.
+3. Gör servern säker, bygg relayn och kör den som en tjänst på
+   `127.0.0.1:8080` med `-trusted-proxies 127.0.0.1`, enligt
+   [`relay/DRIFT.md`](../relay/DRIFT.md), avsnitt 1 och 2.
+4. Lägg nginx med TLS framför enligt `relay/DRIFT.md`, avsnitt 3, i den
+   ordning som står där: nginx-exemplet i `relay/README.md` pekar på
+   certifikatfiler som inte finns förrän det första certifikatet är hämtat.
+   Certifikatet måste komma från en publik CA, till exempel Let's Encrypt
+   med certbot: appen litar bara på telefonens egna CA:er, så ett
+   självsignerat certifikat fungerar inte.
 5. Kontrollera att varken nginx eller brandväggen loggar IP-adresser
    (`relay/README.md`, "Vad servern ser, sparar och inte ser").
    Leverantören kan ändå se och logga trafiken (0002, fråga b).

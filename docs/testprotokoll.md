@@ -27,11 +27,11 @@ på telefonen; gör det sist.**
 
 | # | Gör | Förväntat | Resultat |
 | --- | --- | --- | --- |
-| 2.1 | **Inställningar** innan adressen är satt | Fältet "Serverns adress" är tomt. (Texten "Ingen server är inställd än …" i en chatt provas i 3.8.) | |
+| 2.1 | **Inställningar** innan adressen är satt | Fältet "Serverns adress" är tomt. (Texten "Ingen server är inställd än …" i en chatt provas på B i 3.8.) | |
 | 2.2 | **Inställningar** › skriv `http://` + din domän › **Spara adressen** | Ett fel: adressen måste börja med `https://` | |
 | 2.3 | Skriv din domän utan `https://` › **Spara adressen** | "Adressen är sparad." och `https://` läggs till | |
 | 2.4 | Välj **Varje minut** | Valet sitter kvar när fliken öppnas igen | |
-| 2.5 | Gör 2.3–2.4 på B | Som ovan | |
+| 2.5 | Vänta med B. B sparar sin adress först i 3.9 | – | |
 
 ## 3. Mötet
 
@@ -44,7 +44,8 @@ på telefonen; gör det sist.**
 | 3.5 | Öppna **Min QR** två gånger och jämför koderna | Koden är ny varje gång (en ny engångsnyckel) | |
 | 3.6 | Debug-bygget: **Min QR** › kopiera koden, sedan **Skanna** › **Ange kod manuellt** på samma telefon (en telefon kan inte skanna sin egen skärm) | "Det där är din egen kod." | |
 | 3.7 | Tycker du att texten "Kontrollera att …s telefon visar exakt samma 20 siffror" går att följa? | Båda telefonerna kan inte visa koden samtidigt (granskningen av P8). Skriv vad du tycker | |
-| 3.8 | Om du vill se texten utan server: radera adressen i Inställningar på A och öppna kontakten. Skriv sedan in adressen igen | "Ingen server är inställd än …" visas, och försvinner när adressen är tillbaka | |
+| 3.8 | B (som inte har någon adress än): öppna kontakten A | "Ingen server är inställd än …" visas | |
+| 3.9 | B: gör 2.3–2.4 och öppna kontakten A igen | Texten är borta | |
 
 Använd inte "kopiera koden" och "Ange kod manuellt" för kontakterna i det
 riktiga testet: en kontakt som läggs till så är inte verifierad i person.
@@ -101,8 +102,10 @@ sessioner. Gör det sist, och skanna igen efteråt om du vill fortsätta.
 | MEASURE-P4, största skrivning | | 300 ms |
 | Alla tester gröna? | | Ja |
 
-Efteråt finns testbygget på telefonen i stället för appen. Installera
-APK:n igen och stäng av USB-felsökningen.
+Efteråt finns testbygget på telefonen i stället för appen. Det är signerat
+med en annan debug-nyckel än APK:n från CI, så avinstallera testbygget
+först (`adb uninstall se.sha.sha` eller i telefonens inställningar).
+Installera sedan APK:n igen och stäng av USB-felsökningen.
 
 Det här är också körningen på en riktig arm64-telefon i villkor 1 i 0003
 (R8), för Olm-testerna i appen. Spiken körs enligt

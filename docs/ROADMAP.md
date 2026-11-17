@@ -248,6 +248,15 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – Rättningar efter den andra oberoende granskningen av fas 2
+  (PR #35): villkor 5 i 0009 räknas från det första meddelandet som
+  uppfyller villkor 4 (`qualifiedAt`), så att en aktiv chatt inte stoppar
+  raderingen, och vår egen klocka står bland luckorna. Steg 3.8 i
+  testprotokollet går nu att göra (B väntar med adressen). Skräp i format 3
+  kan visa tre olika rader (0008 (i), hotmodellen, fråga 12). nginx-loggen
+  högst upp i filen, `sudo -i` och `--run-deploy-hooks` i `relay/DRIFT.md`;
+  `docs/prototyp.md` pekar dit. API 28 och `FingerprintManager` i 0011,
+  och antagandet om Keystore i 0010.
 - 2026-11-17 – Rättningar efter den oberoende granskningen av fas 2:
   TLS och minnet i `relay/DRIFT.md` (port 80 för certbot, `GOMEMLIMIT`),
   rad (i) i 0008, ett femte villkor i 0009 efter ett motexempel, (B2) med

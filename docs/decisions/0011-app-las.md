@@ -20,15 +20,19 @@ visas. Ett lås ändrar vad användaren får göra och vad appen lovar.
   och från API 30 med `setAllowedAuthenticators`. Det kräver inget nytt
   beroende, men behörigheten `USE_BIOMETRIC` i manifestet.
 - **Appens minSdk är 24** (`android/app/build.gradle.kts`). På Android 7–8.1
-  (API 24–27) finns inte `BiometricPrompt`; där finns bara
-  `KeyguardManager.createConfirmDeviceCredentialIntent` (telefonens PIN).
+  (API 24–27) finns inte `BiometricPrompt`. Där finns
+  `KeyguardManager.createConfirmDeviceCredentialIntent` (telefonens PIN) och
+  `FingerprintManager` (bara fingeravtryck, föråldrad). På Android 9 (API 28)
+  finns `BiometricPrompt`, men utan telefonens PIN som alternativ.
 - `androidx.biometric` vore ett nytt beroende.
 - Inställningarna för en Keystore-nyckel bestäms när nyckeln skapas. Att
   kräva upplåsning för valvets nyckel betyder en ny nyckel och att varje post
   krypteras om, med ordningen vid krascher i 0004 §6.
 - En nyckel som kräver upplåsning blir ogiltig när skärmlåset stängs av
-  eller återställs, och en nyckel per användning när nya fingeravtryck läggs
-  till. Att byta en PIN mot en annan gör den inte ogiltig.
+  eller återställs. En nyckel som kräver fingeravtryck eller ansikte varje
+  gång den används blir dessutom ogiltig när ett nytt fingeravtryck läggs
+  till och när alla tas bort. Att byta en PIN mot en annan gör den inte
+  ogiltig.
 - En egen PIN för SHA som bara skyddar en skärm är svag; en PIN som skyddar
   en nyckel kräver att nyckeln tas fram ur PIN-koden, och det är ny
   nyckelhärledning, som `CLAUDE.md` inte tillåter ("Aldrig").
@@ -40,8 +44,10 @@ visas. Ett lås ändrar vad användaren får göra och vad appen lovar.
 - **(B) Telefonens eget lås inuti appen** med plattformens `BiometricPrompt`:
   appen frågar efter fingeravtryck, ansikte eller telefonens PIN när den
   öppnas och efter en tid i bakgrunden.
-  - På Android 7–8.1: telefonens PIN via `KeyguardManager`, eller så höjer
-    ägaren minSdk till 28 (ett eget beslut).
+  - På Android 7–9 (API 24–28): telefonens PIN via `KeyguardManager`,
+    eftersom `BiometricPrompt` före API 29 inte kan erbjuda PIN. För att
+    slippa `KeyguardManager` helt måste minSdk höjas till 29 (ett eget
+    beslut för ägaren).
   - Valvets nyckel kan dessutom kräva att användaren har låst upp nyligen
     (`setUserAuthenticationParameters` från API 30,
     `setUserAuthenticationValidityDurationSeconds` före), så att låset inte

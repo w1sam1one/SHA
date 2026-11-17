@@ -7,7 +7,9 @@ Claude hyr ingen server och hanterar inga lösenord eller nycklar
 (`CLAUDE.md`, "Aldrig"): stegen görs av ägaren.
 
 Inget här är provat på en riktig server (G2). Kommandona gäller Debian 13
-eller Ubuntu 24.04 och är **ej verifierade** där.
+eller Ubuntu 24.04 och är **ej verifierade** där. Kommandona på servern körs
+som root: skriv `sudo -i` först när du har loggat in som din vanliga
+användare.
 
 ## 1. Servern
 
@@ -21,7 +23,7 @@ eller Ubuntu 24.04 och är **ej verifierade** där.
    (till exempel `50-cloud-init.conf`) som annars vinner. Kontrollera med
    `sshd -T | grep -E "passwordauthentication|permitrootlogin"` och starta
    om `ssh`.
-3. **Brandvägg:** 22 (SSH), 80 (bara för certifikatet, steg 3) och 443
+3. **Brandvägg:** 22 (SSH), 80 (bara för certifikatet, avsnitt 3) och 443
    (HTTPS) in.
    ```sh
    apt install ufw
@@ -33,21 +35,25 @@ eller Ubuntu 24.04 och är **ej verifierade** där.
    ufw enable
    ```
    Port 80 måste vara öppen för att certbot ska kunna förnya certifikatet
-   automatiskt. nginx svarar där bara på certbots utmaning (steg 3).
+   automatiskt. nginx svarar där bara på certbots utmaning (avsnitt 3).
 4. **Säkerhetsuppdateringar automatiskt:** `apt install unattended-upgrades`
    och `dpkg-reconfigure unattended-upgrades`.
 5. **Klockan:** `timedatectl` ska visa `System clock synchronized: yes`. Den
    behövs för TLS-certifikatet och för tiderna i loggarna. Relayn räknar
    själv ut när paket går ut med en klocka som inte påverkas av ändringar.
 6. **Loggar som kan innehålla IP-adresser:** SSH loggar inloggningar med
-   adress i journald (`journalctl -u ssh`); det är ägarens egna. Kontrollera
-   också brandväggens logg (avstängd ovan) och leverantörens nätloggar.
+   adress i journald (`journalctl -u ssh`), och på Ubuntu 24.04 även i
+   `/var/log/auth.log` (rsyslog). Där finns din egen adress, men också
+   adresser från okända som försöker logga in. De som använder appen syns
+   inte där. Kontrollera också brandväggens logg (avstängd ovan) och
+   leverantörens nätloggar.
 
 ## 2. Relayn som tjänst
 
 Bygg på din dator, med samma Go som i CI (`relay/go.mod`, `ci.yml`), för
 serverns processor (`amd64` för de flesta VPS:er, `arm64` för ARM) och
-utan C-bibliotek, så att filen fungerar på servern oavsett din dator:
+utan C-bibliotek, så att filen fungerar på servern oavsett din dator. Har
+servern ARM: byt `GOARCH=amd64` mot `GOARCH=arm64`.
 
 ```sh
 cd relay && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOTOOLCHAIN=local \
@@ -116,8 +122,10 @@ certifikatet är hämtat. Gör därför så här:
    apt install nginx certbot
    rm /etc/nginx/sites-enabled/default
    ```
-   I `/etc/nginx/nginx.conf`, inuti `http { … }`: byt `access_log …;` mot
-   `access_log off;` och `error_log …;` mot `error_log /dev/null crit;`.
+   I `/etc/nginx/nginx.conf`: byt `error_log …;` högst upp i filen
+   (utanför `http { … }`) mot `error_log /dev/null crit;`. Inuti
+   `http { … }`: byt `access_log …;` mot `access_log off;`, och ett
+   `error_log …;` där, om det finns, mot `error_log /dev/null crit;`.
 2. Lägg till ett block för port 80 som bara svarar på certbots utmaning, i
    `/etc/nginx/sites-enabled/acme.conf`:
    ```nginx
@@ -131,6 +139,10 @@ certifikatet är hämtat. Gör därför så här:
    }
    ```
    `mkdir -p /var/www/acme && nginx -t && systemctl reload nginx`
+
+   Port 80 var redan öppen när nginx installerades, så standardsidan kan ha
+   hunnit logga adresser från dem som söker igenom nätet. Radera de loggarna
+   nu: `rm -f /var/log/nginx/*`
 3. Hämta certifikatet utan att certbot ändrar nginx:
    ```sh
    certbot certonly --webroot -w /var/www/acme -d relay.example.se
@@ -142,15 +154,17 @@ certifikatet är hämtat. Gör därför så här:
    ```sh
    echo 'deploy-hook = systemctl reload nginx' >> /etc/letsencrypt/cli.ini
    systemctl list-timers | grep certbot
-   certbot renew --dry-run
+   certbot renew --dry-run --run-deploy-hooks
    ```
+   `--run-deploy-hooks` gör att provet också laddar om nginx. Utan den
+   flaggan hoppar `--dry-run` över omladdningen.
 
 Går förnyelsen inte igenom slutar certifikatet att gälla efter 90 dagar, och
 då når appen inte relayn: appen litar bara på publika CA:er.
 
 ## 4. Uppdateringar
 
-- **Relayn:** bygg en ny fil (steg 2), kopiera den och kör
+- **Relayn:** bygg en ny fil (avsnitt 2), kopiera den och kör
   `systemctl restart sha-relay`. **En omstart raderar alla paket som inte
   har hämtats** (0002, fråga f): avsändarens app har redan visat dem som
   skickade. Gör det när få skriver, och säg till de som provar.

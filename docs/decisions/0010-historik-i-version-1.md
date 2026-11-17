@@ -39,8 +39,8 @@ visats (0005 (i)); efter en omstart är chatten tom.
   - Men chatten är tom efter en omstart.
 - **(B) Historik i egna valvposter** med en gräns för hur länge den sparas.
   - Postnamnen är slumpade (till exempel `h.<16 slumpade hex>`) och listan
-    över dem ligger i Olm-tillståndet, så att filnamnen inte visar vem eller
-    när.
+    över dem ligger i Olm-tillståndet, så att filnamnen inte visar vem.
+    Filernas tider och storlekar visar ändå ungefär när något skrevs.
   - Inget nytt beroende och ingen ny primitiv: valvet finns redan.
   - Raderas av `resetIdentity()` och när tiden har gått ut.
   - **Men** alla poster delar valvets nyckel: en raderad post som finns kvar
@@ -52,6 +52,12 @@ visats (0005 (i)); efter en omstart är chatten tom.
 - **(B2) Som (B), men en egen Keystore-nyckel per post.** När tiden har gått
   ut raderas nyckeln, och då går posten inte att läsa även om filen finns
   kvar. Det är det 0004 §7 (a) ville uppnå.
+  - Det bygger på att Keystore verkligen tar bort nyckeln. Nyckelns
+    krypterade data kan finnas kvar på lagringen en tid, och appen ber inte
+    om skydd mot att den återställs (rollback resistance). `reset()` bygger
+    redan på samma antagande.
+  - `reset()` och `resetIdentity()` måste då radera varje posts nyckel, inte
+    bara valvets.
   - Inget nytt beroende, men en ändring i valvet (en nyckel per post).
     **Kräver granskning av kryptoexpert.**
 - **(C) SQLite** (`sqlite3` eller `sqflite`), med kryptering per rad eller
@@ -67,8 +73,9 @@ kryptoexpert, som punkt 7 i 0004 redan gör. (B) är enklare men lovar mindre.
 
 Förslag på gräns: 30 dagar som standard, och valen "Spara inte", "7 dagar",
 "30 dagar" och "1 år" under Inställningar. Texten i appen säger att
-historiken finns krypterad på telefonen och tas bort efter den valda tiden;
-med (B2) kan den också säga att den då inte går att läsa.
+historiken finns krypterad på telefonen och tas bort efter den valda tiden.
+Med (B2) kan den också säga att den då inte går att läsa, men först när
+kryptoexperten har granskat antagandet om Keystore ovan.
 
 ## Ägaren beslutar
 
