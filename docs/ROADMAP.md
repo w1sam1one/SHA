@@ -86,6 +86,10 @@ Prototypen är klar när allt detta gäller:
 
 - **G1 – Aktivera.** Merga PR:en med `CLAUDE.md`. Innan dess gör den
   schemalagda körningen ingenting.
+- **G-P8 – Debug-APK som CI-artefakt (före resten av P8).** Ägaren väljer
+  (a), (b) eller (c) i [0007](decisions/0007-debug-apk-som-ci-artefakt.md);
+  (a) kräver ett nytt beroende, `actions/upload-artifact`, och att bara
+  ägaren har åtkomst till repot. `docs/prototyp.md` finns redan.
 - **G2 – Relayn på riktigt.** Efter P8: hyr en VPS i EU och sätt upp relayn
   enligt `relay/README.md`. Claude kan hjälpa till steg för steg.
 - **G3 – Två riktiga telefoner.** Prova prototypen. Kör även spiken på en
@@ -241,6 +245,9 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P8, första delen: `docs/prototyp.md` (servern, APK:n, två
+  telefoner) och beslutsunderlaget 0007 om att ladda upp debug-APK:n från
+  CI. Ny grind G-P8: P8 väntar på ägarens beslut.
 - 2026-11-16 – P7 klar: `test/chain/relay_chain_test.dart` kör två appar
   mot den riktiga relayn i CI (`tool/build_relay.sh`, Go i Flutter-jobbet):
   204, 507 och 429, dubbletter, en krasch efter att relayn tog paketet och

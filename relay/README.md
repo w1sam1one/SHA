@@ -5,9 +5,10 @@ Den gör bara två saker: **lämna** ett paket i en brevlåda och **hämta**
 brevlådans paket. Beslutet bakom den finns i
 [docs/decisions/0002-transport-v1.md](../docs/decisions/0002-transport-v1.md).
 
-> **Inte driftsatt.** Ingen server är hyrd och inget är publicerat. Appen
-> (`lib/`) är inte kopplad till relayn; det väntar på D3 i
-> [0001](../docs/decisions/0001-protocol-storage-transport.md).
+> **Inte driftsatt.** Ingen server är hyrd och inget är publicerat (G2 i
+> [`docs/ROADMAP.md`](../docs/ROADMAP.md)). Appen skickar och hämtar via
+> relayn sedan P6; hur ägaren sätter upp den står i
+> [`docs/prototyp.md`](../docs/prototyp.md).
 
 - Bara Gos standardbibliotek, inga andra beroenden.
 - Paket ligger bara i RAM. Relayn skriver inga filer; loggraderna (utan
