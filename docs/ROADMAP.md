@@ -248,6 +248,12 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – CI använder färre Actions-minuter
+  ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
+  10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade
+  filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
+  per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
+  (ett nytt beroende). Ägaren mergar.
 - 2026-11-17 – F9, första delen (mergas av ägaren): `docs/play-krav.md`.
   Målnivån är läst (API 36 från 31 augusti 2026; SHA bygger med 36). De
   fyra sidorna på support.google.com gick inte att nå från molnmiljön och
