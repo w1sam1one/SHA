@@ -248,6 +248,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F3, första steget: beslutsunderlaget
+  [0010](decisions/0010-historik-i-version-1.md) om historik i version 1.
+  Rekommendation: (B), egna valvposter med en gräns som användaren väljer.
+  Bygget väntar på ägarens beslut.
 - 2026-11-17 – F2, första steget: beslutsunderlaget
   [0009](decisions/0009-radering-av-gamla-sessioner.md) om när gamla
   sessioner får raderas. Rekommendation: (iv), radera bara när kontakten
