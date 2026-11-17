@@ -3,8 +3,10 @@
 Säker meddelandeapp där två personer först **träffas fysiskt** och skannar
 varandras QR-koder. Först då kan de skriva till varandra, end-to-end-krypterat.
 
-Det här är MVP-skelettet: Flutter, Android, Riverpod, lokal lagring i minnet
-och ingen backend än. Designen följer skisserna i SHA-canvasen
+Det här är en intern prototyp (fas 1 i [`docs/ROADMAP.md`](docs/ROADMAP.md)):
+Flutter, Android, Riverpod, Olm via `flutter_vodozemac`, och en liten server
+(`relay/`) som bara lämnar och hämtar krypterade paket. Kryptot är inte
+granskat av en kryptoexpert än. Designen följer skisserna i SHA-canvasen
 (Identitet · Min QR · Skanna · Kontakter · Chatt).
 
 ## Kom igång

@@ -86,9 +86,10 @@ Prototypen är klar när allt detta gäller:
 
 - **G1 – Aktivera.** Merga PR:en med `CLAUDE.md`. Innan dess gör den
   schemalagda körningen ingenting.
-- **G-P8 – Debug-APK som CI-artefakt (före P8).** Ägaren beslutar i
-  [0007](decisions/0007-debug-apk-som-ci-artefakt.md): `actions/upload-artifact`
-  är ett nytt beroende. `docs/prototyp.md` finns redan.
+- **G-P8 – Debug-APK som CI-artefakt (före resten av P8).** Ägaren väljer
+  (a), (b) eller (c) i [0007](decisions/0007-debug-apk-som-ci-artefakt.md);
+  (a) kräver ett nytt beroende, `actions/upload-artifact`, och att bara
+  ägaren har åtkomst till repot. `docs/prototyp.md` finns redan.
 - **G2 – Relayn på riktigt.** Efter P8: hyr en VPS i EU och sätt upp relayn
   enligt `relay/README.md`. Claude kan hjälpa till steg för steg.
 - **G3 – Två riktiga telefoner.** Prova prototypen. Kör även spiken på en
