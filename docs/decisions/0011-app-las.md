@@ -15,10 +15,22 @@ visas. Ett lås ändrar vad användaren får göra och vad appen lovar.
 - Valvets Keystore-nyckel fungerar bara när telefonen är upplåst (Android
   9+, `KeystoreVault.kt`).
 - Android har `BiometricPrompt` i själva plattformen
-  (`android.hardware.biometrics`, API 28+), med telefonens PIN, mönster eller
-  lösenord som alternativ från API 30. Det kräver inget nytt beroende.
+  (`android.hardware.biometrics`) från API 28. Telefonens PIN, mönster eller
+  lösenord som alternativ finns från API 29 (`setDeviceCredentialAllowed`)
+  och från API 30 med `setAllowedAuthenticators`. Det kräver inget nytt
+  beroende, men behörigheten `USE_BIOMETRIC` i manifestet.
+- **Appens minSdk är 24** (`android/app/build.gradle.kts`). På Android 7–8.1
+  (API 24–27) finns inte `BiometricPrompt`; där finns bara
+  `KeyguardManager.createConfirmDeviceCredentialIntent` (telefonens PIN).
 - `androidx.biometric` vore ett nytt beroende.
-- En egen PIN i appen kräver att en nyckel tas fram ur PIN-koden: det är ny
+- Inställningarna för en Keystore-nyckel bestäms när nyckeln skapas. Att
+  kräva upplåsning för valvets nyckel betyder en ny nyckel och att varje post
+  krypteras om, med ordningen vid krascher i 0004 §6.
+- En nyckel som kräver upplåsning blir ogiltig när skärmlåset stängs av
+  eller återställs, och en nyckel per användning när nya fingeravtryck läggs
+  till. Att byta en PIN mot en annan gör den inte ogiltig.
+- En egen PIN för SHA som bara skyddar en skärm är svag; en PIN som skyddar
+  en nyckel kräver att nyckeln tas fram ur PIN-koden, och det är ny
   nyckelhärledning, som `CLAUDE.md` inte tillåter ("Aldrig").
 
 ## Alternativ
@@ -28,13 +40,20 @@ visas. Ett lås ändrar vad användaren får göra och vad appen lovar.
 - **(B) Telefonens eget lås inuti appen** med plattformens `BiometricPrompt`:
   appen frågar efter fingeravtryck, ansikte eller telefonens PIN när den
   öppnas och efter en tid i bakgrunden.
+  - På Android 7–8.1: telefonens PIN via `KeyguardManager`, eller så höjer
+    ägaren minSdk till 28 (ett eget beslut).
   - Valvets nyckel kan dessutom kräva att användaren har låst upp nyligen
-    (`setUserAuthenticationParameters`), så att låset inte bara är en skärm.
+    (`setUserAuthenticationParameters` från API 30,
+    `setUserAuthenticationValidityDurationSeconds` före), så att låset inte
+    bara är en skärm. Det kräver en ny nyckel (se Fakta), och appen måste
+    fråga igen när tiden går ut medan den är öppen, eftersom varje sändning
+    och mottagning skriver till valvet.
   - Inget nytt beroende och ingen ny kryptografi.
-  - Men en nyckel som kräver upplåsning kan göras ogiltig av Android när
-    användaren byter skärmlås. Då försvinner identiteten (som i dag med
+  - Men en nyckel som kräver upplåsning blir ogiltig när skärmlåset stängs
+    av eller återställs. Då försvinner identiteten (som i dag med
     `keyInvalidated`). Det måste testas på riktiga telefoner (F6).
-- **(C) En egen PIN för SHA.** Avråds: ny nyckelhärledning.
+- **(C) En egen PIN för SHA.** Avråds: som skärm är den svag, och som skydd
+  för en nyckel kräver den ny nyckelhärledning.
 
 ## Rekommendation: (B), först som en skärm, sedan bundet till nyckeln
 

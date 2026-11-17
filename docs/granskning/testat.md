@@ -8,7 +8,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 - **`app-android`-jobbet:** testerna i `integration_test/` på en emulator
   (API 35, x86_64).
 - **`relay`-jobbet:** `go vet` och `go test -race`.
-- **`spike`-jobbet:** spikens egna tester (0003).
+- **`spike-vodozemac`-jobbet:** spikens egna tester (0003).
 
 ## Per område
 
@@ -34,6 +34,12 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Inga kryptoord i texter, låsta Olm-versioner | 2 | `test/security/` | Datorn |
 | Skärmar: chatten, QR-fliken, livscykeln, återställning, kontrast | 19 | `test/widget/`, `test/ui/` | Datorn |
 | Relayn: gränser, loggar utan IP, spamgräns | – | `relay/*_test.go` | Datorn |
+| Slumptal för långlivade nycklar (`entropy.dart`) | 3 | `test/crypto/entropy_test.dart` | Datorn |
+| X25519, HKDF och brevlåde-ID (används för §3 (A)), och det gamla formatet 2 | 19 | `test/crypto/crypto_service_test.dart` | Datorn |
+| AES-256-GCM och utfyllnaden i format 2 | 9 | `test/crypto/aes_gcm_test.dart`, `test/crypto/padding_test.dart` | Datorn |
+| Serverns adress och intervallet | 4 | `test/features/transport_settings_test.dart` | Datorn |
+| "Verifierad i person" | 3 | `test/security/trust_display_test.dart` | Datorn |
+| Olm i appbygget: biblioteket laddas och en session går åt båda hållen | 2 | `integration_test/olm_build_test.dart` | Emulatorn |
 
 ## Mutationer
 

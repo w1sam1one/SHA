@@ -16,7 +16,7 @@ beslut (markerade **Ägaren beslutar**).
 | **(f)** Endast RAM | En omstart raderar paket som inte har hämtats, utan besked till avsändaren. | **Ägaren beslutar:** godta för version 1, eller kräv att relayn sparar till disk (en ny grind, med kryptering i vila). |
 | **(g)** Flera servrar | Version 1 har en server. | Inte i version 1. |
 | **(h)** Metadata hos servern | Dokumenterat i `relay/README.md` och `docs/granskning/hotmodell.md`. | Godta. |
-| **(i)** Ingen behörighetskontroll | Relayn kontrollerar bara längden. Appen räknar skräp som "felaktigt" och visar inget. | Godta för version 1. |
+| **(i)** Ingen behörighetskontroll | Relayn kontrollerar bara längden. Skräp som inte är paketformat 3 räknas som "felaktigt" och visar inget. Men skräp i format 3 med typ 0 eller 1 räknas som "kunde inte läsas", och chatten visar raden "Ett meddelande från … kunde inte läsas …" (0004 §10; `docs/granskning/fragor.md`, fråga 12). Den som kan en brevlådes ID kan alltså få raden att visas. | Godta för version 1, med raden som den är. Kryptoexperten tar ställning till rådet i raden (fråga 12). |
 
 ## Ägaren beslutar
 

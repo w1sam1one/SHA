@@ -30,7 +30,7 @@ användas (0002, "Formuleringar i appen").
 | --- | --- | --- |
 | **Den som driver servern** | Se brevlåde-ID, paketets storlek (hinken, typ 0, kedjeindex; 0004 §4), när det kom och IP-adressen; tappa, fördröja, kopiera eller flytta paket; lämna egna paket i en känd brevlåda | Läsa innehållet; se vem som pratar med vem utöver IP och tid; få appen att visa ett ändrat paket (Olm-MAC) |
 | **Nätet mellan telefon och server** | Se att telefonen pratar med servern, och storlek och tid | Läsa eller ändra något: TLS med systemets CA:er |
-| **Den som känner en brevlådes ID** (0002, fråga i) | Lämna skräp eller kopior där | Få det visat som ett meddelande; raden "kunde inte läsas" kan dock visas |
+| **Den som känner en brevlådes ID** (0002, fråga c och i) | Lämna skräp eller kopior där | Få det visat som ett meddelande; raden "kunde inte läsas" kan dock visas |
 | **En kontakt** | Läsa det du skickar till den; skicka meddelanden med påhittade ID eller tider | Läsa dina andra konversationer |
 | **Den som har telefonen i handen, upplåst** | Läsa det som visas | – |
 | **Den som har telefonen, låst** | – | Läsa valvet (Keystore-nyckeln kräver upplåst telefon på Android 9+) |

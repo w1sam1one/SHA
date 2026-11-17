@@ -11,31 +11,47 @@ eller Ubuntu 24.04 och är **ej verifierade** där.
 
 ## 1. Servern
 
-1. **Inloggning bara med SSH-nyckel.** I `/etc/ssh/sshd_config`:
-   `PasswordAuthentication no` och `PermitRootLogin no`. Starta om `ssh`.
-2. **Brandvägg:** bara 22 (SSH) och 443 (HTTPS) in.
+1. **En vanlig användare med SSH-nyckel först.** Skapa en användare med
+   `sudo`, lägg din publika nyckel i dess `~/.ssh/authorized_keys` och logga
+   in med den i ett nytt fönster innan du stänger av något. Annars kan du
+   låsa ute dig själv.
+2. **Inloggning bara med SSH-nyckel.** Skriv `PasswordAuthentication no` och
+   `PermitRootLogin no` i en egen fil, `/etc/ssh/sshd_config.d/10-sha.conf`:
+   filerna där läses före `sshd_config`, och molnavbilder har ofta en egen
+   (till exempel `50-cloud-init.conf`) som annars vinner. Kontrollera med
+   `sshd -T | grep -E "passwordauthentication|permitrootlogin"` och starta
+   om `ssh`.
+3. **Brandvägg:** 22 (SSH), 80 (bara för certifikatet, steg 3) och 443
+   (HTTPS) in.
    ```sh
+   apt install ufw
    ufw default deny incoming
    ufw allow 22/tcp
+   ufw allow 80/tcp
    ufw allow 443/tcp
+   ufw logging off
    ufw enable
    ```
-   Port 80 behövs bara om certbot använder HTTP-utmaningen; öppna den då
-   bara under förnyelsen, eller använd DNS-utmaningen.
-3. **Säkerhetsuppdateringar automatiskt:** `apt install unattended-upgrades`
+   Port 80 måste vara öppen för att certbot ska kunna förnya certifikatet
+   automatiskt. nginx svarar där bara på certbots utmaning (steg 3).
+4. **Säkerhetsuppdateringar automatiskt:** `apt install unattended-upgrades`
    och `dpkg-reconfigure unattended-upgrades`.
-4. **Klockan:** `timedatectl` ska visa `System clock synchronized: yes`.
-   Brevlåde-ID:n byts varje UTC-dygn; appen hämtar dagens och gårdagens.
-5. **Loggar som kan innehålla IP-adresser:** `auth.log` (SSH), brandväggens
-   logg och leverantörens nätloggar. SSH-inloggningar är ägarens egna, men
-   kontrollera att inget loggar trafiken till port 443 (`ufw logging off`).
+5. **Klockan:** `timedatectl` ska visa `System clock synchronized: yes`. Den
+   behövs för TLS-certifikatet och för tiderna i loggarna. Relayn räknar
+   själv ut när paket går ut med en klocka som inte påverkas av ändringar.
+6. **Loggar som kan innehålla IP-adresser:** SSH loggar inloggningar med
+   adress i journald (`journalctl -u ssh`); det är ägarens egna. Kontrollera
+   också brandväggens logg (avstängd ovan) och leverantörens nätloggar.
 
 ## 2. Relayn som tjänst
 
-Bygg på din dator, med samma Go som i CI (`relay/go.mod`, `ci.yml`):
+Bygg på din dator, med samma Go som i CI (`relay/go.mod`, `ci.yml`), för
+serverns processor (`amd64` för de flesta VPS:er, `arm64` för ARM) och
+utan C-bibliotek, så att filen fungerar på servern oavsett din dator:
 
 ```sh
-cd relay && GOTOOLCHAIN=local go build -trimpath -o relay . && go version -m relay
+cd relay && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOTOOLCHAIN=local \
+  go build -trimpath -o relay . && go version -m relay
 ```
 
 Kopiera filen till `/usr/local/bin/sha-relay` och skapa
@@ -44,10 +60,15 @@ Kopiera filen till `/usr/local/bin/sha-relay` och skapa
 ```ini
 [Unit]
 Description=SHA relay
+Wants=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/sha-relay -addr 127.0.0.1:8080 -trusted-proxies 127.0.0.1
+ExecStart=/usr/local/bin/sha-relay -addr 127.0.0.1:8080 -trusted-proxies 127.0.0.1 -max-total-mib 256
+# Go:s skräpsamlare låter minnet växa till ungefär det dubbla av det som
+# används. Gränsen här får Go att städa i tid, långt under MemoryMax, så att
+# relayn svarar 507 i stället för att stoppas av kärnan (ej mätt).
+Environment=GOMEMLIMIT=512MiB
 Restart=on-failure
 DynamicUser=yes
 NoNewPrivileges=yes
@@ -63,8 +84,9 @@ RestrictNamespaces=yes
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 SystemCallArchitectures=native
-# Paketen ligger i RAM: lämna marginal över -max-total-mib (relay/README.md).
-MemoryMax=768M
+# Paketen ligger i RAM (-max-total-mib 256 ovan). Lämna gott om marginal:
+# varje paket tar mer minne än sin storlek (relay/README.md). Ej mätt.
+MemoryMax=900M
 
 [Install]
 WantedBy=multi-user.target
@@ -85,15 +107,46 @@ innehåller varken adresser eller brevlåde-ID (`relay/README.md`,
 Certifikatet måste komma från en publik CA: appen litar bara på
 telefonens egna CA:er.
 
-```sh
-apt install certbot python3-certbot-nginx
-certbot --nginx -d relay.example.se
-systemctl list-timers | grep certbot   # förnyelsen är schemalagd
-certbot renew --dry-run                # provar förnyelsen
-```
+certbot behöver port 80 för sin utmaning, och nginx-exemplet i
+`relay/README.md` pekar på certifikatfiler som inte finns förrän det första
+certifikatet är hämtat. Gör därför så här:
 
-Kontrollera efteråt att certbot inte har lagt till en `access_log` eller
-ändrat `error_log` i nginx-konfigurationen (`relay/README.md`, exemplet).
+1. Installera och stäng av nginx standardsida och åtkomstloggen för allt:
+   ```sh
+   apt install nginx certbot
+   rm /etc/nginx/sites-enabled/default
+   ```
+   I `/etc/nginx/nginx.conf`, inuti `http { … }`: byt `access_log …;` mot
+   `access_log off;` och `error_log …;` mot `error_log /dev/null crit;`.
+2. Lägg till ett block för port 80 som bara svarar på certbots utmaning, i
+   `/etc/nginx/sites-enabled/acme.conf`:
+   ```nginx
+   server {
+       listen 80;
+       listen [::]:80;
+       access_log off;
+       error_log /dev/null crit;
+       location /.well-known/acme-challenge/ { root /var/www/acme; }
+       location / { return 444; }
+   }
+   ```
+   `mkdir -p /var/www/acme && nginx -t && systemctl reload nginx`
+3. Hämta certifikatet utan att certbot ändrar nginx:
+   ```sh
+   certbot certonly --webroot -w /var/www/acme -d relay.example.se
+   ```
+4. Lägg nu in blocket för port 443 från `relay/README.md` (med din domän),
+   och kör `nginx -t && systemctl reload nginx`.
+5. Förnyelsen: certbot lägger själv in en timer. Låt certbot ladda om nginx
+   efter en förnyelse, och prova med brandväggen som den är:
+   ```sh
+   echo 'deploy-hook = systemctl reload nginx' >> /etc/letsencrypt/cli.ini
+   systemctl list-timers | grep certbot
+   certbot renew --dry-run
+   ```
+
+Går förnyelsen inte igenom slutar certifikatet att gälla efter 90 dagar, och
+då når appen inte relayn: appen litar bara på publika CA:er.
 
 ## 4. Uppdateringar
 
@@ -115,7 +168,9 @@ Kontrollera efteråt att certbot inte har lagt till en `access_log` eller
   för spamgränsen, `rejected_full` för fulla brevlådor). Många `rejected_rate` tyder på delade IP-adresser (0002,
   fråga e).
 - **Minne:** `systemctl status sha-relay` visar minnet. Når det `MemoryMax`
-  startar systemd om tjänsten, och paketen försvinner.
+  stoppas tjänsten och startas om, och alla paket som inte har hämtats
+  försvinner. Med `GOMEMLIMIT` och `-max-total-mib 256` ska relayn i stället
+  svara 507 när den är full; det är **ej mätt**.
 - **Inga IP-adresser** i något av detta. Lägg inte till verktyg som läser
   nginx- eller brandväggsloggar.
 

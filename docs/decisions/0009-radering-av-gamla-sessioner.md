@@ -51,19 +51,36 @@ ligger gamla sessioners nycklar kvar i riktiga användares telefoner
   2. inget i utkorgen är krypterat på S;
   3. relayn tog emot vårt senaste paket på S vid tiden `sentS` (eller S
      skapades då, om vi aldrig skickade på den);
-  4. vi har läst ett meddelande från K på en annan session, och K skrev det
-     enligt dess egen tid `t` senare än `sentS` + 48 h + en marginal på
-     24 h för klockor som går fel.
-  - **Varför det håller krav 1:** när K skrev det meddelandet hade den
-    andra sessionen högst nummer hos K. Efter `sentS` + 48 h kan inget av
-    våra paket på S nå K, och utkorgen har inga fler. S kan därför aldrig
-    bli högst hos K igen, och K skickar aldrig mer på S.
-  - **Luckan:** villkor 4 bygger på K:s klocka. Går den mer än 24 h fel
-    framåt kan S raderas för tidigt, och ett meddelande gå förlorat.
-  - Behöver två nya fält: `sentS` per session (sätts vid `markSent`), och
-    K:s tid för det senast lästa meddelandet per session. Tiden ligger i
-    JSON-texten, så appen måste lämna den till Olm-tjänsten; det ändrar
-    API:t men inte kryptot.
+  4. vi har läst ett meddelande M från K på en annan session, och K skrev
+     det enligt dess egen tid `t` senare än `sentS` + 48 h + en marginal på
+     24 h för klockor som går fel;
+  5. det har gått minst 48 h + 24 h på vår egen klocka sedan vi läste M.
+  - **Varför det håller krav 1, i två delar:**
+    - *K skickar aldrig mer på S.* När K skrev M hade den andra sessionen
+      högst nummer hos K. Efter `sentS` + 48 h kan inget av våra paket på S
+      nå K, och vår utkorg har inga fler (villkor 2 och 3). S kan därför
+      aldrig bli högst hos K igen.
+    - *Inget som K redan har skickat på S är kvar.* K:s utkorg skickar i
+      ordning per kontakt, så allt K skickade på S före bytet låg hos relayn
+      före M. Efter villkor 5 har vi antingen hämtat det eller så har relayn
+      tagit bort det efter 48 h.
+  - **Motexemplet som villkor 5 stoppar** (granskningen av F2): K skriver m1
+    på S strax före midnatt och m2 på den nya sessionen strax efter. Appen
+    hämtar dagens brevlåda före gårdagens, läser m2 först, och utan villkor
+    5 raderas S innan m1 har lästs.
+  - **Luckorna:**
+    - Villkor 4 bygger på skillnaden mellan K:s klocka och vår. Går K:s
+      klocka mer än 24 h fel framåt mot vår kan S raderas för tidigt.
+    - Det antas att relayn aldrig håller ett paket längre än 48 h. Den som
+      driver relayn kan fördröja paket (hotmodellen); ett paket från oss på
+      S som når K mycket sent gör S högst hos K igen.
+  - **Behöver nya fält:**
+    - `sentS` per session (sätts vid `markSent`);
+    - sessionens id för varje paket i utkorgen (`_Outgoing` har i dag bara
+      id, kontakt, paket och text), för villkor 2 och för att sätta `sentS`;
+    - K:s tid för det senast lästa meddelandet per session, och när vi läste
+      det. Tiden ligger i JSON-texten, så appen måste lämna den till
+      Olm-tjänsten; det ändrar API:t men inte kryptot.
   - Sessioner raderas aldrig för en kontakt som är tyst, hur gamla de än är.
 - **(v) (iv), och dessutom (i) som tak:** som (iv), men har en kontakt fler
   än 20 sessioner raderas också den äldsta enligt (i). Det begränsar
@@ -83,6 +100,8 @@ förlorat, med en känd lucka (en klocka som går mer än 24 h fel). Taket i
   raderas, och kontaktens nästa meddelande läses.
 - Ett försenat paket på S som når kontakten efter bytet: S raderas inte
   förrän 72 h har gått.
+- Motexemplet ovan: m2 läses före m1; S raderas inte förrän villkor 5
+  gäller, och m1 läses.
 - Utkorgen med ett paket på S: S raderas inte.
 - Omstart: `sentS` och tiderna finns kvar.
 - Mutationer för varje villkor.
