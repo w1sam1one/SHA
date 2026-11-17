@@ -167,6 +167,10 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 - **Besluten i F7.** Ägaren beslutar om VPN-texten och om paket som
   försvinner vid en omstart, i [0008](decisions/0008-oppna-fragor-i-0002.md).
   VPN-texten behövs för F5.
+- **QR-skannern och AGPL (F5).** Ägaren väljer i
+  [0012](decisions/0012-qr-skannern-och-agpl.md): ML Kit i `mobile_scanner`
+  är inte öppen källkod, och appen innehåller AGPL-kod från Famedly.
+  Licenserna för Android-biblioteken på licenssidan väntar på beslutet.
 
 ## Före första utdelning
 
@@ -197,6 +201,8 @@ någon annan än ägaren (0003, 0004 §13):
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna (G7).
 - `LICENSE` är bytt till AGPL-3.0 (G8).
+- QR-skannern går att dela ut under AGPL-3.0 tillsammans med
+  `flutter_vodozemac`, och licenssidan visar alla bibliotek i APK:n (0012).
 - Spiken och appen är körda på en riktig arm64-telefon (G3, F6).
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
   ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
@@ -248,6 +254,12 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F5: beslutsunderlaget
+  [0012](decisions/0012-qr-skannern-och-agpl.md) om QR-skannern. ML Kit i
+  `mobile_scanner` är inte öppen källkod, och `flutter_vodozemac` har
+  AGPL-3.0 utan undantag, så det ser ut som en konflikt redan vid första
+  utdelningen. Rekommendation: (C), en skanner byggd på ZXing. En ny grind
+  och en ny punkt under "Före första utdelning".
 - 2026-11-17 – F5, första delen: en licenssida under Inställningar ›
   Licenser, med Dart-paketen (bland dem AGPL-3.0 för flutter_vodozemac och
   vodozemac), de två typsnitten (SIL OFL) och de 129 Rust-paketen i
