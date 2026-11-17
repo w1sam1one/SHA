@@ -57,7 +57,7 @@ Prototypen är klar när allt detta gäller:
     inget kvar.
   - Skrivning och läsning mäts på emulatorn. Tar en skrivning mer än
     300 ms stannar Claude och frågar ägaren.
-- [ ] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
+- [x] **P4 – Mötet och kontakten.** QR-koden `shaid:2` och kontrollkoden
   (§1, OGRANSKAT). Adresseringsnyckel och brevlåde-ID enligt §3 (A), OGRANSKAT.
   Sessionsregeln enligt 0006 (b) och (iii): den senast aktiva sessionen,
   ordnad med en räknare, och inga sessioner raderas. En engångsnyckel som
@@ -241,6 +241,13 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P4 klar: QR-koden `shaid:2` (136 tecken), kontrollkoden på
+  Olm-nycklarna och adresseringsnyckeln (OGRANSKAT, §1 och §3 (A)).
+  Kontakterna sparas i Olm-tillståndets valvpost. Sessionsregeln enligt
+  0006 (b) och (iii), med en engångsnyckel per session, och oanvända
+  engångsnycklar tas bort efter 30 dagar. 0006:s tester och fyra mutationer.
+  En session väger 3,8 kB efter 30 meddelanden. Mätningen med 50 sessioner
+  för en kontakt skrivs ut av emulatortestet.
 - 2026-11-16 – P3 klar: Olm bakom `CryptoService.olm` (OGRANSKAT, 0004 §6).
   Hela tillståndet i valvposten `olm.state.v1` och pickle-nyckeln i en egen
   post. Ordningen vid mottagning, sändning och QR-koden följer §6. R1–R7 som

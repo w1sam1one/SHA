@@ -134,6 +134,25 @@ utdelningen.
     `integration_test/olm_service_test.dart`;
   - för värdtesterna bygger `tool/build_native_host.sh` biblioteket.
 
+### Kontakter och engångsnycklar (P4)
+
+- **QR-koden `shaid:2`** (`lib/features/qr/contact_code.dart`) har
+  Olm-identitetsnyckeln, en ny engångsnyckel och adresseringsnyckeln, 32 byte
+  var: 136 tecken (0004 §1). Varje visning har en ny engångsnyckel, och den
+  sparas innan koden visas.
+- **Kontrollkoden** räknas med appens befintliga funktion på de två
+  Olm-identitetsnycklarna (OGRANSKAT, 0004 §1).
+- **Adresseringsnyckeln** är den statiska X25519-nyckeln och används bara för
+  brevlåde-ID (OGRANSKAT, 0004 §3 (A)).
+- **Kontakten** sparas i samma valvpost som Olm: identitetsnyckel,
+  adresseringsnyckel, namn, när ni träffades, och vilka av kontaktens
+  engångsnycklar som redan har gett en session. En engångsnyckel ger högst en
+  session (0006).
+- **Visade engångsnycklar** som ingen har använt tas bort efter 30 dagar
+  (0004 §8 (a)).
+- **Testat:** `test/crypto/olm_contacts_test.dart` (0006:s tester och
+  mutationer) och `test/features/contact_code_test.dart`.
+
 ## Konversationer
 
 ```

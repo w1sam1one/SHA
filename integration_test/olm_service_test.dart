@@ -86,6 +86,40 @@ void main() {
     );
     await vault.reset();
   });
+
+  test(
+    'P4 measurement: a write with 50 sessions for one contact',
+    measureManySessions,
+  );
 }
 
 int _max(int a, int b) => a > b ? a : b;
+
+/// P4 (0005 after G5): with no deletion of sessions (0006 (iii)) there is no
+/// upper limit per contact, so one write is measured with many sessions for
+/// one contact. Printed, not asserted, as for the 0005 measurement.
+Future<void> measureManySessions() async {
+  final vault = AndroidKeystoreVault();
+  await vault.reset();
+  final me = ShaCryptoService(vault: vault);
+  await me.olm.createAccount();
+  final peer = await Person().start();
+  for (var i = 0; i < 50; i++) {
+    await me.olm.startSession(await peer.olm.publishBundle());
+  }
+  final state = (await vault.read('olm.state.v1'))!;
+  final writes = <int>[];
+  for (var i = 0; i < 5; i++) {
+    final watch = Stopwatch()..start();
+    final out = await me.olm.encrypt(peer.key, 'kort');
+    writes.add(watch.elapsedMilliseconds);
+    await me.olm.markSent(out.id);
+  }
+  // ignore: avoid_print
+  print(
+    'MEASURE-P4 50 sessions for one contact: state ${state.length ~/ 1024} KiB; '
+    'encrypt incl. save ${writes.join('/')} ms (max ${writes.reduce(_max)}); '
+    'limit 300 ms per write',
+  );
+  await vault.reset();
+}

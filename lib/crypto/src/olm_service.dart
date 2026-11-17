@@ -38,6 +38,31 @@ final class OlmContactBundle {
   }
 }
 
+/// A contact met in person (0001, D1), as saved in the state (0005, item 3).
+/// Everything here is public, except that the name is private to the user.
+final class OlmContact {
+  OlmContact({
+    required this.id,
+    required this.identityKey,
+    required this.addressingKey,
+    required this.name,
+    required this.metAt,
+  });
+
+  /// SHA-256 (hex) of the Olm identity key (0004 §1).
+  final String id;
+
+  /// The contact's Olm identity key (Curve25519).
+  final Uint8List identityKey;
+
+  /// The contact's static X25519 key for mailbox IDs (0004 §3 (A)).
+  final Uint8List addressingKey;
+  final String name;
+
+  /// When the two people met and compared the verification code (UTC).
+  final DateTime metAt;
+}
+
 /// A message that is saved in the outbox and waits for the relay. It stays
 /// until [OlmService.markSent] (0004 §6, 0005 (i)). Resending must use the
 /// same [packet], never a new encryption.
@@ -142,12 +167,36 @@ abstract interface class OlmService {
   /// Makes a new account and saves it. Throws if one already exists.
   Future<Uint8List> createAccount();
 
+  /// This device's Olm identity key, making and saving the account first if
+  /// there is none (the first time a QR code is shown or scanned).
+  Future<Uint8List> ensureAccount();
+
   /// A new one-time key for the QR code. The account is saved before this
   /// returns, so the key is never shown unsaved (0004 §6).
   Future<OlmContactBundle> publishBundle();
 
-  /// Starts a session from a scanned [peer] bundle and saves it.
+  /// Starts a session from a scanned [peer] bundle and saves it. A one-time
+  /// key that already gave a session with the contact gives no second one
+  /// (0006): the same QR display scanned twice starts nothing.
   Future<void> startSession(OlmContactBundle peer);
+
+  /// Adds the contact from a scanned code, with the session, in one write
+  /// (P4). [addressingKey] is the contact's X25519 key from the code (0004
+  /// §3 (A)). Throws if a known contact's code has a different addressing
+  /// key.
+  Future<OlmContact> addContact({
+    required OlmContactBundle bundle,
+    required List<int> addressingKey,
+    required String name,
+    required DateTime metAt,
+  });
+
+  /// Saved contacts, by name.
+  Future<List<OlmContact>> contacts();
+
+  /// The 20-digit code both people compare (0004 §1), from the two Olm
+  /// identity keys. OGRANSKAT (0004 §1).
+  Future<String> verificationCode(List<int> peerIdentityKey);
 
   /// Encrypts [text] for [peer] and saves the session and the packet in the
   /// outbox before returning (0004 §6). Send [OlmOutgoing.packet] only after

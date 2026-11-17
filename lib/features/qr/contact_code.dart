@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import '../../crypto/crypto.dart';
 
@@ -12,50 +13,76 @@ class ContactCodeException implements Exception {
   String toString() => 'ContactCodeException: $message';
 }
 
-/// Text carried in an SHA contact QR code:
+/// What a scanned code gives: the Olm bundle and the contact's addressing
+/// key (0004 §1 and §3 (A)). Everything in it is public.
+final class ScannedCode {
+  const ScannedCode({required this.bundle, required this.addressingKey});
+
+  final OlmContactBundle bundle;
+
+  /// The contact's static X25519 key, used only for mailbox IDs.
+  final PublicIdentity addressingKey;
+}
+
+/// Text carried in an SHA contact QR code (0004 §1):
 ///
-///     shaid:1:<identity hash, 64 hex>:<X25519 public key, base64url>
+///     shaid:2:<base64url without "=" of 96 bytes>
 ///
-/// Everything in it is public. The identity hash lets the scanner check that
-/// the code was read intact: it must equal SHA-256 of the public key.
+/// The 96 bytes are the Olm identity key, one new one-time key and the
+/// addressing key, 32 bytes each: 8 + 128 = 136 characters. There is no hash
+/// in the code (0004 §1 (a)): the two people compare the verification code.
+///
+/// OGRANSKAT (0004 §3): the addressing key is a static X25519 key kept beside
+/// Olm, and the verification code does not cover it.
 abstract final class ContactCode {
   static const String scheme = 'shaid';
-  static const int version = 1;
+  static const int version = 2;
   static const int maxLength = 160;
+  static const int _bytes = 3 * olmKeyLength;
   static const String _damaged = 'Koden verkar vara skadad. Skanna igen.';
 
-  static String encode(PublicIdentity identity) {
-    final key = base64Url.encode(identity.publicKey).replaceAll('=', '');
-    return '$scheme:$version:${identity.hash.hex}:$key';
+  static String encode(OlmContactBundle bundle, PublicIdentity addressingKey) {
+    final payload = Uint8List.fromList([
+      ...bundle.identityKey,
+      ...bundle.oneTimeKey,
+      ...addressingKey.publicKey,
+    ]);
+    return '$scheme:$version:${base64Url.encode(payload).replaceAll('=', '')}';
   }
 
-  /// Parses and verifies a scanned code.
-  static PublicIdentity parse(String raw) {
+  /// Parses a scanned code. Only `shaid:2` is read (0004 §1).
+  static ScannedCode parse(String raw) {
     final text = raw.trim();
     final parts = text.split(':');
-    if (text.length > maxLength || parts.length != 4 || parts[0] != scheme) {
+    if (text.length > maxLength || parts.length < 3 || parts[0] != scheme) {
       throw const ContactCodeException('Det här är inte en SHA-kod.');
+    }
+    if (parts[1] == '1') {
+      throw const ContactCodeException(
+        'Koden kommer från en äldre version av SHA. Be din kontakt uppdatera '
+        'appen.',
+      );
     }
     if (parts[1] != '$version') {
       throw const ContactCodeException(
         'Koden kommer från en version av SHA som inte stöds.',
       );
     }
-    final IdentityHash claimed;
-    final PublicIdentity identity;
+    if (parts.length != 3) throw const ContactCodeException(_damaged);
+    final Uint8List bytes;
     try {
-      claimed = IdentityHash.fromHex(parts[2]);
-      identity = PublicIdentity(
-        base64Url.decode(base64Url.normalize(parts[3])),
-      );
+      bytes = base64Url.decode(base64Url.normalize(parts[2]));
     } on FormatException {
       throw const ContactCodeException(_damaged);
+    }
+    if (bytes.length != _bytes) throw const ContactCodeException(_damaged);
+    try {
+      return ScannedCode(
+        bundle: OlmContactBundle.fromBytes(bytes.sublist(0, 2 * olmKeyLength)),
+        addressingKey: PublicIdentity(bytes.sublist(2 * olmKeyLength)),
+      );
     } on CryptoException {
       throw const ContactCodeException(_damaged);
     }
-    if (identity.hash != claimed) {
-      throw const ContactCodeException(_damaged);
-    }
-    return identity;
   }
 }

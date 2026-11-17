@@ -5,26 +5,54 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../app/theme.dart';
+import '../../core/errors.dart';
+import '../../core/providers.dart';
 import '../../ui/hash_format.dart';
 import '../onboarding/identity_controller.dart';
 import 'contact_code.dart';
 import 'scan_screen.dart';
 
 /// Shows this device's identity as a QR code for someone to scan in person.
-class MyQrScreen extends ConsumerWidget {
+///
+/// Every time the screen opens it shows a new one-time key, which is saved
+/// before the code is drawn (0004 §1, §6 and §8). HomeShell makes a new
+/// screen each time the tab is chosen.
+class MyQrScreen extends ConsumerStatefulWidget {
   const MyQrScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyQrScreen> createState() => _MyQrScreenState();
+}
+
+class _MyQrScreenState extends ConsumerState<MyQrScreen> {
+  late final Future<String> _code = _makeCode();
+
+  Future<String> _makeCode() async {
+    final olm = ref.read(cryptoServiceProvider).olm;
+    await olm.ensureAccount();
+    final bundle = await olm.publishBundle();
+    return ContactCode.encode(bundle, ref.read(ownIdentityProvider));
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String>(
+    future: _code,
+    builder: (context, snapshot) => _build(
+      context,
+      snapshot.data,
+      snapshot.hasError ? describeError(snapshot.error!) : null,
+    ),
+  );
+
+  Widget _build(BuildContext context, String? code, String? error) {
     final identity = ref.watch(ownIdentityProvider);
-    final code = ContactCode.encode(identity);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Min QR'),
         // Copying puts your public key on the clipboard, readable by other
         // apps; only allowed in debug builds for emulator testing.
         actions: [
-          if (kDebugMode)
+          if (kDebugMode && code != null)
             IconButton(
               tooltip: 'Kopiera koden som text',
               icon: const Icon(Icons.copy_rounded),
@@ -71,34 +99,46 @@ class MyQrScreen extends ConsumerWidget {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        QrImageView(
-                          data: code,
-                          padding: EdgeInsets.zero,
-                          // High error correction leaves room for the logo.
-                          errorCorrectionLevel: QrErrorCorrectLevel.H,
-                          backgroundColor: ShaColors.qrBackground,
-                          eyeStyle: const QrEyeStyle(
-                            eyeShape: QrEyeShape.square,
-                            color: ShaColors.background,
+                        if (code == null)
+                          error == null
+                              ? const CircularProgressIndicator()
+                              : Text(
+                                  error,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: ShaColors.background,
+                                  ),
+                                )
+                        else
+                          QrImageView(
+                            data: code,
+                            padding: EdgeInsets.zero,
+                            // High error correction leaves room for the logo.
+                            errorCorrectionLevel: QrErrorCorrectLevel.H,
+                            backgroundColor: ShaColors.qrBackground,
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: ShaColors.background,
+                            ),
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: ShaColors.background,
+                            ),
                           ),
-                          dataModuleStyle: const QrDataModuleStyle(
-                            dataModuleShape: QrDataModuleShape.square,
-                            color: ShaColors.background,
+                        if (code != null)
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: ShaColors.background,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.verified_user_outlined,
+                              color: ShaColors.primary,
+                              size: 24,
+                            ),
                           ),
-                        ),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: ShaColors.background,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.verified_user_outlined,
-                            color: ShaColors.primary,
-                            size: 24,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -135,9 +175,9 @@ class MyQrScreen extends ConsumerWidget {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Koden är inte hemlig. Den innehåller bara din offentliga '
-                    'nyckel och kan visas för den du träffar. Din hemliga nyckel '
-                    'lämnar aldrig telefonen.',
+                    'Koden är inte hemlig. Den innehåller bara offentliga '
+                    'nycklar och kan visas för den du träffar. Dina hemliga '
+                    'nycklar lämnar aldrig telefonen.',
                     style: TextStyle(
                       fontSize: 13.5,
                       height: 20 / 13.5,
