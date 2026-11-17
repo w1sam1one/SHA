@@ -248,6 +248,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F4, första steget: beslutsunderlaget
+  [0011](decisions/0011-app-las.md) om app-lås. Rekommendation: (B),
+  telefonens eget lås med plattformens `BiometricPrompt`, utan nytt
+  beroende. Bygget väntar på ägarens beslut.
 - 2026-11-17 – F3, första steget: beslutsunderlaget
   [0010](decisions/0010-historik-i-version-1.md) om historik i version 1.
   Rekommendation: (B), egna valvposter med en gräns som användaren väljer.
