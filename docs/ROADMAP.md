@@ -248,6 +248,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F9, första delen (mergas av ägaren): `docs/play-krav.md`.
+  Målnivån är läst (API 36 från 31 augusti 2026; SHA bygger med 36). De
+  fyra sidorna på support.google.com gick inte att nå från molnmiljön och
+  är ej lästa.
 - 2026-11-17 – F5, första delen: en licenssida under Inställningar ›
   Licenser, med Dart-paketen (bland dem AGPL-3.0 för flutter_vodozemac och
   vodozemac), de två typsnitten (SIL OFL) och de 129 Rust-paketen i
