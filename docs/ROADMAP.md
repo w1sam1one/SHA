@@ -119,7 +119,7 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 
 ### Paket
 
-- [ ] **F1 – Granskningspaket.** `docs/granskning/` med:
+- [x] **F1 – Granskningspaket.** `docs/granskning/` med:
   - en hotmodell;
   - alla OGRANSKAT-punkter, med fil och rad;
   - vad som är testat och hur;
@@ -141,10 +141,10 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
     Apache-paketen.
-- [ ] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
+- [x] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
   steg, förväntat resultat och en ruta för ägarens resultat. Med en mätning
   av farten i StrongBox och ett test med TalkBack.
-- [ ] **F7 – Relayn i drift:**
+- [x] **F7 – Relayn i drift:**
   - härdning och driftinstruktioner för en riktig VPS: förnyelse av TLS,
     uppdateringar och övervakning utan IP-adresser;
   - svar eller beslutsunderlag för de öppna frågorna i 0002 som påverkar
@@ -164,6 +164,9 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   repot publikt.
 - **Besluten i F2, F3 och F4.** Ägaren beslutar i varje beslutsunderlag innan
   bygget börjar, som vid G4 och G5.
+- **Besluten i F7.** Ägaren beslutar om VPN-texten och om paket som
+  försvinner vid en omstart, i [0008](decisions/0008-oppna-fragor-i-0002.md).
+  VPN-texten behövs för F5.
 
 ## Före första utdelning
 
@@ -245,6 +248,17 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F7 klar: `relay/DRIFT.md` (härdning, systemd, TLS med
+  certbot, uppdateringar och övervakning utan IP-adresser; ej provat på en
+  riktig server) och beslutsunderlaget 0008 med svar på de öppna frågorna i
+  0002. Två beslut väntar på ägaren.
+- 2026-11-17 – F6 klar: `docs/testprotokoll.md` med steg, förväntat
+  resultat och en ruta för ägarens resultat, inklusive TalkBack och farten i
+  valvet på en riktig telefon. Ägaren fyller i det vid G3.
+- 2026-11-17 – F1 klar: granskningspaketet i `docs/granskning/`
+  (hotmodell, alla OGRANSKAT-punkter med fil och rad, vad som är testat,
+  frågor till kryptoexperten, och underlaget för granskningen av
+  Flutter/Dart-lagret och bygget). Det används vid G6.
 - 2026-11-16 – P8, första delen: `docs/prototyp.md` (servern, APK:n, två
   telefoner) och beslutsunderlaget 0007 om att ladda upp debug-APK:n från
   CI. Ny grind G-P8: P8 väntar på ägarens beslut.
