@@ -248,6 +248,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F2, första steget: beslutsunderlaget
+  [0009](decisions/0009-radering-av-gamla-sessioner.md) om när gamla
+  sessioner får raderas. Rekommendation: (iv), radera bara när kontakten
+  bevisligen har gått vidare. Bygget väntar på ägarens beslut.
 - 2026-11-17 – F7 klar: `relay/DRIFT.md` (härdning, systemd, TLS med
   certbot, uppdateringar och övervakning utan IP-adresser; ej provat på en
   riktig server) och beslutsunderlaget 0008 med svar på de öppna frågorna i
