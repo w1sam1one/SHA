@@ -248,6 +248,13 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – Rättelser efter den oberoende granskningen av PR #39 (0013):
+  varje push till `main` har en egen grupp i `concurrency`, så att ingen
+  körning där ersätts och lämnar en push oprovad. En flyttad fil räknas med
+  båda sökvägarna, och namn med å, ä och ö skrivs som de är
+  (`changed-files.sh`). `pipefail` i `changes`. `LICENSE` kör Flutter-jobbet.
+  Rätt katalog för cargokits Rust-bygge i cachen. Dependabot följer
+  `actions/cache`. Ägaren mergar.
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade
