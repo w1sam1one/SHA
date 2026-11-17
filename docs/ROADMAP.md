@@ -119,7 +119,7 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 
 ### Paket
 
-- [ ] **F1 – Granskningspaket.** `docs/granskning/` med:
+- [x] **F1 – Granskningspaket.** `docs/granskning/` med:
   - en hotmodell;
   - alla OGRANSKAT-punkter, med fil och rad;
   - vad som är testat och hur;
@@ -245,6 +245,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F1 klar: granskningspaketet i `docs/granskning/`
+  (hotmodell, alla OGRANSKAT-punkter med fil och rad, vad som är testat,
+  frågor till kryptoexperten, och underlaget för granskningen av
+  Flutter/Dart-lagret och bygget). Det används vid G6.
 - 2026-11-16 – P8, första delen: `docs/prototyp.md` (servern, APK:n, två
   telefoner) och beslutsunderlaget 0007 om att ladda upp debug-APK:n från
   CI. Ny grind G-P8: P8 väntar på ägarens beslut.
