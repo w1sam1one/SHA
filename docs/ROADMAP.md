@@ -248,6 +248,12 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – CI använder färre Actions-minuter
+  ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
+  10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade
+  filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
+  per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
+  (ett nytt beroende). Ägaren mergar.
 - 2026-11-17 – Rättningar efter den andra oberoende granskningen av fas 2
   (PR #35): villkor 5 i 0009 räknas från det första meddelandet som
   uppfyller villkor 4 (`qualifiedAt`), så att en aktiv chatt inte stoppar
