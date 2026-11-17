@@ -158,57 +158,17 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
 - **Ikon:** byt app-ikonen (punkt 0). Butikssidan har dessutom en egen ikon
   som laddas upp i Play Console; storlekskraven står där.
 
-## 6. Underlag till Data safety – vad koden visar i dag
+## 6. Underlag till Data safety
 
-**Du måste själv kontrollera varje svar innan du skickar in.** Listan visar
-bara vad SHA:s egen kod gör. Den säger inte hur Googles definitioner ska
-tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
+Underlaget står i [`docs/data-safety.md`](data-safety.md) (F10), med fil
+som källa för varje svar, och utkastet till integritetspolicyn i
+[`docs/integritetspolicy.md`](integritetspolicy.md). Sedan P6 skickar appen
+krypterade paket till servern och begär `INTERNET`.
 
-- **Nätverk:**
-  - Appens egen kod gör inga nätverksanrop. Varken `lib/` eller
-    `pubspec.yaml` innehåller `dart:io`, `http` eller något nätverkspaket.
-  - Appens eget manifest begär inte `INTERNET`
-    (`android/app/src/main/AndroidManifest.xml`), och
-    `android/app/src/main/res/xml/network_security_config.xml` stänger av
-    okrypterad trafik.
-  - Om det färdiga release-manifestet ändå får nätverksbehörighet, och om
-    ML Kit eller CameraX skickar något: **ej verifierat** (punkt 0).
-- **Kamera:**
-  - Används bara för att skanna QR-koder (`lib/features/qr/scan_screen.dart`,
-    via `mobile_scanner`).
-  - Appens kod ber inte om bilderna (`returnImage` är `false` som standard i
-    `MobileScannerController`) och sparar inga bilder.
-  - Hur ML Kit behandlar kamerabilden: **ej verifierat**.
-- **På telefonen sparas** bara identitetens nyckelpar.
-  - Det krypteras med en Android Keystore-nyckel och ligger i appens privata
-    `noBackupFilesDir`
-    (`android/app/src/main/kotlin/se/sha/sha/keystore/KeystoreVault.kt`).
-  - Backup och enhetsöverföring är avstängda (`allowBackup="false"` och
-    `res/xml/data_extraction_rules.xml`).
-- **Kontakter** (namnet du skriver och kontaktens offentliga nyckel) och
-  **meddelanden** finns bara i minnet och försvinner när appen stängs
-  (`lib/features/contacts/contacts_store.dart`,
-  `lib/features/chat/message_store.dart`).
-- **Meddelanden skickas inte** (`lib/features/chat/chat_controller.dart`,
-  `transportAvailableProvider` är `false` i `lib/core/providers.dart`).
-- **Inga konton**, inget telefonnummer och ingen e-post. Identiteten skapas
-  lokalt (`lib/features/onboarding/identity_controller.dart`,
-  `lib/crypto/src/sha_crypto_service.dart`).
-- **Dart-paket:** inga för analys, kraschrapporter eller annonser
-  (`pubspec.yaml`: `flutter_riverpod`, `cryptography`, `qr_flutter`,
-  `mobile_scanner`). Om ML Kit skickar användnings- eller
-  diagnostikdata till Google: **ej verifierat**, kontrollera Googles
-  dokumentation för ML Kit.
-- **Ingen loggning** i appkoden (`test/security/no_logging_test.dart`).
-- **Urklipp:** appens egna kopieringsknappar finns bara i debugbyggen
-  (`kDebugMode` i `lib/features/onboarding/identity_screen.dart` och
-  `lib/features/qr/my_qr_screen.dart`). Vanliga textfält har systemets
-  kopiera och klistra in.
+## 7. Lova inget som saknas
 
-## 7. Förhandsversion – lova inget som saknas
-
-Chatten visar själv att meddelanden inte skickas än
-(`lib/features/chat/chat_screen.dart`). Butikstext, skärmbilder och
-beskrivning får inte påstå att appen skickar meddelanden, sparar historik,
-har app-lås eller forward secrecy. Det som saknas står i
-`docs/SECURITY_REVIEW.md` och i appens "Teknisk information".
+Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
+historik, har app-lås eller hämtar i bakgrunden (F3, F4, 0002). Det som
+saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)
+och i `docs/granskning/`. Orden i 0002, "Formuleringar i appen", gäller
+också butikssidan.

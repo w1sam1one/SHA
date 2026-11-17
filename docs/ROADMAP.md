@@ -219,7 +219,7 @@ Version 1.0 är publicerad i produktion på Google Play.
   - Data safety och integritetspolicyn.
 
   Höj Flutter-versionen i en egen PR om det behövs.
-- [ ] **F10 – Integritetspolicy och Data safety.** Ett utkast till
+- [x] **F10 – Integritetspolicy och Data safety.** Ett utkast till
   integritetspolicy på svenska och engelska, och svaren till Data safety.
   Bara det koden faktiskt gör, med fil som källa.
 - [ ] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
@@ -248,6 +248,11 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-17 – F10 klar (mergas av ägaren): utkast till integritetspolicy
+  på svenska och engelska (`docs/integritetspolicy.md`) och underlaget till
+  Data safety med fil som källa (`docs/data-safety.md`). Punkt 6 och 7 i
+  `docs/release.md` pekar dit och stämmer med P6. Mot Googles definitioner
+  kontrolleras svaren i F9.
 - 2026-11-17 – F5, första delen: en licenssida under Inställningar ›
   Licenser, med Dart-paketen (bland dem AGPL-3.0 för flutter_vodozemac och
   vodozemac), de två typsnitten (SIL OFL) och de 129 Rust-paketen i
