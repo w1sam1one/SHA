@@ -144,6 +144,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 28),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Licenser'),
+          subtitle: const Text('Programvara och typsnitt som SHA bygger på'),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () =>
+              showLicensePage(context: context, applicationName: 'SHA'),
+        ),
       ],
     );
   }
