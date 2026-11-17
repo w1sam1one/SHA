@@ -68,7 +68,7 @@ Prototypen är klar när allt detta gäller:
   ägaren. Texterna i §10 är godkända (2026-11-16).
   Engångsnycklar (§8), med 30 dagar för oanvända nycklar tills ägaren
   väljer antal dagar. Kontakterna sparas i tillståndets valvpost (0005 (A)).
-- [ ] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
+- [x] **P5 – Paketformat version 3.** Format och utfyllnad (§4, §5). Relayns
   största paketstorlek i `relay/limits.go` och dess tester.
 - [ ] **P6 – Transport.** En relay-klient utan nytt beroende (`dart:io`).
   Hämtning enligt §9 (b). Intervallet 1, 5, 15 eller 60 minuter i
@@ -241,6 +241,11 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-16 – P5 klar: paketformat 3 och utfyllnad innanför Olm
+  (OGRANSKAT, 0004 §4 (A) och §5 (a)). Alla rader i storlekstabellen stämmer
+  med riktiga Olm-meddelanden, och kedjeindex 16 384 är nu mätt. Relayns
+  största paket är 65 712 byte, provat även bakom nginx. Appen kopplas om
+  i P6.
 - 2026-11-16 – P4 klar: QR-koden `shaid:2` (136 tecken), kontrollkoden på
   Olm-nycklarna och adresseringsnyckeln (OGRANSKAT, §1 och §3 (A)).
   Kontakterna sparas i Olm-tillståndets valvpost. Sessionsregeln enligt

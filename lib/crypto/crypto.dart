@@ -21,6 +21,8 @@ export 'src/olm_service.dart'
         OlmReceiveResult,
         OlmService,
         olmKeyLength;
+export 'src/olm_padding.dart' show OlmPadding;
+export 'src/olm_wire_format.dart' show PacketV3;
 export 'src/padding.dart' show MessagePadding;
 export 'src/sha_crypto_service.dart' show ShaCryptoService;
 export 'src/types.dart'

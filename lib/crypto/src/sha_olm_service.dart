@@ -9,6 +9,7 @@ import 'package:vodozemac/vodozemac.dart';
 import 'entropy.dart';
 import 'hashing.dart';
 import 'key_vault.dart';
+import 'olm_padding.dart';
 import 'olm_service.dart';
 import 'types.dart';
 import 'wipe.dart';
@@ -279,8 +280,8 @@ final class ShaOlmService implements OlmService {
     }
     final chosen = contact.chosen;
     final session = _session(chosen, key);
-    // 1. Encrypt in memory.
-    final message = session.encrypt(text);
+    // 1. Pad (0004 §4 (A)) and encrypt in memory.
+    final message = session.encrypt(OlmPadding.pad(text));
     final packet = Uint8List.fromList([
       message.messageType,
       ...base64.decode(base64.normalize(message.ciphertext)),
@@ -347,7 +348,9 @@ final class ShaOlmService implements OlmService {
           final session = _session(saved, key);
           final String text;
           try {
-            text = session.decrypt(messageType: type, ciphertext: ciphertext);
+            text = OlmPadding.unpad(
+              session.decrypt(messageType: type, ciphertext: ciphertext),
+            );
           } catch (e) {
             // Classify only; the text itself is dropped here.
             final kind = _classify(e);
@@ -391,7 +394,12 @@ final class ShaOlmService implements OlmService {
             );
             // Outside the try: a failed save must reach the caller as an
             // error, never turn into "unreadable".
-            return _keep(next, peerKey, hash, inbound.plaintext);
+            return _keep(
+              next,
+              peerKey,
+              hash,
+              OlmPadding.unpad(inbound.plaintext),
+            );
           }
           failure = OlmReceiveFailure.unreadable;
         }

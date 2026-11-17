@@ -391,9 +391,14 @@ Kedjeindex under 128. Paketet är 18 byte plus Olm-meddelandet (punkt 5).
   - **Kedjeindex:** 127 gav samma storlek och 128 gav 1 byte mer.
   - **Utfyllnaden:** text med å och emoji, utfylld med mellanslag, kom
     fram oförändrad, och `jsonDecode` godtog mellanslagen.
+- **Mätt 2026-11-16 i P5**, i `test/crypto/olm_sizes_test.dart` (incheckat,
+  på datorn): alla rader i tabellen stämmer, både typ 0 och typ 1, och
+  kedjeindex 16 384 gav ytterligare 1 byte. R7 i
+  `test/crypto/olm_service_cases.dart` kontrollerar tre av raderna (typ 1,
+  hinkarna 256, 1 024 och 16 384) även på Android.
 - **Ej verifierat:**
-  - kedjeindex 16 384 och högre;
-  - mätningen på Android.
+  - kedjeindex 2 097 152 och högre (4 byte);
+  - hela tabellen på Android.
 
 **Testa:**
 - mät varje rad i tabellen med riktiga Olm-meddelanden;
