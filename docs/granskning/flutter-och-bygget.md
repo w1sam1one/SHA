@@ -23,7 +23,8 @@ incheckad.
 | `cryptography` | ^2.9.0 | AES-GCM, HKDF, SHA-256, X25519 |
 | `flutter_riverpod` | ^3.4.3 | Tillstånd i appen |
 | `qr_flutter` | ^4.1.0 | Visa QR-koden |
-| `mobile_scanner` | ^7.4.2 | Skanna QR-koden (ML Kit och CameraX) |
+| `camera` | 0.12.2 (exakt) | Kameran för skannern (CameraX), 0012 (C1) |
+| `zxing2` | 0.2.4 (exakt) | Läsa QR-koden, i ren Dart, 0012 (C1) |
 
 `test/security/olm_versions_test.dart` kontrollerar att Olm-paketen är
 låsta.
@@ -68,5 +69,8 @@ låsta.
 4. Riverpod 3: att ingen provider ändras under ett bygge, och att
    `ref.mounted` kontrolleras efter `await`.
 5. Att Rust i Android-bygget inte är låst (se ovan).
-6. Vad ML Kit och CameraX gör med kamerabilden, och om de använder nätet
-   (`docs/release.md`, punkt 6: ej verifierat).
+6. CameraX: vad den gör med kamerabilden, och om den använder nätet (ej
+   verifierat). ML Kit är borttaget (0012 (C1)). `zxing2` har ett fel i hur
+   den hittar koden: vissa koder läses bara när bilden vrids, så
+   `lib/features/qr/qr_decoder.dart` vrider en bild som inte gav något
+   (`test/features/qr_decoder_test.dart`).

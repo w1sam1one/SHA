@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../app/theme.dart';
 import '../../core/errors.dart';
@@ -13,6 +12,7 @@ import '../onboarding/identity_controller.dart';
 import 'add_contact_sheet.dart';
 import 'contact_code.dart';
 import 'my_qr_screen.dart';
+import 'qr_camera.dart';
 
 /// Scans another person's SHA QR code and adds them as a contact.
 class ScanScreen extends ConsumerStatefulWidget {
@@ -27,9 +27,8 @@ class ScanScreen extends ConsumerStatefulWidget {
 }
 
 class _ScanScreenState extends ConsumerState<ScanScreen> {
-  final MobileScannerController _camera = MobileScannerController(
-    formats: const [BarcodeFormat.qrCode],
-  );
+  final ValueNotifier<bool> _torch = ValueNotifier(false);
+  final ValueNotifier<bool> _cameraRunning = ValueNotifier(false);
 
   /// True while a scanned code is being checked or shown, so further
   /// detections are ignored.
@@ -41,19 +40,14 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
   @override
   void dispose() {
-    _camera.dispose();
+    _torch.dispose();
+    _cameraRunning.dispose();
     super.dispose();
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    for (final barcode in capture.barcodes) {
-      final raw = barcode.rawValue;
-      if (raw != null) {
-        if (DateTime.now().isBefore(_ignoreCameraUntil)) return;
-        _handleCode(raw);
-        return;
-      }
-    }
+  void _onCode(String raw) {
+    if (DateTime.now().isBefore(_ignoreCameraUntil)) return;
+    _handleCode(raw);
   }
 
   Future<void> _handleCode(String raw) async {
@@ -203,11 +197,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          MobileScanner(
-            controller: _camera,
-            onDetect: _onDetect,
-            errorBuilder: (context, error) => _CameraError(error: error),
-          ),
+          QrCamera(onCode: _onCode, torch: _torch, running: _cameraRunning),
           const _ScanFrame(),
           SafeArea(
             child: Column(
@@ -235,18 +225,23 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                         ),
                       ),
                       ValueListenableBuilder(
-                        valueListenable: _camera,
-                        builder: (context, state, _) => IconButton.filledTonal(
-                          tooltip: 'Ficklampa',
-                          onPressed: state.isRunning
-                              ? _camera.toggleTorch
-                              : null,
-                          icon: Icon(
-                            state.torchState == TorchState.on
-                                ? Icons.flashlight_off_rounded
-                                : Icons.flashlight_on_rounded,
-                          ),
-                        ),
+                        valueListenable: _cameraRunning,
+                        builder: (context, running, _) =>
+                            ValueListenableBuilder(
+                              valueListenable: _torch,
+                              builder: (context, torchOn, _) =>
+                                  IconButton.filledTonal(
+                                    tooltip: 'Ficklampa',
+                                    onPressed: running
+                                        ? () => _torch.value = !torchOn
+                                        : null,
+                                    icon: Icon(
+                                      torchOn
+                                          ? Icons.flashlight_off_rounded
+                                          : Icons.flashlight_on_rounded,
+                                    ),
+                                  ),
+                            ),
                       ),
                     ],
                   ),
@@ -310,33 +305,6 @@ class _ScanFrame extends StatelessWidget {
             boxShadow: const [
               BoxShadow(color: Color(0x99060A0B), spreadRadius: 1000),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CameraError extends StatelessWidget {
-  const _CameraError({required this.error});
-
-  final MobileScannerException error;
-
-  @override
-  Widget build(BuildContext context) {
-    final message = error.errorCode == MobileScannerErrorCode.permissionDenied
-        ? 'SHA behöver tillgång till kameran för att skanna QR-koder. '
-              'Du kan ge behörighet i telefonens inställningar.'
-        : 'Kameran kunde inte startas.';
-    return ColoredBox(
-      color: ShaColors.background,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: ShaColors.textSecondary),
           ),
         ),
       ),

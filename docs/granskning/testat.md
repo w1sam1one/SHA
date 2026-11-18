@@ -24,6 +24,8 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Valvets felkoder | 6 | `test/crypto/android_keystore_vault_test.dart` | Datorn |
 | Mätningen i 0005 och med 50 sessioner | 2 | `integration_test/olm_service_test.dart` | Emulatorn |
 | QR-koden `shaid:2` | 4 | `test/features/contact_code_test.dart` | Datorn |
+| Skannern (0012 (C1)): koden som "Min QR" ritar, 100 slumpade koder, koderna som `zxing2` bara läser vridna, utfyllda rader, en bild i taget | 11 | `test/features/qr_decoder_test.dart` | Datorn |
+| APK:ns manifest: bara `CAMERA` och `INTERNET`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
 | JSON-texten v3 | 6 | `test/features/message_payload_test.dart` | Datorn |
 | Relay-klienten mot en server på datorn | 11 | `test/features/relay_client_test.dart` | Datorn |
 | Transporten med två appar och en låtsasserver: 204, 507, 429, dubbletter, krascher, rundor | 20 | `test/features/transport_test.dart` | Datorn |
@@ -65,3 +67,5 @@ faller (`CLAUDE.md`). De står i respektive PR:
 - TLS mot relayn i kedjetesterna (nginx provades för hand, P5).
 - En fast testvektor för kontrollkoden (0004 §11.3).
 - TalkBack (F6).
+- Skannern med en riktig kamera: att kameran startar, stängs och läser en
+  kod på en telefon, och hur fort (G3). Emulatorn i CI har ingen kamera.

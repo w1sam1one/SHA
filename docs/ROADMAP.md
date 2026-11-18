@@ -140,7 +140,9 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   - en enkel förklaring i appen av vad servern ser, och rekommendationen om
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
-    Apache-paketen.
+    Apache-paketen;
+  - QR-skannern utan ML Kit (0012 (C1)): `zxing2` med `camera`. Klar i en
+    egen PR, se loggen.
 - [x] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
   steg, förväntat resultat och en ruta för ägarens resultat. Med en mätning
   av farten i StrongBox och ett test med TalkBack.
@@ -248,6 +250,14 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-18 – F5, QR-skannern (0012 (C1)): `mobile_scanner` och ML Kit är
+  borta. Kameran tas via `camera` 0.12.2 (CameraX, utan ljud), och koden
+  läses av `zxing2` 0.2.4 i ren Dart, i en bakgrundsisolat, en bild i
+  taget. `zxing2` hittade inte vissa koder som de var ritade (3 av 120
+  med perfekta pixlar); en bild som inte gav något vrids därför ett kvarts
+  och ett halvt varv (0 av 1000 missade). `RECORD_AUDIO`,
+  `WRITE_EXTERNAL_STORAGE` och kravet på kamera tas bort ur manifestet, och
+  CI kontrollerar debug-APK:ns manifest. Ej provat: en riktig kamera (G3).
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade

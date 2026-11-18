@@ -371,6 +371,15 @@ jobs:
           ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
           exit "$status"
 
+      # 0012 (C1) and README: the app asks only for CAMERA and INTERNET, and
+      # requires no hardware feature. The camera plugin adds more; the app's
+      # manifest removes it, and this fails if anything gets through.
+      - name: Permissions and features in the built APK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print \
+            build/app/outputs/flutter-apk/app-debug.apk > "$RUNNER_TEMP/manifest.xml"
+          python3 -I .github/scripts/check-manifest.py "$RUNNER_TEMP/manifest.xml"
+
       # Saved right after the build, before the emulator needs the memory.
       - name: Save the pub cache
         if: github.event_name == 'push' && steps.pub-cache.outputs.cache-hit != 'true'
