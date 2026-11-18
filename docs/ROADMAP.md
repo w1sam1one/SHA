@@ -291,8 +291,10 @@ Nyast först. En rad per paket eller körning som ändrar något.
   bild som inte gav något vrids därför ett kvarts och ett halvt varv (0 av
   1000 missade i mätningen). Kameran stängs i bakgrunden och startar igen,
   även efter en nekad behörighet. `RECORD_AUDIO`, `WRITE_EXTERNAL_STORAGE`
-  och kravet på kamera tas bort ur manifestet, och CI kontrollerar
-  release-manifestet. Ej provat: Android-bygget och en riktig kamera (G3).
+  och kravet på kamera tas bort ur manifestet, liksom `READ_EXTERNAL_STORAGE`
+  och `ACCESS_NETWORK_STATE`, som följer med CameraX videodel (media3), som
+  skannern inte använder. CI bygger appen och kontrollerar release-manifestet.
+  Ej provat: en riktig kamera (G3).
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade

@@ -29,8 +29,10 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
   - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) begär
     bara `CAMERA` och `INTERNET`. Kameran tas via `camera` (CameraX), och
     koden läses av `zxing2` i ren Dart (0012 (C1)). `camera` lägger till
-    `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE`, och appens manifest tar
-    bort dem. CI kontrollerar debug-APK:ns färdiga manifest
+    `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` (och `READ_EXTERNAL_STORAGE`
+    följer med), och CameraX videodel drar in media3, som lägger till
+    `ACCESS_NETWORK_STATE`. Appens manifest tar bort alla fyra; skannern
+    använder varken video, lagring eller nätverksstatus. CI kontrollerar debug-APK:ns färdiga manifest
     (`.github/scripts/check-manifest.py`).
   - `INTERNET` finns i debug- och profilmanifesten. Flutter behöver den där
     för utvecklingsverktygen.
