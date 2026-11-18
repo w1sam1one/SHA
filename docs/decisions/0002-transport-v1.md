@@ -55,13 +55,14 @@ Beslutat av ägaren 2026-11-13.
 Beslutat av ägaren:
 
 - Får användas: **"Servern sparar inte din IP-adress."**
+- Får användas (2026-11-18, 0008): **"Vi rekommenderar VPN om du inte vill
+  att servern ska se din IP-adress."**
 - Får inte användas: **"Servern kan inte se din IP-adress"** och **"anonym"**.
 
 Förslag (inte beslutat, ägaren avgör):
 
 - Får användas: "Servern lagrar bara krypterade meddelanden som den inte
-  kan läsa." "Meddelanden raderas från servern efter 48 timmar." "Vi
-  rekommenderar VPN om du inte vill att servern ska se din IP-adress."
+  kan läsa." "Meddelanden raderas från servern efter 48 timmar."
 - Får inte användas: varianter av "anonym" ("anonymt", "helt anonym"),
   "spårlöst", "ingen kan se att du använder SHA" och "inga loggar". Den
   sista gäller för att leverantören och en omvänd proxy kan logga även när

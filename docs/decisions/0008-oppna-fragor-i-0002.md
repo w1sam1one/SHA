@@ -1,6 +1,7 @@
 # 0008 – De öppna frågorna i 0002 inför version 1
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-17 (F7).
+Status: **Beslutat av ägaren 2026-11-18:** VPN-texten används, och paket
+som försvinner vid en omstart godtas för version 1. Skrivet 2026-11-17 (F7).
 
 Svar på de öppna frågorna i [0002](0002-transport-v1.md) som påverkar
 version 1. De flesta är redan besvarade av koden; två behöver ägarens
@@ -22,11 +23,12 @@ beslut (markerade **Ägaren beslutar**).
 
 1. **VPN-rekommendationen.** Förslaget i 0002 är inte beslutat: "Vi
    rekommenderar VPN om du inte vill att servern ska se din IP-adress."
-   - [ ] Använd texten (den visas då under Inställningar och i "Teknisk
-     information", F5).
+   - [x] Använd texten (den visas då under Inställningar och i "Teknisk
+     information", F5). Beslutat 2026-11-18.
    - [ ] Använd den inte.
    - [ ] En annan text: ______________________
 2. **Paket som försvinner vid en omstart (f).**
-   - [ ] Godta för version 1 (rekommenderas: inget sparas på disk, vilket
-     också betyder att inget kan läsas av den som tar disken).
+   - [x] Godta för version 1 (rekommenderas: inget sparas på disk, vilket
+     också betyder att inget kan läsas av den som tar disken). Beslutat
+     2026-11-18.
    - [ ] Relayn ska spara till disk (blir ett nytt beslutsunderlag).

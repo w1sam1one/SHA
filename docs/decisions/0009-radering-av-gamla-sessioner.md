@@ -1,6 +1,7 @@
 # 0009 – Radering av gamla sessioner (F2)
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-17. **Kräver
+Status: **Beslutat av ägaren 2026-11-18: (iv), med 24 h marginal för
+klockor.** Skrivet 2026-11-17. **Kräver
 granskning av kryptoexpert** (gamla nycklar i telefonen och regeln för när
 de får raderas).
 
@@ -127,8 +128,8 @@ mätningar visar att tillståndet växer.
 
 ## Ägaren beslutar
 
-- [ ] (i), (ii), (iv) eller (v).
-- [ ] Marginalen för klockor (förslag: 24 h).
+- [x] **(iv)**, beslutat 2026-11-18.
+- [x] Marginalen för klockor: **24 h**, beslutat 2026-11-18.
 
 Bygget (F2) börjar först efter beslutet, och regeln märks
 `OGRANSKAT (0009)` tills kryptoexperten har granskat den (G6).

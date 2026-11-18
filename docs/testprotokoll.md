@@ -102,10 +102,12 @@ sessioner. Gör det sist, och skanna igen efteråt om du vill fortsätta.
 | MEASURE-P4, största skrivning | | 300 ms |
 | Alla tester gröna? | | Ja |
 
-Efteråt finns testbygget på telefonen i stället för appen. Det är signerat
-med en annan debug-nyckel än APK:n från CI, så avinstallera testbygget
-först (`adb uninstall se.sha.sha` eller i telefonens inställningar).
-Installera sedan APK:n igen och stäng av USB-felsökningen.
+Efteråt finns testbygget på telefonen i stället för appen. Bygg och
+installera APK:n igen på samma dator (`docs/prototyp.md`, steg 2), med
+`adb install -r build/app/outputs/flutter-apk/app-debug.apk`, och stäng av
+USB-felsökningen. Båda är signerade med samma debug-nyckel. Byggdes de på
+olika datorer måste testbygget avinstalleras först (`adb uninstall
+se.sha.sha`).
 
 Det här är också körningen på en riktig arm64-telefon i villkor 1 i 0003
 (R8), för Olm-testerna i appen. Spiken körs enligt

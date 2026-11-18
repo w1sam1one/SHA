@@ -10,7 +10,7 @@ Du behöver:
 - två Android-telefoner, Android 7 (API 24) eller senare (grinden G3).
   Android 9 eller senare rekommenderas: först där fungerar nyckeln bara när
   telefonen är upplåst, och StrongBox finns bara där;
-- APK:n (steg 2).
+- APK:n, som du bygger själv (steg 2).
 
 ## 1. Sätt upp servern (G2)
 
@@ -41,15 +41,30 @@ Allt står i [`relay/README.md`](../relay/README.md). Kort:
 Claude kan hjälpa dig steg för steg, men hyr inte servern och hanterar
 inga lösenord åt dig.
 
-## 2. Hämta APK:n
+## 2. Bygg APK:n
 
-Det här beror på beslutet i
-[0007](decisions/0007-debug-apk-som-ci-artefakt.md):
-- **(a)**: starta jobbet under Actions, ladda ner artefakten (en .zip) och
-  packa upp den. Den finns i 7 dagar.
-- **(b)**: bygg själv med `flutter build apk --debug`. APK:n hamnar i
-  `build/app/outputs/flutter-apk/app-debug.apk`. Det kräver Flutter 3.47.7,
-  Android SDK, NDK och Rust (se README, "Kom igång", och `ci.yml`).
+Du bygger APK:n själv på din dator (0007 (b)). CI bygger samma APK i
+emulatorjobbet men laddar inte upp den.
+
+1. Installera det som CI använder (`.github/workflows/ci.yml`):
+   - Flutter **3.47.7**;
+   - Android SDK med NDK, till exempel via Android Studio. CI använder NDK
+     28.2.13676358;
+   - Rust via `rustup`, med `rustup toolchain install stable`. Pluginet
+     lägger själv till Android-målen när det bygger (README, "Kom igång").
+2. Hämta paketen, exakt enligt låsfilen:
+   ```sh
+   flutter pub get --enforce-lockfile
+   ```
+3. Bygg:
+   ```sh
+   flutter build apk --debug
+   ```
+   APK:n hamnar i `build/app/outputs/flutter-apk/app-debug.apk`. Första
+   bygget tar en stund, eftersom Olm-biblioteket byggs från källkod.
+
+Bygg bara debug. Ett release-bygge eller en APK till någon annan än du får
+inte göras än (`CLAUDE.md`, "Aldrig").
 
 Det är en **debug-APK**. Den har två hjälpmedel för att prova utan kamera:
 kopiera koden på **Min QR** och **Ange kod manuellt** på skannerskärmen. En
@@ -63,9 +78,10 @@ kontakt som läggs till på det sättet är inte verifierad i person.
    Android frågar.
 3. Öppna SHA. Appen skapar din identitet första gången.
 
-**En ny APK:** med (a) kräver den troligen att appen avinstalleras först
-(0007, "Signering"). Då försvinner identiteten och kontakterna, och ni måste
-skanna varandra igen.
+**En ny APK:** bygg den på samma dator. Den signeras då med samma
+debug-nyckel (`~/.android/debug.keystore`), och appen kan uppdateras utan att
+identiteten och kontakterna försvinner. Byggs den på en annan dator måste
+appen avinstalleras först, och då måste ni skanna varandra igen.
 
 ## 4. Prova
 

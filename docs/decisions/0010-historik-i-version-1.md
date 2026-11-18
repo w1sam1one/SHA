@@ -1,6 +1,7 @@
 # 0010 – Historik i version 1 (F3)
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-17.
+Status: **Beslutat av ägaren 2026-11-18: (B)**, historik i egna valvposter
+med valvets nyckel, 30 dagar som standard. Skrivet 2026-11-17.
 
 Underlag för F3 i [`docs/ROADMAP.md`](../ROADMAP.md) (0004 §7, 0005 (C) och
 (ii)). I prototypen sparas ett meddelande bara tills det har skickats eller
@@ -79,5 +80,8 @@ kryptoexperten har granskat antagandet om Keystore ovan.
 
 ## Ägaren beslutar
 
-- [ ] (A), (B), (B2) eller (C).
-- [ ] Med (B) eller (B2): standard och val för hur länge (förslag ovan).
+- [x] **(B)**, beslutat 2026-11-18. Inte (B2): alla poster delar valvets
+  nyckel. Texten i appen lovar därför bara att historiken *tas bort ur
+  appen* efter tiden, inte att den inte går att läsa (se (B) ovan).
+- [x] Standard **30 dagar**. Valen är **Spara inte**, **7 dagar**, **30
+  dagar** och **1 år**, under Inställningar. Beslutat 2026-11-18.

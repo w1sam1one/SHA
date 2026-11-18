@@ -29,7 +29,9 @@ Prototypen är klar när allt detta gäller:
    startats om.
 3. Testplanen i 0004 §11 är grön i CI, även på Android-emulatorn. Körning på
    en riktig telefon ingår inte här, se G3.
-4. CI bygger en debug-APK som ägaren kan ladda ner och installera.
+4. Ägaren bygger själv en debug-APK enligt `docs/prototyp.md` och
+   installerar den (0007 (b)). CI bygger APK:n i emulatorjobbet men laddar
+   inte upp den.
 5. `docs/prototyp.md` beskriver hur ägaren sätter upp relayn och provar med
    två telefoner.
 
@@ -79,17 +81,16 @@ Prototypen är klar när allt detta gäller:
   ställa in.
 - [x] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
   204, 507 och 429, dubbletter, krascher och mutationer (§11).
-- [ ] **P8 – Leverans till ägaren.** Debug-APK som CI-artefakt och
-  `docs/prototyp.md`.
+- [x] **P8 – Leverans till ägaren.** `docs/prototyp.md`, med hur ägaren
+  bygger debug-APK:n själv (0007 (b)) och sätter upp relayn.
 
 ### Grindar (bara ägaren)
 
 - **G1 – Aktivera.** Merga PR:en med `CLAUDE.md`. Innan dess gör den
   schemalagda körningen ingenting.
-- **G-P8 – Debug-APK som CI-artefakt (före resten av P8).** Ägaren väljer
-  (a), (b) eller (c) i [0007](decisions/0007-debug-apk-som-ci-artefakt.md);
-  (a) kräver ett nytt beroende, `actions/upload-artifact`, och att bara
-  ägaren har åtkomst till repot. `docs/prototyp.md` finns redan.
+- **G-P8 – Debug-APK som CI-artefakt. Klar 2026-11-18.** Ägaren valde (b) i
+  [0007](decisions/0007-debug-apk-som-ci-artefakt.md): ägaren bygger APK:n
+  själv, och CI laddar inte upp någon.
 - **G2 – Relayn på riktigt.** Efter P8: hyr en VPS i EU och sätt upp relayn
   enligt `relay/README.md`. Claude kan hjälpa till steg för steg.
 - **G3 – Två riktiga telefoner.** Prova prototypen. Kör även spiken på en
@@ -162,11 +163,17 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   PR som byter `LICENSE` till AGPL-3.0, uppdaterar README och 0002, och lägger
   till CONTRIBUTING med ett förslag på CLA. Bara ägaren mergar den och gör
   repot publikt.
-- **Besluten i F2, F3 och F4.** Ägaren beslutar i varje beslutsunderlag innan
-  bygget börjar, som vid G4 och G5.
-- **Besluten i F7.** Ägaren beslutar om VPN-texten och om paket som
-  försvinner vid en omstart, i [0008](decisions/0008-oppna-fragor-i-0002.md).
-  VPN-texten behövs för F5.
+- **Besluten i F2, F3 och F4. Klara 2026-11-18.**
+  - F2: (iv) i [0009](decisions/0009-radering-av-gamla-sessioner.md), med
+    24 h marginal för klockor.
+  - F3: (B) i [0010](decisions/0010-historik-i-version-1.md), 30 dagar som
+    standard, med valen Spara inte, 7 dagar, 30 dagar och 1 år.
+  - F4: (B) i [0011](decisions/0011-app-las.md). Steg 1 i version 1, med 5
+    minuter i bakgrunden. Steg 2 först efter G3 och G6, i ett eget beslut.
+- **Besluten i F7. Klara 2026-11-18.** Ägaren valde i
+  [0008](decisions/0008-oppna-fragor-i-0002.md) att VPN-texten används (den
+  behövs för F5) och att paket som försvinner vid en omstart godtas för
+  version 1.
 
 ## Före första utdelning
 
@@ -248,6 +255,11 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-18 – Ägarens beslut inskrivna: 0007 (b), ägaren bygger APK:n
+  själv, så "Klart när" punkt 4 är ändrad och P8 är klar. 0008: VPN-texten
+  används (även i 0002), och paket som försvinner vid en omstart godtas.
+  0009 (iv) med 24 h marginal, 0010 (B) med 30 dagar som standard, och 0011
+  (B) med steg 1 i version 1 (5 minuter) och steg 2 efter G3 och G6.
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade

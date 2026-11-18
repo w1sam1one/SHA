@@ -1,6 +1,7 @@
 # 0007 – Debug-APK till ägaren som CI-artefakt
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-16.
+Status: **Beslutat av ägaren 2026-11-18: (b).** Ägaren bygger debug-APK:n
+själv. CI laddar inte upp någon APK. Skrivet 2026-11-16.
 
 Underlag för grinden G-P8 i [`docs/ROADMAP.md`](../ROADMAP.md). Ingen kod
 är ändrad här.
@@ -106,4 +107,6 @@ Steg för steg:
 2. Välj nedan och skriv in valet i den här filen (eller säg det till Claude).
 
 - [ ] Jag har kontrollerat Settings › Collaborators: bara jag har åtkomst.
-- [ ] (a), (b) eller (c).
+  (Behövs inte med (b): ingen APK finns på GitHub.)
+- [x] **(b)**, beslutat 2026-11-18. "Klart när" punkt 4 i färdplanen säger
+  nu att ägaren bygger APK:n själv enligt `docs/prototyp.md`.
