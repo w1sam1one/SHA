@@ -70,6 +70,9 @@ Förslag (inte beslutat, ägaren avgör):
 
 ## Öppna frågor
 
+Svaren för version 1 står i [0008](0008-oppna-fragor-i-0002.md). Ägaren
+beslutade (a) och (f) där 2026-11-18.
+
 - **(a) Flera brevlådor från samma IP.** Brevlåde-ID:n går inte att koppla
   ihop kryptografiskt. Men om appen hämtar flera brevlådor från samma
   IP-adress, och vid samma tid, kan servern koppla ihop dem. Den kan då se

@@ -30,8 +30,8 @@ Prototypen är klar när allt detta gäller:
 3. Testplanen i 0004 §11 är grön i CI, även på Android-emulatorn. Körning på
    en riktig telefon ingår inte här, se G3.
 4. Ägaren bygger själv en debug-APK enligt `docs/prototyp.md` och
-   installerar den (0007 (b)). CI bygger APK:n i emulatorjobbet men laddar
-   inte upp den.
+   installerar den (0007 (b)). CI laddar inte upp någon APK. Punkten är
+   uppfylld först när ägaren har byggt den.
 5. `docs/prototyp.md` beskriver hur ägaren sätter upp relayn och provar med
    två telefoner.
 
@@ -82,13 +82,14 @@ Prototypen är klar när allt detta gäller:
 - [x] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
   204, 507 och 429, dubbletter, krascher och mutationer (§11).
 - [x] **P8 – Leverans till ägaren.** `docs/prototyp.md`, med hur ägaren
-  bygger debug-APK:n själv (0007 (b)) och sätter upp relayn.
+  bygger debug-APK:n själv (0007 (b)) och sätter upp relayn. Stegen för
+  bygget är **ej provade**: appen har aldrig byggts för en riktig telefon.
 
 ### Grindar (bara ägaren)
 
 - **G1 – Aktivera.** Merga PR:en med `CLAUDE.md`. Innan dess gör den
   schemalagda körningen ingenting.
-- **G-P8 – Debug-APK som CI-artefakt. Klar 2026-11-18.** Ägaren valde (b) i
+- **G-P8 – Hur APK:n når ägaren. Klar 2026-11-18.** Ägaren valde (b) i
   [0007](decisions/0007-debug-apk-som-ci-artefakt.md): ägaren bygger APK:n
   själv, och CI laddar inte upp någon.
 - **G2 – Relayn på riktigt.** Efter P8: hyr en VPS i EU och sätt upp relayn
@@ -127,8 +128,9 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   - öppna frågor till kryptoexperten.
 
   Ett motsvarande paket för granskningen av Flutter/Dart-lagret och bygget.
-- [ ] **F2 – Radering av gamla sessioner,** med 0006 (i) som utgångspunkt.
-  Först ett beslutsunderlag och en grind, sedan kod och tester.
+- [ ] **F2 – Radering av gamla sessioner** enligt (iv) i
+  [0009](decisions/0009-radering-av-gamla-sessioner.md), märkt
+  `OGRANSKAT (0009)`. Beslutsunderlaget och grinden är klara.
 - [ ] **F3 – Historik i version 1** (0004 §7, 0005 (C) eller (ii)). Först ett
   beslutsunderlag och en grind, sedan bygget om ägaren vill ha det.
 - [ ] **F4 – App-lås med PIN eller biometri** (README, "Nästa steg"). Först
@@ -169,7 +171,7 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   - F3: (B) i [0010](decisions/0010-historik-i-version-1.md), 30 dagar som
     standard, med valen Spara inte, 7 dagar, 30 dagar och 1 år.
   - F4: (B) i [0011](decisions/0011-app-las.md). Steg 1 i version 1, med 5
-    minuter i bakgrunden. Steg 2 först efter G3 och G6, i ett eget beslut.
+    minuter i bakgrunden. Steg 2 först efter telefontester och G6.
 - **Besluten i F7. Klara 2026-11-18.** Ägaren valde i
   [0008](decisions/0008-oppna-fragor-i-0002.md) att VPN-texten används (den
   behövs för F5) och att paket som försvinner vid en omstart godtas för
@@ -197,9 +199,10 @@ någon annan än ägaren (0003, 0004 §13):
     tillståndet i en enda valvpost (0005).
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
     alternativ C, §7 (historiken) och ett yttre lager.
-- En raderingsregel för gamla sessioner (0004 §2, 0006; (i) är
-  utgångspunkten, F2). I prototypen raderas inga sessioner, och utan en regel
-  ligger gamla sessioners nycklar kvar i riktiga användares telefoner.
+- En raderingsregel för gamla sessioner (0004 §2, F2): (iv) i 0009, märkt
+  `OGRANSKAT (0009)` och granskad av kryptoexperten (G6). I prototypen
+  raderas inga sessioner, och utan en regel ligger gamla sessioners nycklar
+  kvar i riktiga användares telefoner.
 - Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna (G7).
@@ -259,7 +262,8 @@ Nyast först. En rad per paket eller körning som ändrar något.
   själv, så "Klart när" punkt 4 är ändrad och P8 är klar. 0008: VPN-texten
   används (även i 0002), och paket som försvinner vid en omstart godtas.
   0009 (iv) med 24 h marginal, 0010 (B) med 30 dagar som standard, och 0011
-  (B) med steg 1 i version 1 (5 minuter) och steg 2 efter G3 och G6.
+  (B) med steg 1 i version 1 (5 minuter) och steg 2 efter telefontester och
+  G6. Stegen för att bygga APK:n är ej provade.
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade

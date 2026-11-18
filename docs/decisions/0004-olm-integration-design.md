@@ -51,6 +51,13 @@ var "Mottagarens brevlåda är full just nu" och är nu "Servern har inte plats
 för det just nu". **Ägaren godkände texterna i §10 den 2026-11-16,** med två
 ändringar som står i §10.
 
+**Inför första utdelningen (ägarens beslut 2026-11-18):**
+- §2: gamla sessioner raderas enligt (iv) i
+  [0009](0009-radering-av-gamla-sessioner.md), märkt `OGRANSKAT (0009)`.
+- §7: historiken sparas enligt (B) i [0010](0010-historik-i-version-1.md),
+  i egna valvposter med valvets nyckel, inte med en nyckel per konversation
+  som §7 (a) rekommenderar. Kryptoexperten granskar (B).
+
 ## Så läses dokumentet
 
 - **Varje punkt** har krav, alternativ med för- och nackdelar, en

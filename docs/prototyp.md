@@ -43,16 +43,32 @@ inga lösenord åt dig.
 
 ## 2. Bygg APK:n
 
-Du bygger APK:n själv på din dator (0007 (b)). CI bygger samma APK i
-emulatorjobbet men laddar inte upp den.
+Du bygger APK:n själv på din dator (0007 (b)). CI laddar inte upp någon
+APK. CI bygger bara en test-APK för emulatorn (x86_64), inte appen.
 
-1. Installera det som CI använder (`.github/workflows/ci.yml`):
-   - Flutter **3.47.7**;
-   - Android SDK med NDK, till exempel via Android Studio. CI använder NDK
-     28.2.13676358;
+**Ej provat:** ingen har följt stegen nedan än, och appen har aldrig byggts
+för en riktig telefon (arm och arm64). Skriv ner det som inte stämmer, så
+rättar jag texten.
+
+1. Installera:
+   - Flutter **3.47.7**, samma som i CI (`.github/workflows/ci.yml`);
+   - JDK 17 (`android/app/build.gradle.kts`);
+   - Android SDK, till exempel via Android Studio, med **Android SDK
+     Command-line Tools** och **NDK 28.2.13676358**. Den versionen krävs:
+     Flutter 3.47.7 väljer den (`ndkVersion = flutter.ndkVersion`);
    - Rust via `rustup`, med `rustup toolchain install stable`. Pluginet
      lägger själv till Android-målen när det bygger (README, "Kom igång").
-2. Hämta paketen, exakt enligt låsfilen:
+
+   Godkänn Androids licenser och kontrollera installationen:
+   ```sh
+   flutter doctor --android-licenses
+   flutter doctor
+   ```
+2. Hämta koden och paketen, exakt enligt låsfilen:
+   ```sh
+   git clone https://github.com/w1sam1one/SHA.git
+   cd SHA
+   ```
    ```sh
    flutter pub get --enforce-lockfile
    ```
@@ -63,8 +79,10 @@ emulatorjobbet men laddar inte upp den.
    APK:n hamnar i `build/app/outputs/flutter-apk/app-debug.apk`. Första
    bygget tar en stund, eftersom Olm-biblioteket byggs från källkod.
 
-Bygg bara debug. Ett release-bygge eller en APK till någon annan än du får
-inte göras än (`CLAUDE.md`, "Aldrig").
+Bygg bara debug, och ge inte APK:n till någon annan: ingen utdelning före
+kryptoexpertens granskning (`CLAUDE.md`, "Ägarens beslut" 1). Ett
+release-bygge blir dessutom osignerat utan `key.properties`
+(`android/app/build.gradle.kts`).
 
 Det är en **debug-APK**. Den har två hjälpmedel för att prova utan kamera:
 kopiera koden på **Min QR** och **Ange kod manuellt** på skannerskärmen. En
@@ -73,13 +91,13 @@ kontakt som läggs till på det sättet är inte verifierad i person.
 ## 3. Installera på båda telefonerna
 
 1. Skicka APK:n till telefonen, till exempel med en kabel, eller kör
-   `adb install app-debug.apk`.
+   `adb install -r build/app/outputs/flutter-apk/app-debug.apk`.
 2. Öppna filen i appen **Filer** och tillåt installation från den när
    Android frågar.
 3. Öppna SHA. Appen skapar din identitet första gången.
 
 **En ny APK:** bygg den på samma dator. Den signeras då med samma
-debug-nyckel (`~/.android/debug.keystore`), och appen kan uppdateras utan att
+debugnyckel (`~/.android/debug.keystore`), och appen kan uppdateras utan att
 identiteten och kontakterna försvinner. Byggs den på en annan dator måste
 appen avinstalleras först, och då måste ni skanna varandra igen.
 

@@ -80,8 +80,9 @@ kryptoexperten har granskat antagandet om Keystore ovan.
 
 ## Ägaren beslutar
 
-- [x] **(B)**, beslutat 2026-11-18. Inte (B2): alla poster delar valvets
-  nyckel. Texten i appen lovar därför bara att historiken *tas bort ur
-  appen* efter tiden, inte att den inte går att läsa (se (B) ovan).
+- [x] **(B)**, beslutat 2026-11-18, inte den rekommenderade (B2). Med (B)
+  delar alla poster valvets nyckel, så texten i appen får bara lova att
+  historiken *tas bort ur appen* efter tiden, inte att den blir oläslig (se
+  (B) ovan). Den exakta texten läggs fram för ägaren.
 - [x] Standard **30 dagar**. Valen är **Spara inte**, **7 dagar**, **30
   dagar** och **1 år**, under Inställningar. Beslutat 2026-11-18.
