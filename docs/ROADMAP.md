@@ -254,10 +254,12 @@ Nyast först. En rad per paket eller körning som ändrar något.
   borta. Kameran tas via `camera` 0.12.2 (CameraX, utan ljud), och koden
   läses av `zxing2` 0.2.4 i ren Dart, i en bakgrundsisolat, en bild i
   taget. `zxing2` hittade inte vissa koder som de var ritade (3 av 120
-  med perfekta pixlar); en bild som inte gav något vrids därför ett kvarts
-  och ett halvt varv (0 av 1000 missade). `RECORD_AUDIO`,
-  `WRITE_EXTERNAL_STORAGE` och kravet på kamera tas bort ur manifestet, och
-  CI kontrollerar debug-APK:ns manifest. Ej provat: en riktig kamera (G3).
+  med perfekta pixlar), och kastade ibland andra fel än "hittade inget". En
+  bild som inte gav något vrids därför ett kvarts och ett halvt varv (0 av
+  1000 missade i mätningen). Kameran stängs i bakgrunden och startar igen,
+  även efter en nekad behörighet. `RECORD_AUDIO`, `WRITE_EXTERNAL_STORAGE`
+  och kravet på kamera tas bort ur manifestet, och CI kontrollerar
+  release-manifestet. Ej provat: Android-bygget och en riktig kamera (G3).
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade

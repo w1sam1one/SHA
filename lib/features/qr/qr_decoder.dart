@@ -39,16 +39,17 @@ class LuminanceFrame {
 /// the fault is in finding the code, not in decoding it. Turned a quarter,
 /// 2 of 1000 still failed; turned a half, those were read too. The camera's
 /// frames come in any orientation anyway, so a frame that gives nothing is
-/// tried turned a quarter and a half. Light modules on a dark background are
-/// tried last.
+/// tried turned a quarter and a half. The turned copies are made only then.
+///
+/// Only dark modules on a light background are read: that is how "Min QR"
+/// draws the code (ContactQrCode).
 String? decodeQr(LuminanceFrame frame) {
   if (!frame._fits) return null;
   final source = _PlaneLuminanceSource(frame);
+  final asDrawn = _read(source);
+  if (asDrawn != null) return asDrawn;
   final quarter = _turnedQuarter(source);
-  return _read(source) ??
-      _read(quarter) ??
-      _read(_turnedQuarter(quarter)) ??
-      _read(source.invert());
+  return _read(quarter) ?? _read(_turnedQuarter(quarter));
 }
 
 /// Row [y] of [frame] as zxing2 sees it (its threshold uses single rows).
@@ -80,6 +81,15 @@ String? _read(LuminanceSource source) {
         .decode(BinaryBitmap(HybridBinarizer(source)), hints: hints)
         .text;
   } on ReaderException {
+    return null;
+  } on ArgumentError {
+    // zxing2 0.2.4 also throws these for frames it cannot make sense of
+    // (a version it cannot estimate, NaN in its geometry), where ZXing for
+    // Java returns "not found". Found by the review of PR #41.
+    return null;
+  } on UnsupportedError {
+    return null;
+  } on StateError {
     return null;
   }
 }

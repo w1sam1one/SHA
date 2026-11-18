@@ -11,7 +11,9 @@ fails if one gets through.
 androidx.core adds the app's own DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION,
 which no other app can hold; it is allowed.
 
-Usage: check-manifest.py MANIFEST.xml   (from `apkanalyzer manifest print`)
+Usage: check-manifest.py MANIFEST.xml [APPLICATION_ID]
+The merged release manifest from Gradle. APPLICATION_ID defaults to the
+manifest's package attribute.
 """
 import sys
 import xml.etree.ElementTree as ET
@@ -20,9 +22,9 @@ ANDROID = "{http://schemas.android.com/apk/res/android}"
 REQUIRED = {"android.permission.CAMERA", "android.permission.INTERNET"}
 
 
-def problems(manifest):
+def problems(manifest, application_id=None):
     root = ET.fromstring(manifest)
-    package = root.get("package", "")
+    package = application_id or root.get("package", "")
     allowed = REQUIRED | {f"{package}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"}
     found = set()
     for tag in ("uses-permission", "uses-permission-sdk-23"):
@@ -40,9 +42,9 @@ def problems(manifest):
     return out
 
 
-def main(path):
+def main(path, application_id=None):
     with open(path, encoding="utf-8") as f:
-        found = problems(f.read())
+        found = problems(f.read(), application_id)
     for line in found:
         print(line)
     if not found:
@@ -51,4 +53,4 @@ def main(path):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1]))
+    sys.exit(main(*sys.argv[1:3]))

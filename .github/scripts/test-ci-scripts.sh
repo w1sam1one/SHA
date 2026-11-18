@@ -98,6 +98,20 @@ if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
   echo "FAIL check-manifest: a missing CAMERA must fail"
   failed=1
 fi
+# Without a package attribute, the application id comes from the argument.
+printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' \
+  '<uses-permission android:name="android.permission.CAMERA"/>' \
+  '<uses-permission android:name="android.permission.INTERNET"/>' \
+  '<uses-permission android:name="se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
+  '</manifest>' > "$tmp/manifest.xml"
+if ! python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" se.sha.sha > /dev/null; then
+  echo "FAIL check-manifest: the application id argument must be used"
+  failed=1
+fi
+if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
+  echo "FAIL check-manifest: another app's permission must fail"
+  failed=1
+fi
 
 if [ "$failed" -ne 0 ]; then
   exit 1

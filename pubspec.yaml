@@ -53,6 +53,9 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  # A fake camera for the scanner's tests (test/widget/qr_camera_test.dart).
+  # Already in the lockfile through camera (0012 (C1)); the same exact version.
+  camera_platform_interface: 2.15.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

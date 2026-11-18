@@ -371,14 +371,24 @@ jobs:
           ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
           exit "$status"
 
-      # 0012 (C1) and README: the app asks only for CAMERA and INTERNET, and
-      # requires no hardware feature. The camera plugin adds more; the app's
-      # manifest removes it, and this fails if anything gets through.
-      - name: Permissions and features in the built APK
+      # 0012 (C1) and README: the release app asks only for CAMERA and
+      # INTERNET, and requires no hardware feature. The camera plugin adds
+      # more; the app's manifest removes it, and this fails if anything gets
+      # through. The release manifest is checked, not the debug APK: debug
+      # builds also carry the test libraries (integration_test, androidx.test),
+      # which add permissions of their own. Only the manifest is merged here;
+      # no release APK is built.
+      - name: Permissions and features in the release manifest
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print \
-            build/app/outputs/flutter-apk/app-debug.apk > "$RUNNER_TEMP/manifest.xml"
-          python3 -I .github/scripts/check-manifest.py "$RUNNER_TEMP/manifest.xml"
+          (cd android && ./gradlew --no-daemon -q :app:processReleaseMainManifest)
+          manifest="$(find build/app/intermediates -path '*merged_manifest*' \
+            -path '*release*' -name AndroidManifest.xml | head -n 1)"
+          if [ -z "$manifest" ]; then
+            echo "::error::the merged release manifest was not found"
+            exit 1
+          fi
+          echo "$manifest"
+          python3 -I .github/scripts/check-manifest.py "$manifest" se.sha.sha
 
       # Saved right after the build, before the emulator needs the memory.
       - name: Save the pub cache

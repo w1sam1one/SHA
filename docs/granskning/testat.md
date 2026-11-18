@@ -24,8 +24,9 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Valvets felkoder | 6 | `test/crypto/android_keystore_vault_test.dart` | Datorn |
 | Mätningen i 0005 och med 50 sessioner | 2 | `integration_test/olm_service_test.dart` | Emulatorn |
 | QR-koden `shaid:2` | 4 | `test/features/contact_code_test.dart` | Datorn |
-| Skannern (0012 (C1)): koden som "Min QR" ritar, 100 slumpade koder, koderna som `zxing2` bara läser vridna, utfyllda rader, en bild i taget | 11 | `test/features/qr_decoder_test.dart` | Datorn |
-| APK:ns manifest: bara `CAMERA` och `INTERNET`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
+| Skannern (0012 (C1)): koden som "Min QR" ritar, 100 slumpade koder, koderna som `zxing2` bara läser vridna eller kastar fel på, utfyllda rader, en bild i taget | 12 | `test/features/qr_decoder_test.dart` | Datorn |
+| Kameran: start, bakgrund och tillbaka, även mitt i en start, att lämna skärmen, nekad behörighet, ficklampan | 5 | `test/widget/qr_camera_test.dart` | Datorn (en låtsaskamera) |
+| Release-manifestet: bara `CAMERA` och `INTERNET`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
 | JSON-texten v3 | 6 | `test/features/message_payload_test.dart` | Datorn |
 | Relay-klienten mot en server på datorn | 11 | `test/features/relay_client_test.dart` | Datorn |
 | Transporten med två appar och en låtsasserver: 204, 507, 429, dubbletter, krascher, rundor | 20 | `test/features/transport_test.dart` | Datorn |

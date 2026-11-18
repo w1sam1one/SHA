@@ -104,13 +104,16 @@ LuminanceFrame _perfectFrame(String text, {int scale = 4}) {
 
 /// Real `shaid:2`-shaped codes that zxing2 0.2.4 could not find as drawn
 /// (FormatReaderException; `pureBarcode` read them), measured 2026-11-18.
-/// The first three are read turned a quarter, the last two turned a half.
+/// The first three are read turned a quarter, the next two turned a half.
+/// The last one made zxing2 throw UnsupportedError (NaN) as drawn, which
+/// must not stop the turned tries (review of PR #41).
 const _codesZxing2MissedAsDrawn = [
   'shaid:2:auJeDUxwPelicxF-VNdh5eNbik-7_EAzJEX8f8YC5H8zyLCSeT49V708JPjH55Y3o8uiijDW4IcX4dkq414_BaJ0v2WQyBva6ZTfOkIiA2S9pjd0vwhryFcwR2xl7fLx',
   'shaid:2:X-onSMG0nYgAjaovhb6ECNHQ-BiXfewYhTZfSkGnTDriDuhFu8wjpn8IN3wmy7p3fizVX_ASJj5Dhtv4hPrW2WtJ3JRSCqqobHTnK75_DtJ1QnZdXaCwhHjURdW91bKd',
   'shaid:2:UxqPJeUe33iNvzPZcWf9ywqYXY4HABr4dtkH5x6UCFDu_A0Hatke1BVv0_AgWbEUJ05q_1NrpQs5sl1SmqDt4sSOd7klypjc1_M92FsQvT2LlaoUXiTNIeoccs9e5DRz',
   'shaid:2:_d26EkYcAHbgh0MNECqfryyF6ty3kWVDrV8F4SDKHTc--Y02uEt4Unk8qjr1idisGW4FaUfIvKviCoZ7aKFC-Ayic0Sa4j7SY_4x-xVC6cH4GHZvAw3SIK4tbFwPMfmr',
   'shaid:2:zI1h7jwgfm7XmH2nCWAWLNb72NhHHL3k8nRlwTlj9KwqRfiDfyOVsIzZpsuTsMHtWK2nLA9qUGKUd6_430Im-IMA3c8bgeYrfjwG2TxyryI8Z-FOUGD6wzYHOLWV1vEb',
+  'shaid:2:m3Py6cXCPtp9Z-av3QeO0R7p5jwXBxhbyfLYpHrkuf5BARkJ6NZChnVLRHLUdDGJlb-aLfB1xGT-MootW2qVfs975NIJXneIKj3dTifnTFgywz66aeZDWXchH1vMf0Dy',
 ];
 
 void main() {
@@ -184,6 +187,35 @@ void main() {
       );
       expect(luminanceRow(frame, 0), [1, 2, 3]);
       expect(luminanceRow(frame, 1), [4, 5, 6]);
+    });
+
+    test('reads a frame whose last row has no padding, as CameraX gives '
+        'the Y plane', () {
+      final code = _codesZxing2MissedAsDrawn.first;
+      final frame = _perfectFrame(code);
+      const stride = 1024;
+      // rowStride * (height - 1) + width bytes: the last row ends at the
+      // image's edge, not at the stride.
+      final bytes = Uint8List(stride * (frame.height - 1) + frame.width);
+      for (var row = 0; row < frame.height; row++) {
+        bytes.setRange(
+          row * stride,
+          row * stride + frame.width,
+          frame.bytes,
+          row * frame.width,
+        );
+      }
+      expect(
+        decodeQr(
+          LuminanceFrame(
+            bytes: bytes,
+            width: frame.width,
+            height: frame.height,
+            bytesPerRow: stride,
+          ),
+        ),
+        code,
+      );
     });
 
     test('returns null when there is no code', () {
@@ -300,17 +332,22 @@ void main() {
       await pumpEventQueue();
       expect(codes, isEmpty);
 
+      var reads = 0;
       final failing = QrFrameReader(
         onCode: codes.add,
         minInterval: Duration.zero,
-        decode: (_) => Future.error(StateError('decoder crashed')),
+        decode: (_) {
+          reads++;
+          return Future.error(StateError('decoder crashed'));
+        },
       );
       failing.add(frame());
       await pumpEventQueue();
       expect(codes, isEmpty);
-      // The reader is not stuck after a failure.
+      // The reader is not stuck after a failure: the next frame is read.
       failing.add(frame());
       await pumpEventQueue();
+      expect(reads, 2);
       expect(codes, isEmpty);
     });
   });

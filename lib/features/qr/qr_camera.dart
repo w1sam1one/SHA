@@ -42,6 +42,9 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   _Problem? _problem;
   bool _starting = false;
 
+  /// False while the app is hidden: the camera must not start then.
+  bool _inForeground = true;
+
   /// Bumped by every stop, so that a start that was under way gives up.
   int _generation = 0;
 
@@ -68,12 +71,14 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       // Not on "inactive": Android's permission dialog makes the app
       // inactive while the camera is being started.
       case AppLifecycleState.hidden || AppLifecycleState.paused:
+        _inForeground = false;
         _stop();
         if (mounted) setState(() {});
       case AppLifecycleState.resumed:
-        if (_controller == null && _problem != _Problem.permissionDenied) {
-          unawaited(_start());
-        }
+        _inForeground = true;
+        // Also after a denied camera: the user may have allowed it in the
+        // phone's settings meanwhile.
+        if (_controller == null) unawaited(_start());
       case AppLifecycleState.inactive || AppLifecycleState.detached:
         break;
     }
@@ -86,6 +91,7 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     CameraController? controller;
     try {
       final cameras = await availableCameras();
+      if (!mounted || generation != _generation) return;
       final back = cameras
           .where((c) => c.lensDirection == CameraLensDirection.back)
           .firstOrNull;
@@ -102,7 +108,7 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       );
       await controller.initialize();
       if (!mounted || generation != _generation) {
-        await controller.dispose();
+        await _close(controller);
         return;
       }
       final reader = QrFrameReader(onCode: widget.onCode);
@@ -120,7 +126,7 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       });
       if (!mounted || generation != _generation) {
         reader.close();
-        await controller.dispose();
+        await _close(controller);
         return;
       }
       setState(() {
@@ -131,7 +137,7 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       widget.running.value = true;
       _applyTorch();
     } on CameraException catch (e) {
-      await controller?.dispose();
+      if (controller != null) await _close(controller);
       _show(
         const {
               'CameraAccessDenied',
@@ -144,10 +150,28 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     } on Object {
       // No camera plugin (tests on the computer) or another failure. The
       // error's text is not shown: it is not written for the user.
-      await controller?.dispose();
+      if (controller != null) await _close(controller);
       _show(_Problem.failed);
     } finally {
       _starting = false;
+      // The app went to the background and came back while this start was
+      // under way: that start gave up, so start again.
+      if (mounted &&
+          _inForeground &&
+          _controller == null &&
+          generation != _generation) {
+        unawaited(_start());
+      }
+    }
+  }
+
+  /// Closes [controller]; a camera that failed to start can fail to close
+  /// too, and there is nothing more to do about it then.
+  static Future<void> _close(CameraController controller) async {
+    try {
+      await controller.dispose();
+    } on Object {
+      // Nothing to close.
     }
   }
 
@@ -163,7 +187,7 @@ class _QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     final controller = _controller;
     _controller = null;
     if (notify) widget.running.value = false;
-    if (controller != null) unawaited(controller.dispose());
+    if (controller != null) unawaited(_close(controller));
   }
 
   void _applyTorch() {

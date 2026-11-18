@@ -46,7 +46,7 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
     ```
     Eller öppna AAB-filen i Android Studio (Build › Analyze APK) och läs
     manifestet.
-  - Allt utöver `CAMERA` påverkar punkt 6. En post som slutar på
+  - Allt utöver `CAMERA` och `INTERNET` påverkar punkt 6. En post som slutar på
     `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` brukar komma från androidx.core
     och är intern för appen (ej verifierat).
 - **App-ikonen** är fortfarande Flutters standardikon (byte för byte samma
@@ -166,7 +166,7 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
 
 **Du måste själv kontrollera varje svar innan du skickar in.** Listan visar
 bara vad SHA:s egen kod gör. Den säger inte hur Googles definitioner ska
-tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
+tolkas och täcker inte vad Googles bibliotek (CameraX) gör.
 
 - **Nätverk:**
   - Appens egen kod gör inga nätverksanrop. Varken `lib/` eller
@@ -175,14 +175,15 @@ tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
     (`android/app/src/main/AndroidManifest.xml`), och
     `android/app/src/main/res/xml/network_security_config.xml` stänger av
     okrypterad trafik.
-  - Om det färdiga release-manifestet ändå får nätverksbehörighet, och om
-    ML Kit eller CameraX skickar något: **ej verifierat** (punkt 0).
+  - Om CameraX skickar något: **ej verifierat** (punkt 0).
 - **Kamera:**
-  - Används bara för att skanna QR-koder (`lib/features/qr/scan_screen.dart`,
-    via `mobile_scanner`).
-  - Appens kod ber inte om bilderna (`returnImage` är `false` som standard i
-    `MobileScannerController`) och sparar inga bilder.
-  - Hur ML Kit behandlar kamerabilden: **ej verifierat**.
+  - Används bara för att skanna QR-koder (`lib/features/qr/qr_camera.dart`,
+    via `camera` och CameraX), och bara medan skannern är öppen och appen
+    syns.
+  - Bilderna läses i appen av `zxing2` (`lib/features/qr/qr_decoder.dart`),
+    i minnet. Inga bilder sparas eller skickas, och inget ljud spelas in
+    (`enableAudio: false`, och `RECORD_AUDIO` är borttagen ur manifestet).
+  - Hur CameraX behandlar kamerabilden: **ej verifierat**.
 - **På telefonen sparas** bara identitetens nyckelpar.
   - Det krypteras med en Android Keystore-nyckel och ligger i appens privata
     `noBackupFilesDir`
@@ -200,9 +201,7 @@ tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
   `lib/crypto/src/sha_crypto_service.dart`).
 - **Dart-paket:** inga för analys, kraschrapporter eller annonser
   (`pubspec.yaml`: `flutter_riverpod`, `cryptography`, `qr_flutter`,
-  `mobile_scanner`). Om ML Kit skickar användnings- eller
-  diagnostikdata till Google: **ej verifierat**, kontrollera Googles
-  dokumentation för ML Kit.
+  `camera`, `zxing2`). ML Kit är borttaget (0012 (C1)).
 - **Ingen loggning** i appkoden (`test/security/no_logging_test.dart`).
 - **Urklipp:** appens egna kopieringsknappar finns bara i debugbyggen
   (`kDebugMode` i `lib/features/onboarding/identity_screen.dart` och
