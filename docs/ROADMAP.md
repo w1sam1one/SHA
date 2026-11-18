@@ -178,6 +178,11 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   [0008](decisions/0008-oppna-fragor-i-0002.md) att VPN-texten används (den
   behövs för F5) och att paket som försvinner vid en omstart godtas för
   version 1.
+- **QR-skannern och AGPL (F5). Klar 2026-11-18.** Ägaren valde (C1) i
+  [0012](decisions/0012-qr-skannern-och-agpl.md): `zxing2` med `camera`
+  ersätter `mobile_scanner` och ML Kit. Bygget görs i en egen PR inom F5,
+  och licenserna för Android-biblioteken på licenssidan tas fram efter
+  det.
 
 ## Före första utdelning
 
@@ -209,6 +214,8 @@ någon annan än ägaren (0003, 0004 §13):
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna (G7).
 - `LICENSE` är bytt till AGPL-3.0 (G8).
+- Varje bibliotek i APK:n går att dela ut under AGPL-3.0 tillsammans med
+  `flutter_vodozemac`, och licenssidan visar dem alla (0012).
 - Spiken och appen är körda på en riktig arm64-telefon (G3, F6).
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
   ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
@@ -272,6 +279,8 @@ Nyast först. En rad per paket eller körning som ändrar något.
   0009 (iv) med 24 h marginal, 0010 (B) med 30 dagar som standard, och 0011
   (B) med steg 1 i version 1 (5 minuter) och steg 2 efter telefontester och
   G6. Stegen för att bygga APK:n är ej provade.
+- 2026-11-18 – Ägaren valde (C1) i 0012: `zxing2` 0.2.4 med `camera`
+  0.12.2 ersätter `mobile_scanner`.
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade
@@ -292,6 +301,13 @@ Nyast först. En rad per paket eller körning som ändrar något.
   rad (i) i 0008, ett femte villkor i 0009 efter ett motexempel, (B2) med
   en nyckel per post i 0010, API-nivåer och minSdk i 0011, och mindre fel i
   F1, F6 och F5.
+- 2026-11-17 – F5: beslutsunderlaget
+  [0012](decisions/0012-qr-skannern-och-agpl.md) om QR-skannern. ML Kit i
+  `mobile_scanner` är inte öppen källkod, och `flutter_vodozemac` har
+  AGPL-3.0 utan undantag, så det ser ut som en konflikt redan vid första
+  utdelningen. Rekommendation: (C1), `zxing2` med `camera`, en skanner i
+  ren Dart, med `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` borttagna ur
+  manifestet. En ny grind och en ny punkt under "Före första utdelning".
 - 2026-11-17 – F5, första delen: en licenssida under Inställningar ›
   Licenser, med Dart-paketen (bland dem AGPL-3.0 för flutter_vodozemac och
   vodozemac), de två typsnitten (SIL OFL) och de 129 Rust-paketen för
