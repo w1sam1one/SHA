@@ -42,7 +42,7 @@ inom några minuter.
 
 Beslutat av ägaren 2026-11-13.
 
-- Repot är publikt för insyn sedan 2026-11-18 (ägarens beslut), men koden
+- Beslutat av ägaren 2026-11-18: repot görs publikt för insyn, men koden
   är "All rights reserved" (`LICENSE`) och får inte kopieras eller delas ut.
   Före det var repot stängt.
 - Om ett AGPL-bibliotek väljs för protokollet (D3, se

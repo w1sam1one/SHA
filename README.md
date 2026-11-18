@@ -5,7 +5,7 @@
 > publik för insyn men får inte kopieras eller delas ut (All rights
 > reserved).**
 >
-> Hittar du en säkerhetsbugg: rapportera den privat, enligt
+> Hittar du en säkerhetsbugg, rapportera den privat enligt
 > [`SECURITY.md`](SECURITY.md), inte i ett öppet issue.
 
 Säker meddelandeapp där två personer först **träffas fysiskt** och skannar
