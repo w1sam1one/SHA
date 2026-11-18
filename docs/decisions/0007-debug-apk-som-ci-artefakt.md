@@ -52,6 +52,14 @@ Underlag för grinden G-P8 i [`docs/ROADMAP.md`](../ROADMAP.md). Ingen kod
 - **Ägaren delar inte APK:n vidare** (`CLAUDE.md`, "Aldrig": ingen APK till
   någon annan än ägaren).
 
+## Publikt repo (2026-11-18)
+
+Ägaren gör repot publikt för insyn. I ett publikt repo kan alla inloggade
+ladda ner CI:s artefakter. En APK som artefakt (a) eller som Release (c)
+vore då en APK till andra än ägaren, vilket `CLAUDE.md` ("Aldrig") och
+"Ägarens beslut" 1 förbjuder. **CI-artefakter används därför inte**:
+arbetsflödena laddar inte upp någon APK, och ägaren bygger själv (b).
+
 ## Alternativ
 
 - **(a) `actions/upload-artifact`, låst till en full commit-SHA** som de

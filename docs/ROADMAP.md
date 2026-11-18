@@ -161,10 +161,12 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   Fynden blir F8.
 - **G7 – Säkerhetsuppdateringar.** Slå på Dependency graph, Dependabot alerts
   och security updates, och godkänn planen i 0004 §12.
-- **G8 – AGPL och öppen källkod.** När ägaren säger till förbereder Claude en
-  PR som byter `LICENSE` till AGPL-3.0, uppdaterar README och 0002, och lägger
-  till CONTRIBUTING med ett förslag på CLA. Bara ägaren mergar den och gör
-  repot publikt.
+- **G8 – AGPL och öppen källkod.** Repot görs publikt för insyn (ägarens
+  beslut 2026-11-18), men koden är "All rights reserved" och får inte
+  kopieras eller delas ut. `LICENSE` byts till AGPL-3.0 före första
+  utdelningen av appen. När ägaren säger till förbereder Claude en PR som
+  byter `LICENSE`, uppdaterar README och 0002, och lägger till CONTRIBUTING
+  med ett förslag på CLA. Bara ägaren mergar den.
 - **Besluten i F2, F3 och F4. Klara 2026-11-18.**
   - F2: (iv) i [0009](decisions/0009-radering-av-gamla-sessioner.md), med
     24 h marginal för klockor.
@@ -258,6 +260,12 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-18 – Inför att ägaren gör repot publikt: en varning överst i
+  README (ogranskad prototyp, All rights reserved), `SECURITY.md` om att
+  rapportera säkerhetsbuggar privat, och samma sak om licensen i
+  `CLAUDE.md` ("Målet"), G8 och 0002. Den schemalagda körningen litar bara
+  på ägarens egna PR:er och kommentarer, och 0007 säger att CI-artefakter
+  inte används. `LICENSE` är oförändrad. Ägaren mergar.
 - 2026-11-18 – Ägarens beslut inskrivna: 0007 (b), ägaren bygger APK:n
   själv, så "Klart när" punkt 4 är ändrad och P8 är klar. 0008: VPN-texten
   används (även i 0002), och paket som försvinner vid en omstart godtas.
