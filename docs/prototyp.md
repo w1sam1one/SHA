@@ -10,7 +10,7 @@ Du behöver:
 - två Android-telefoner, Android 7 (API 24) eller senare (grinden G3).
   Android 9 eller senare rekommenderas: först där fungerar nyckeln bara när
   telefonen är upplåst, och StrongBox finns bara där;
-- APK:n (steg 2).
+- APK:n, som du bygger själv (steg 2).
 
 ## 1. Sätt upp servern (G2)
 
@@ -21,16 +21,15 @@ Allt står i [`relay/README.md`](../relay/README.md). Kort:
    RAM: starta relayn med `-max-total-mib 256`.
 2. Peka en domän till serverns IP-adress. Byt ut `relay.example.se` i
    nginx-exemplet och `server.example.se` här mot din domän.
-3. Installera Go (se `relay/go.mod`) och bygg relayn:
-   ```sh
-   cd relay && go build -trimpath -o relay .
-   ```
-4. Kör relayn som en tjänst som lyssnar på `127.0.0.1:8080`. Lägg nginx med
-   TLS framför, enligt exemplet i `relay/README.md` ("Exempel: nginx med TLS
-   och utan åtkomstlogg"), och starta relayn med
-   `-trusted-proxies 127.0.0.1`. Certifikatet måste komma från en publik
-   CA, till exempel Let's Encrypt med certbot: appen litar bara på
-   telefonens egna CA:er, så ett självsignerat certifikat fungerar inte.
+3. Gör servern säker, bygg relayn och kör den som en tjänst på
+   `127.0.0.1:8080` med `-trusted-proxies 127.0.0.1`, enligt
+   [`relay/DRIFT.md`](../relay/DRIFT.md), avsnitt 1 och 2.
+4. Lägg nginx med TLS framför enligt `relay/DRIFT.md`, avsnitt 3, i den
+   ordning som står där: nginx-exemplet i `relay/README.md` pekar på
+   certifikatfiler som inte finns förrän det första certifikatet är hämtat.
+   Certifikatet måste komma från en publik CA, till exempel Let's Encrypt
+   med certbot: appen litar bara på telefonens egna CA:er, så ett
+   självsignerat certifikat fungerar inte.
 5. Kontrollera att varken nginx eller brandväggen loggar IP-adresser
    (`relay/README.md`, "Vad servern ser, sparar och inte ser").
    Leverantören kan ändå se och logga trafiken (0002, fråga b).
@@ -42,15 +41,48 @@ Allt står i [`relay/README.md`](../relay/README.md). Kort:
 Claude kan hjälpa dig steg för steg, men hyr inte servern och hanterar
 inga lösenord åt dig.
 
-## 2. Hämta APK:n
+## 2. Bygg APK:n
 
-Det här beror på beslutet i
-[0007](decisions/0007-debug-apk-som-ci-artefakt.md):
-- **(a)**: starta jobbet under Actions, ladda ner artefakten (en .zip) och
-  packa upp den. Den finns i 7 dagar.
-- **(b)**: bygg själv med `flutter build apk --debug`. APK:n hamnar i
-  `build/app/outputs/flutter-apk/app-debug.apk`. Det kräver Flutter 3.47.7,
-  Android SDK, NDK och Rust (se README, "Kom igång", och `ci.yml`).
+Du bygger APK:n själv på din dator (0007 (b)). CI laddar inte upp någon
+APK. CI bygger bara en test-APK för emulatorn (x86_64), inte appen.
+
+**Ej provat:** ingen har följt stegen nedan än, och appen har aldrig byggts
+för en riktig telefon (arm och arm64). Skriv ner det som inte stämmer, så
+rättar jag texten.
+
+1. Installera:
+   - Flutter **3.47.7**, samma som i CI (`.github/workflows/ci.yml`);
+   - JDK 17 (`android/app/build.gradle.kts`);
+   - Android SDK, till exempel via Android Studio, med **Android SDK
+     Command-line Tools** och **NDK 28.2.13676358**. Den versionen krävs:
+     Flutter 3.47.7 väljer den (`ndkVersion = flutter.ndkVersion`);
+   - Rust via `rustup`, med `rustup toolchain install stable`. Pluginet
+     lägger själv till Android-målen när det bygger (README, "Kom igång").
+
+   Godkänn Androids licenser och kontrollera installationen:
+   ```sh
+   flutter doctor --android-licenses
+   flutter doctor
+   ```
+2. Hämta koden och paketen, exakt enligt låsfilen:
+   ```sh
+   git clone https://github.com/w1sam1one/SHA.git
+   cd SHA
+   ```
+   ```sh
+   flutter pub get --enforce-lockfile
+   ```
+3. Bygg:
+   ```sh
+   flutter build apk --debug
+   ```
+   APK:n hamnar i `build/app/outputs/flutter-apk/app-debug.apk`. Första
+   bygget tar en stund, eftersom Olm-biblioteket byggs från källkod.
+
+Bygg bara debug, och ge inte APK:n till någon annan: ingen utdelning före
+kryptoexpertens granskning (`CLAUDE.md`, "Ägarens beslut" 1). Ett
+release-bygge blir dessutom osignerat utan `key.properties`
+(`android/app/build.gradle.kts`).
 
 Det är en **debug-APK**. Den har två hjälpmedel för att prova utan kamera:
 kopiera koden på **Min QR** och **Ange kod manuellt** på skannerskärmen. En
@@ -59,14 +91,15 @@ kontakt som läggs till på det sättet är inte verifierad i person.
 ## 3. Installera på båda telefonerna
 
 1. Skicka APK:n till telefonen, till exempel med en kabel, eller kör
-   `adb install app-debug.apk`.
+   `adb install -r build/app/outputs/flutter-apk/app-debug.apk`.
 2. Öppna filen i appen **Filer** och tillåt installation från den när
    Android frågar.
 3. Öppna SHA. Appen skapar din identitet första gången.
 
-**En ny APK:** med (a) kräver den troligen att appen avinstalleras först
-(0007, "Signering"). Då försvinner identiteten och kontakterna, och ni måste
-skanna varandra igen.
+**En ny APK:** bygg den på samma dator. Den signeras då med samma
+debugnyckel (`~/.android/debug.keystore`), och appen kan uppdateras utan att
+identiteten och kontakterna försvinner. Byggs den på en annan dator måste
+appen avinstalleras först, och då måste ni skanna varandra igen.
 
 ## 4. Prova
 
