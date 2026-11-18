@@ -87,8 +87,10 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
 ## Annat som granskaren bör känna till
 
 - **Det gamla formatet 2** (AES-256-GCM med X25519 + HKDF, `seal`/`open` i
-  `CryptoService`, `WireFormat`) finns kvar i `lib/crypto/` men används inte
-  längre av appen. Bara `WireFormat.epochOf` (dagens nummer) används.
+  `CryptoService`, `WireFormat`) finns kvar i `lib/crypto/`. `seal`, `open`
+  och AES-GCM används inte längre av appen, men X25519 + HKDF från samma kod
+  tar fram brevlådenycklarna (§3 (A)), och `WireFormat.epochOf` ger dagens
+  nummer.
 - **Slumptal för långlivade nycklar:** `lib/crypto/src/entropy.dart:44`
   blandar Dart och Android med HKDF-SHA256.
 - **`seen`** (hashar av behandlade paket) är gemensam för alla kontakter och

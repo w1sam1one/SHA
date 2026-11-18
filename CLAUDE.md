@@ -26,8 +26,9 @@ mötts kan skicka krypterade meddelanden till varandra via relayn. Exakt vad
 - Relay v1: bara lämna och hämta, inga konton, ingen push, ingen FCM. IP
   sparas aldrig på disk eller i loggar. Appen hämtar själv, bara när den är
   öppen, med 1, 5, 15 eller 60 minuter. VPN är en rekommendation (0002).
-- Repot är stängt nu ("All rights reserved"). `LICENSE` byts till AGPL-3.0
-  före första utdelningen av appen (0002, "Licens"). Öppen källkod senare.
+- Repot är publikt för insyn, men koden är "All rights reserved" och får inte
+  kopieras eller delas ut. `LICENSE` byts till AGPL-3.0 före första
+  utdelningen av appen (0002, "Licens"; G8). Då blir koden öppen källkod.
 - AI får aldrig hitta på kryptografi. Bara granskade bibliotek och redan
   testad kod i `lib/crypto/`.
 

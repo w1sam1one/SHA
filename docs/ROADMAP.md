@@ -29,7 +29,9 @@ Prototypen är klar när allt detta gäller:
    startats om.
 3. Testplanen i 0004 §11 är grön i CI, även på Android-emulatorn. Körning på
    en riktig telefon ingår inte här, se G3.
-4. CI bygger en debug-APK som ägaren kan ladda ner och installera.
+4. Ägaren bygger själv en debug-APK enligt `docs/prototyp.md` och
+   installerar den (0007 (b)). CI laddar inte upp någon APK. Punkten är
+   uppfylld först när ägaren har byggt den.
 5. `docs/prototyp.md` beskriver hur ägaren sätter upp relayn och provar med
    två telefoner.
 
@@ -79,17 +81,17 @@ Prototypen är klar när allt detta gäller:
   ställa in.
 - [x] **P7 – Hela kedjan i CI.** Två klienter mot en riktig relay: svaren
   204, 507 och 429, dubbletter, krascher och mutationer (§11).
-- [ ] **P8 – Leverans till ägaren.** Debug-APK som CI-artefakt och
-  `docs/prototyp.md`.
+- [x] **P8 – Leverans till ägaren.** `docs/prototyp.md`, med hur ägaren
+  bygger debug-APK:n själv (0007 (b)) och sätter upp relayn. Stegen för
+  bygget är **ej provade**: appen har aldrig byggts för en riktig telefon.
 
 ### Grindar (bara ägaren)
 
 - **G1 – Aktivera.** Merga PR:en med `CLAUDE.md`. Innan dess gör den
   schemalagda körningen ingenting.
-- **G-P8 – Debug-APK som CI-artefakt (före resten av P8).** Ägaren väljer
-  (a), (b) eller (c) i [0007](decisions/0007-debug-apk-som-ci-artefakt.md);
-  (a) kräver ett nytt beroende, `actions/upload-artifact`, och att bara
-  ägaren har åtkomst till repot. `docs/prototyp.md` finns redan.
+- **G-P8 – Hur APK:n når ägaren. Klar 2026-11-18.** Ägaren valde (b) i
+  [0007](decisions/0007-debug-apk-som-ci-artefakt.md): ägaren bygger APK:n
+  själv, och CI laddar inte upp någon.
 - **G2 – Relayn på riktigt.** Efter P8: hyr en VPS i EU och sätt upp relayn
   enligt `relay/README.md`. Claude kan hjälpa till steg för steg.
 - **G3 – Två riktiga telefoner.** Prova prototypen. Kör även spiken på en
@@ -126,8 +128,9 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   - öppna frågor till kryptoexperten.
 
   Ett motsvarande paket för granskningen av Flutter/Dart-lagret och bygget.
-- [ ] **F2 – Radering av gamla sessioner,** med 0006 (i) som utgångspunkt.
-  Först ett beslutsunderlag och en grind, sedan kod och tester.
+- [ ] **F2 – Radering av gamla sessioner** enligt (iv) i
+  [0009](decisions/0009-radering-av-gamla-sessioner.md), märkt
+  `OGRANSKAT (0009)`. Beslutsunderlaget och grinden är klara.
 - [ ] **F3 – Historik i version 1** (0004 §7, 0005 (C) eller (ii)). Först ett
   beslutsunderlag och en grind, sedan bygget om ägaren vill ha det.
 - [ ] **F4 – App-lås med PIN eller biometri** (README, "Nästa steg"). Först
@@ -158,15 +161,23 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   Fynden blir F8.
 - **G7 – Säkerhetsuppdateringar.** Slå på Dependency graph, Dependabot alerts
   och security updates, och godkänn planen i 0004 §12.
-- **G8 – AGPL och öppen källkod.** När ägaren säger till förbereder Claude en
-  PR som byter `LICENSE` till AGPL-3.0, uppdaterar README och 0002, och lägger
-  till CONTRIBUTING med ett förslag på CLA. Bara ägaren mergar den och gör
-  repot publikt.
-- **Besluten i F2, F3 och F4.** Ägaren beslutar i varje beslutsunderlag innan
-  bygget börjar, som vid G4 och G5.
-- **Besluten i F7.** Ägaren beslutar om VPN-texten och om paket som
-  försvinner vid en omstart, i [0008](decisions/0008-oppna-fragor-i-0002.md).
-  VPN-texten behövs för F5.
+- **G8 – AGPL och öppen källkod.** Repot görs publikt för insyn (ägarens
+  beslut 2026-11-18), men koden är "All rights reserved" och får inte
+  kopieras eller delas ut. `LICENSE` byts till AGPL-3.0 före första
+  utdelningen av appen. När ägaren säger till förbereder Claude en PR som
+  byter `LICENSE`, uppdaterar README och 0002, och lägger till CONTRIBUTING
+  med ett förslag på CLA. Bara ägaren mergar den.
+- **Besluten i F2, F3 och F4. Klara 2026-11-18.**
+  - F2: (iv) i [0009](decisions/0009-radering-av-gamla-sessioner.md), med
+    24 h marginal för klockor.
+  - F3: (B) i [0010](decisions/0010-historik-i-version-1.md), 30 dagar som
+    standard, med valen Spara inte, 7 dagar, 30 dagar och 1 år.
+  - F4: (B) i [0011](decisions/0011-app-las.md). Steg 1 i version 1, med 5
+    minuter i bakgrunden. Steg 2 först efter telefontester och G6.
+- **Besluten i F7. Klara 2026-11-18.** Ägaren valde i
+  [0008](decisions/0008-oppna-fragor-i-0002.md) att VPN-texten används (den
+  behövs för F5) och att paket som försvinner vid en omstart godtas för
+  version 1.
 - **QR-skannern och AGPL (F5). Klar 2026-11-18.** Ägaren valde (C1) i
   [0012](decisions/0012-qr-skannern-och-agpl.md): `zxing2` med `camera`
   ersätter `mobile_scanner` och ML Kit. Bygget görs i en egen PR inom F5,
@@ -195,9 +206,10 @@ någon annan än ägaren (0003, 0004 §13):
     tillståndet i en enda valvpost (0005).
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
     alternativ C, §7 (historiken) och ett yttre lager.
-- En raderingsregel för gamla sessioner (0004 §2, 0006; (i) är
-  utgångspunkten, F2). I prototypen raderas inga sessioner, och utan en regel
-  ligger gamla sessioners nycklar kvar i riktiga användares telefoner.
+- En raderingsregel för gamla sessioner (0004 §2, F2): (iv) i 0009, märkt
+  `OGRANSKAT (0009)` och granskad av kryptoexperten (G6). I prototypen
+  raderas inga sessioner, och utan en regel ligger gamla sessioners nycklar
+  kvar i riktiga användares telefoner.
 - Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna (G7).
@@ -255,6 +267,18 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-18 – Inför att ägaren gör repot publikt: en varning överst i
+  README (ogranskad prototyp, All rights reserved), `SECURITY.md` om att
+  rapportera säkerhetsbuggar privat, och samma sak om licensen i
+  `CLAUDE.md` ("Målet"), G8 och 0002. Den schemalagda körningen litar bara
+  på ägarens egna PR:er och kommentarer, och 0007 säger att CI-artefakter
+  inte används. `LICENSE` är oförändrad. Ägaren mergar.
+- 2026-11-18 – Ägarens beslut inskrivna: 0007 (b), ägaren bygger APK:n
+  själv, så "Klart när" punkt 4 är ändrad och P8 är klar. 0008: VPN-texten
+  används (även i 0002), och paket som försvinner vid en omstart godtas.
+  0009 (iv) med 24 h marginal, 0010 (B) med 30 dagar som standard, och 0011
+  (B) med steg 1 i version 1 (5 minuter) och steg 2 efter telefontester och
+  G6. Stegen för att bygga APK:n är ej provade.
 - 2026-11-18 – Ägaren valde (C1) i 0012: `zxing2` 0.2.4 med `camera`
   0.12.2 ersätter `mobile_scanner`.
 - 2026-11-17 – CI använder färre Actions-minuter
@@ -263,6 +287,20 @@ Nyast först. En rad per paket eller körning som ändrar något.
   filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
   per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
   (ett nytt beroende). Ägaren mergar.
+- 2026-11-17 – Rättningar efter den andra oberoende granskningen av fas 2
+  (PR #35): villkor 5 i 0009 räknas från det första meddelandet som
+  uppfyller villkor 4 (`qualifiedAt`), så att en aktiv chatt inte stoppar
+  raderingen, och vår egen klocka står bland luckorna. Steg 3.8 i
+  testprotokollet går nu att göra (B väntar med adressen). Skräp i format 3
+  kan visa tre olika rader (0008 (i), hotmodellen, fråga 12). nginx-loggen
+  högst upp i filen, `sudo -i` och `--run-deploy-hooks` i `relay/DRIFT.md`;
+  `docs/prototyp.md` pekar dit. API 28 och `FingerprintManager` i 0011,
+  och antagandet om Keystore i 0010.
+- 2026-11-17 – Rättningar efter den oberoende granskningen av fas 2:
+  TLS och minnet i `relay/DRIFT.md` (port 80 för certbot, `GOMEMLIMIT`),
+  rad (i) i 0008, ett femte villkor i 0009 efter ett motexempel, (B2) med
+  en nyckel per post i 0010, API-nivåer och minSdk i 0011, och mindre fel i
+  F1, F6 och F5.
 - 2026-11-17 – F5: beslutsunderlaget
   [0012](decisions/0012-qr-skannern-och-agpl.md) om QR-skannern. ML Kit i
   `mobile_scanner` är inte öppen källkod, och `flutter_vodozemac` har
@@ -272,18 +310,22 @@ Nyast först. En rad per paket eller körning som ändrar något.
   manifestet. En ny grind och en ny punkt under "Före första utdelning".
 - 2026-11-17 – F5, första delen: en licenssida under Inställningar ›
   Licenser, med Dart-paketen (bland dem AGPL-3.0 för flutter_vodozemac och
-  vodozemac), de två typsnitten (SIL OFL) och de 129 Rust-paketen i
-  Olm-biblioteket för Android (`tool/rust_licenses.py`). Förhandsvarningen
-  och "Finns inte än" rättades redan i P6. Kvar: VPN-texten (väntar på
-  0008) och §7 i `docs/release.md` (en PR som ägaren mergar).
+  vodozemac), de två typsnitten (SIL OFL) och de 129 Rust-paketen för
+  Olm-biblioteket för Android (`tool/rust_licenses.py`; några används bara
+  vid bygget). Förhandsvarningen och "Finns inte än" rättades redan i P6.
+  Kvar: VPN-texten (väntar på 0008), §7 i `docs/release.md` (en PR som
+  ägaren mergar), och licenserna för Android-biblioteken som
+  `mobile_scanner` drar in (ML Kit med Googles villkor, CameraX,
+  kotlinx-coroutines, AndroidX), som Flutter inte samlar in.
 - 2026-11-17 – F4, första steget: beslutsunderlaget
   [0011](decisions/0011-app-las.md) om app-lås. Rekommendation: (B),
   telefonens eget lås med plattformens `BiometricPrompt`, utan nytt
   beroende. Bygget väntar på ägarens beslut.
 - 2026-11-17 – F3, första steget: beslutsunderlaget
   [0010](decisions/0010-historik-i-version-1.md) om historik i version 1.
-  Rekommendation: (B), egna valvposter med en gräns som användaren väljer.
-  Bygget väntar på ägarens beslut.
+  Rekommendation efter granskningen: (B2), egna valvposter med en egen
+  nyckel per post och en gräns som användaren väljer. Bygget väntar på
+  ägarens beslut.
 - 2026-11-17 – F2, första steget: beslutsunderlaget
   [0009](decisions/0009-radering-av-gamla-sessioner.md) om när gamla
   sessioner får raderas. Rekommendation: (iv), radera bara när kontakten
