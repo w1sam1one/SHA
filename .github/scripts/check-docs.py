@@ -11,6 +11,7 @@ Usage: check-docs.py FILE.md ...
 import pathlib
 import re
 import sys
+import urllib.parse
 
 # [text](target) and [text](target "title"), not images' alt text rules.
 LINK = re.compile(r"\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
@@ -41,7 +42,8 @@ def main(paths):
         for number, target in links(path.read_text(encoding="utf-8")):
             if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target) or target.startswith("#"):
                 continue
-            file_part = target.split("#", 1)[0]
+            # A space in a link is written %20.
+            file_part = urllib.parse.unquote(target.split("#", 1)[0])
             if not file_part:
                 continue
             resolved = (path.parent / file_part).resolve()
