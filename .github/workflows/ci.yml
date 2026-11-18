@@ -32,11 +32,14 @@ on:
 permissions:
   contents: read
 
-# One run per branch: a new commit on a pull request cancels the run for the
-# older one. Runs on main are not cancelled: "changes" only looks at what each
-# push brought in, so a cancelled run on main would leave that push untested.
+# A pull request has one group (its number): a new commit cancels the run for
+# the older one. Every push to main has a group of its own, so its run is
+# never cancelled or replaced by a later one. "changes" only looks at what
+# each push brought in, so a run on main that was dropped would leave that
+# push untested on main. (A pending run in a group is replaced by the next
+# one even without cancel-in-progress.)
 concurrency:
-  group: ci-${{ github.head_ref || github.ref_name }}
+  group: ci-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -47,6 +50,10 @@ jobs:
     name: Changed files and quick check
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    defaults:
+      run:
+        # bash -eo pipefail: a failing script before "| tee" fails the step.
+        shell: bash
     outputs:
       flutter: ${{ steps.jobs.outputs.flutter }}
       android: ${{ steps.jobs.outputs.android }}
@@ -73,7 +80,7 @@ jobs:
           fi
           # If the diff cannot be made (a new branch, rewritten history), the
           # list is empty and every job runs.
-          if [ -n "$base" ] && git diff --name-only "$base" HEAD > "$RUNNER_TEMP/changed.txt"; then
+          if [ -n "$base" ] && .github/scripts/changed-files.sh "$base" > "$RUNNER_TEMP/changed.txt"; then
             echo "BASE=$base" >> "$GITHUB_ENV"
           else
             : > "$RUNNER_TEMP/changed.txt"
@@ -103,8 +110,9 @@ jobs:
   flutter:
     name: Flutter analyze and test
     needs: changes
-    # The other jobs run even if the quick check failed, so that its result
-    # does not hide theirs.
+    # The jobs still run if only the whitespace or link check failed, so that
+    # its result does not hide theirs. If "changes" fails before it has
+    # picked the jobs, they are skipped and the run is red.
     if: ${{ !cancelled() && needs.changes.outputs.flutter == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -318,14 +326,15 @@ jobs:
             ~/.gradle/wrapper/dists
             !~/.gradle/caches/modules-2/modules-2.lock
             !~/.gradle/caches/modules-2/gc.properties
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
-          restore-keys: gradle-${{ runner.os }}-
+          key: gradle-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
+          restore-keys: gradle-${{ runner.os }}-flutter-${{ env.FLUTTER_VERSION }}-
 
-      # The crates' downloads and cargokit's build for Android. cargokit
-      # builds into the plugin's Gradle build directory, build/flutter_vodozemac
-      # (CARGOKIT_TARGET_TEMP_DIR in cargokit/gradle/plugin.gradle): the target
-      # in x86_64-linux-android, build scripts and macros in debug, and its
-      # Dart build tool in build_tool.
+      # The crates' downloads and cargokit's build for Android. cargokit's
+      # target directory is "${project.buildDir}/build" for the plugin
+      # (cargoBuildDir, CARGOKIT_TARGET_TEMP_DIR in cargokit/gradle/plugin.gradle),
+      # and the plugin's buildDir is build/flutter_vodozemac
+      # (android/build.gradle.kts). A debug build compiles x86_64-linux-android
+      # and i686-linux-android.
       - name: Restore the Cargo cache (Android build)
         id: cargo-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -334,9 +343,7 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            build/flutter_vodozemac/x86_64-linux-android
-            build/flutter_vodozemac/debug
-            build/flutter_vodozemac/build_tool
+            build/flutter_vodozemac/build
           key: cargo-android-${{ runner.os }}-${{ steps.cargokit-rust.outputs.key }}-ndk-${{ env.NDK_VERSION }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: cargo-android-${{ runner.os }}-${{ steps.cargokit-rust.outputs.key }}-ndk-${{ env.NDK_VERSION }}-
 
@@ -423,9 +430,7 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            build/flutter_vodozemac/x86_64-linux-android
-            build/flutter_vodozemac/debug
-            build/flutter_vodozemac/build_tool
+            build/flutter_vodozemac/build
           key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
 
       - name: Start emulator

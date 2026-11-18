@@ -21,7 +21,7 @@ all="flutter=true android=true spike=true relay=true docs_only=false"
 app="flutter=true android=true spike=false relay=false docs_only=false"
 flutter_only="flutter=true android=false spike=false relay=false docs_only=false"
 
-expect "$none" docs/ROADMAP.md README.md CLAUDE.md LICENSE relay/DRIFT.md spike/vodozemac/README.md
+expect "$none" docs/ROADMAP.md README.md CLAUDE.md relay/DRIFT.md spike/vodozemac/README.md "docs/ändring.md"
 expect "$app" lib/main.dart
 expect "$app" test/crypto/olm_service_cases.dart
 expect "$app" integration_test/vault_test.dart
@@ -36,6 +36,10 @@ expect "flutter=true android=false spike=true relay=false docs_only=false" spike
 expect "flutter=true android=false spike=false relay=true docs_only=false" relay/store.go
 expect "flutter=true android=true spike=true relay=false docs_only=false" rust/src/lib.rs
 expect "flutter=true android=true spike=true relay=false docs_only=false" spike/x/Cargo.lock
+expect "flutter=true android=true spike=true relay=false docs_only=false" rust/Cargo.toml
+expect "flutter=true android=true spike=true relay=false docs_only=false" rust-toolchain.toml
+expect "$flutter_only" LICENSE
+expect "$app" "lib/säkerhet.dart"
 expect "$all" .github/workflows/ci.yml
 expect "$all" .github/scripts/resource-monitor.sh
 if [ "$(printf '' | "$here/changed-jobs.sh" | tr '\n' ' ')" != "$all " ]; then
@@ -47,19 +51,56 @@ fi
 # and links in code do not.
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/docs"
-touch "$tmp/README.md"
+root="$tmp/root"
+mkdir -p "$root/docs"
+touch "$root/README.md"
+# Exists, but outside the checkout that check-docs.py runs in.
+touch "$tmp/outside.md"
 # The backticks are Markdown, not shell.
 # shellcheck disable=SC2016
 printf '%s\n' '[a](../README.md) [b](https://example.se) [c](#x) [d](../README.md#y)' \
-  '`[e](missing.md)`' '```' '[f](missing.md)' '```' > "$tmp/docs/good.md"
-printf '%s\n' '[a](missing.md)' > "$tmp/docs/bad.md"
-if ! (cd "$tmp" && python3 -I "$here/check-docs.py" docs/good.md > /dev/null); then
+  '`[e](missing.md)`' '```' '[f](missing.md)' '```' > "$root/docs/good.md"
+printf '%s\n' '[a](missing.md)' > "$root/docs/bad.md"
+printf '%s\n' '[a](../../outside.md)' > "$root/docs/outside.md"
+touch "$root/docs/with space.md"
+printf '%s\n' '[a](with%20space.md)' > "$root/docs/space.md"
+if ! (cd "$root" && python3 -I "$here/check-docs.py" docs/good.md > /dev/null); then
   echo "FAIL check-docs: docs/good.md has no broken links"
   failed=1
 fi
-if (cd "$tmp" && python3 -I "$here/check-docs.py" docs/bad.md > /dev/null); then
+if (cd "$root" && python3 -I "$here/check-docs.py" docs/bad.md > /dev/null); then
   echo "FAIL check-docs: docs/bad.md has a broken link"
+  failed=1
+fi
+if (cd "$root" && python3 -I "$here/check-docs.py" docs/outside.md > /dev/null); then
+  echo "FAIL check-docs: docs/outside.md links outside the repository"
+  failed=1
+fi
+if ! (cd "$root" && python3 -I "$here/check-docs.py" docs/space.md > /dev/null); then
+  echo "FAIL check-docs: docs/space.md links to a file that exists"
+  failed=1
+fi
+
+# changed-files.sh: a moved file is listed under both paths, and å, ä, ö
+# are not escaped.
+repo="$tmp/repo"
+mkdir -p "$repo/integration_test"
+git -C "$repo" init -q
+echo a > "$repo/integration_test/t.dart"
+git -C "$repo" add -A
+git -C "$repo" -c user.name=ci -c user.email=ci@example.invalid commit -q -m a
+mkdir -p "$repo/docs" "$repo/lib"
+git -C "$repo" mv integration_test/t.dart docs/t.dart
+echo b > "$repo/lib/säkerhet.dart"
+git -C "$repo" add -A
+git -C "$repo" -c user.name=ci -c user.email=ci@example.invalid commit -q -m b
+got="$(cd "$repo" && "$here/changed-files.sh" HEAD^ | sort | tr '\n' ' ')"
+if [ "$got" != "docs/t.dart integration_test/t.dart lib/säkerhet.dart " ]; then
+  echo "FAIL changed-files: got '$got'"
+  failed=1
+fi
+if (cd "$repo" && "$here/changed-files.sh" 0000000000000000000000000000000000000000 > /dev/null 2>&1); then
+  echo "FAIL changed-files: an unknown base must fail"
   failed=1
 fi
 
