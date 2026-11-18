@@ -42,7 +42,9 @@ inom några minuter.
 
 Beslutat av ägaren 2026-11-13.
 
-- Repot är stängt nu: "All rights reserved" (`LICENSE`).
+- Beslutat av ägaren 2026-11-18: repot görs publikt för insyn, men koden
+  är "All rights reserved" (`LICENSE`) och får inte kopieras eller delas ut.
+  Före det var repot stängt.
 - Om ett AGPL-bibliotek väljs för protokollet (D3, se
   [0003](0003-protocol-library.md)) byts `LICENSE` till **AGPL-3.0**. Det
   sker senast före första utdelningen av appen, även till testare via
@@ -55,19 +57,23 @@ Beslutat av ägaren 2026-11-13.
 Beslutat av ägaren:
 
 - Får användas: **"Servern sparar inte din IP-adress."**
+- Får användas (2026-11-18, 0008): **"Vi rekommenderar VPN om du inte vill
+  att servern ska se din IP-adress."**
 - Får inte användas: **"Servern kan inte se din IP-adress"** och **"anonym"**.
 
 Förslag (inte beslutat, ägaren avgör):
 
 - Får användas: "Servern lagrar bara krypterade meddelanden som den inte
-  kan läsa." "Meddelanden raderas från servern efter 48 timmar." "Vi
-  rekommenderar VPN om du inte vill att servern ska se din IP-adress."
+  kan läsa." "Meddelanden raderas från servern efter 48 timmar."
 - Får inte användas: varianter av "anonym" ("anonymt", "helt anonym"),
   "spårlöst", "ingen kan se att du använder SHA" och "inga loggar". Den
   sista gäller för att leverantören och en omvänd proxy kan logga även när
   vårt program inte gör det (fråga b nedan).
 
 ## Öppna frågor
+
+Svaren för version 1 står i [0008](0008-oppna-fragor-i-0002.md). Ägaren
+beslutade (a) och (f) där 2026-11-18.
 
 - **(a) Flera brevlådor från samma IP.** Brevlåde-ID:n går inte att koppla
   ihop kryptografiskt. Men om appen hämtar flera brevlådor från samma

@@ -1,6 +1,7 @@
 # 0009 – Radering av gamla sessioner (F2)
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-17. **Kräver
+Status: **Beslutat av ägaren 2026-11-18: (iv), med 24 h marginal för
+klockor.** Skrivet 2026-11-17. **Kräver
 granskning av kryptoexpert** (gamla nycklar i telefonen och regeln för när
 de får raderas).
 
@@ -51,19 +52,50 @@ ligger gamla sessioners nycklar kvar i riktiga användares telefoner
   2. inget i utkorgen är krypterat på S;
   3. relayn tog emot vårt senaste paket på S vid tiden `sentS` (eller S
      skapades då, om vi aldrig skickade på den);
-  4. vi har läst ett meddelande från K på en annan session, och K skrev det
-     enligt dess egen tid `t` senare än `sentS` + 48 h + en marginal på
-     24 h för klockor som går fel.
-  - **Varför det håller krav 1:** när K skrev det meddelandet hade den
-    andra sessionen högst nummer hos K. Efter `sentS` + 48 h kan inget av
-    våra paket på S nå K, och utkorgen har inga fler. S kan därför aldrig
-    bli högst hos K igen, och K skickar aldrig mer på S.
-  - **Luckan:** villkor 4 bygger på K:s klocka. Går den mer än 24 h fel
-    framåt kan S raderas för tidigt, och ett meddelande gå förlorat.
-  - Behöver två nya fält: `sentS` per session (sätts vid `markSent`), och
-    K:s tid för det senast lästa meddelandet per session. Tiden ligger i
-    JSON-texten, så appen måste lämna den till Olm-tjänsten; det ändrar
-    API:t men inte kryptot.
+  4. vi har läst ett meddelande M från K på en annan session, och K skrev
+     det enligt dess egen tid `t` senare än `sentS` + 48 h + en marginal på
+     24 h för klockor som går fel;
+  5. det har gått minst 48 h + 24 h på vår egen klocka sedan vi läste det
+     första M som uppfyllde villkor 4 (`qualifiedAt`, se "Behöver nya
+     fält").
+  - **Varför det håller krav 1, i två delar:**
+    - *K skickar aldrig mer på S.* När K skrev M hade den andra sessionen
+      högst nummer hos K. Efter `sentS` + 48 h kan inget av våra paket på S
+      nå K, och vår utkorg har inga fler (villkor 2 och 3). S kan därför
+      aldrig bli högst hos K igen.
+    - *Inget som K redan har skickat på S är kvar.* K:s utkorg skickar i
+      ordning per kontakt, så allt K skickade på S före bytet låg hos relayn
+      före M. Efter villkor 5 har vi antingen hämtat det eller så har relayn
+      tagit bort det efter 48 h.
+    - Argumentet gäller för varje M som uppfyller villkor 4, så det räcker
+      att räkna från det första. Räknar vi i stället från det senast lästa
+      meddelandet raderas S aldrig så länge K skriver minst var 72:a timme
+      (granskningen av PR #35), och det bryter krav 2.
+  - **Motexemplet som villkor 5 stoppar** (granskningen av F2): K skriver m1
+    på S strax före midnatt och m2 på den nya sessionen strax efter. Appen
+    hämtar dagens brevlåda före gårdagens, läser m2 först, och utan villkor
+    5 raderas S innan m1 har lästs.
+  - **Luckorna:**
+    - Villkor 4 bygger på skillnaden mellan K:s klocka och vår. Går K:s
+      klocka mer än 24 h fel framåt mot vår kan S raderas för tidigt.
+    - Villkor 3 och 5 mäts med vår egen väggklocka. Hoppar den fram mer än
+      24 h efter att vi läste M (någon ställer tiden för hand) kan villkor 5
+      gälla för tidigt. Ställs den sedan tillbaka medan ett gammalt paket på
+      S fortfarande finns hos relayn, hämtas det när S redan är raderad.
+    - Det antas att relayn aldrig håller ett paket längre än 48 h. Den som
+      driver relayn kan fördröja paket (hotmodellen); ett paket från oss på
+      S som når K mycket sent gör S högst hos K igen.
+  - **Behöver nya fält:**
+    - `sentS` per session (sätts vid `markSent`);
+    - sessionens id för varje paket i utkorgen (`_Outgoing` har i dag bara
+      id, kontakt, paket och text), för villkor 2 och för att sätta `sentS`;
+    - `qualifiedAt` per session: när vi, enligt vår klocka, första gången
+      läste ett meddelande från K som uppfyller villkor 4 för S. Det
+      nollställs om `sentS` ändras. S raderas när det har gått 72 h sedan
+      `qualifiedAt` och villkor 1–3 fortfarande gäller.
+    - För villkor 4 behöver Olm-tjänsten K:s tid `t` för varje läst
+      meddelande. Tiden ligger i JSON-texten, så appen måste lämna den till
+      Olm-tjänsten; det ändrar API:t men inte kryptot.
   - Sessioner raderas aldrig för en kontakt som är tyst, hur gamla de än är.
 - **(v) (iv), och dessutom (i) som tak:** som (iv), men har en kontakt fler
   än 20 sessioner raderas också den äldsta enligt (i). Det begränsar
@@ -72,8 +104,9 @@ ligger gamla sessioners nycklar kvar i riktiga användares telefoner
 ## Rekommendation: (iv)
 
 Den enda regeln där det går att argumentera för att inget meddelande går
-förlorat, med en känd lucka (en klocka som går mer än 24 h fel). Taket i
-(v) kan läggas till senare om mätningar visar att tillståndet växer.
+förlorat. Luckorna är kända: en klocka, K:s eller vår, som går mer än 24 h
+fel, och en relay som fördröjer paket. Taket i (v) kan läggas till senare om
+mätningar visar att tillståndet växer.
 
 ## Testa
 
@@ -83,14 +116,20 @@ förlorat, med en känd lucka (en klocka som går mer än 24 h fel). Taket i
   raderas, och kontaktens nästa meddelande läses.
 - Ett försenat paket på S som når kontakten efter bytet: S raderas inte
   förrän 72 h har gått.
+- Motexemplet ovan: m2 läses före m1; S raderas inte förrän villkor 5
+  gäller, och m1 läses.
+- En aktiv chatt: K skriver var 12:e timme på den nya sessionen. S raderas
+  72 h efter det första meddelandet som uppfyller villkor 4, inte senare.
+- Ett paket på S i utkorgen som skickas efter `qualifiedAt`: `qualifiedAt`
+  nollställs, och S raderas inte förrän villkoren gäller igen.
 - Utkorgen med ett paket på S: S raderas inte.
-- Omstart: `sentS` och tiderna finns kvar.
+- Omstart: `sentS`, `qualifiedAt` och tiderna finns kvar.
 - Mutationer för varje villkor.
 
 ## Ägaren beslutar
 
-- [ ] (i), (ii), (iv) eller (v).
-- [ ] Marginalen för klockor (förslag: 24 h).
+- [x] **(iv)**, beslutat 2026-11-18.
+- [x] Marginalen för klockor: **24 h**, beslutat 2026-11-18.
 
 Bygget (F2) börjar först efter beslutet, och regeln märks
 `OGRANSKAT (0009)` tills kryptoexperten har granskat den (G6).
