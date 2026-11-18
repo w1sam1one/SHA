@@ -102,8 +102,13 @@ som redan används. Dependabot följer den (ekosystemet `github-actions` i
 - Cargo kontrollerar en nedladdad crate mot kontrollsumman i `Cargo.lock`,
   även utan `--locked`, och pub kontrollerar paketen mot `pubspec.lock`
   (`--enforce-lockfile`). Men det som redan ligger i en cache, och de byggda
-  Rust-filerna, litar de på. Repot är stängt. Till `main` pushar bara
-  ägaren, och Claude när Claude mergar sina egna PR:er enligt `CLAUDE.md`.
+  Rust-filerna, litar de på. Till `main` pushar bara ägaren, och Claude när
+  Claude mergar sina egna PR:er enligt `CLAUDE.md`.
+- När repot är publikt kan andra öppna PR:er från en fork. De kör CI med
+  läsrättighet och utan hemligheter, och GitHub kräver som standard att
+  ägaren godkänner körningen för den som bidrar första gången. En sådan PR
+  läser cacharna men kan inte spara dem, eftersom bara pushar till `main`
+  sparar.
 - **CI bygger inget som delas ut**, bara debug-APK:er för testerna. Ett
   release-bygge får inte göras från CI:s cacher.
 - Nycklar och lösenord ligger inte i cacharna. `~/.gradle/gradle.properties`
