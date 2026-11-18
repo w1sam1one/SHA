@@ -151,10 +151,12 @@ alternativ.
 ## Ägaren beslutar
 
 - [x] **(C1)**, beslutat 2026-11-18. Det godkänner `zxing2` 0.2.4 och
-  `camera` 0.12.2, med de paket som de drar in enligt låsfilen.
+  `camera` 0.12.2, med de Dart-paket som de drar in enligt låsfilen och de
+  Android-bibliotek som Gradle drar in för dem (CameraX och Guava).
   `mobile_scanner` tas bort.
 - [ ] Läs de två sidorna om ML Kit ovan, eller låt Claude läsa dem
-  (`developers.google.com` måste då tillåtas i miljöns nätverk).
+  (`developers.google.com` måste då tillåtas i miljöns nätverk). Behövs
+  inte med (C1): ML Kit tas bort.
 - [ ] Låt någon som kan upphovsrätt kontrollera licensfrågan före första
   utdelningen, oavsett alternativ.
 

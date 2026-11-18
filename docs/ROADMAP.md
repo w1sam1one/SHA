@@ -169,8 +169,9 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   VPN-texten behövs för F5.
 - **QR-skannern och AGPL (F5). Klar 2026-11-18.** Ägaren valde (C1) i
   [0012](decisions/0012-qr-skannern-och-agpl.md): `zxing2` med `camera`
-  ersätter `mobile_scanner` och ML Kit. Bygget kommer i ett eget paket, och
-  licenserna för Android-biblioteken på licenssidan tas fram efter det.
+  ersätter `mobile_scanner` och ML Kit. Bygget görs i en egen PR inom F5,
+  och licenserna för Android-biblioteken på licenssidan tas fram efter
+  det.
 
 ## Före första utdelning
 
