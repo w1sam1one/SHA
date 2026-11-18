@@ -1,7 +1,7 @@
 # 0013 – Färre Actions-minuter i CI
 
 Status: **Godkänd av ägaren** 2026-11-17, när ägaren mergade PR #39 (kl.
-16:26 UTC). Ägaren hade bett om ändringen samma dag, efter att CI stoppades
+16:26 UTC), och bekräftad av ägaren 2026-11-18. Ägaren hade bett om ändringen samma dag, efter att CI stoppades
 av Actions-budgeten. Mergen godkände underlaget och det nya beroendet nedan.
 PR #39 mergades innan CI hade kört och innan den oberoende granskningen var
 klar. Granskningens fynd rättas i en egen PR, som ägaren också mergar.
