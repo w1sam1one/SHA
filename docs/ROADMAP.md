@@ -167,10 +167,10 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 - **Besluten i F7.** Ägaren beslutar om VPN-texten och om paket som
   försvinner vid en omstart, i [0008](decisions/0008-oppna-fragor-i-0002.md).
   VPN-texten behövs för F5.
-- **QR-skannern och AGPL (F5).** Ägaren väljer i
-  [0012](decisions/0012-qr-skannern-och-agpl.md): ML Kit i `mobile_scanner`
-  är inte öppen källkod, och appen innehåller AGPL-kod från Famedly.
-  Licenserna för Android-biblioteken på licenssidan väntar på beslutet.
+- **QR-skannern och AGPL (F5). Klar 2026-11-18.** Ägaren valde (C1) i
+  [0012](decisions/0012-qr-skannern-och-agpl.md): `zxing2` med `camera`
+  ersätter `mobile_scanner` och ML Kit. Bygget kommer i ett eget paket, och
+  licenserna för Android-biblioteken på licenssidan tas fram efter det.
 
 ## Före första utdelning
 
@@ -254,6 +254,8 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-18 – Ägaren valde (C1) i 0012: `zxing2` 0.2.4 med `camera`
+  0.12.2 ersätter `mobile_scanner`.
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade

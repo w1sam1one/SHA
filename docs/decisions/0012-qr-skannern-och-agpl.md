@@ -1,6 +1,7 @@
 # 0012 – QR-skannern och AGPL (F5)
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-17. Det här är inte
+Status: **Beslutat av ägaren 2026-11-18: (C1)**, `zxing2` 0.2.4 med
+`camera` 0.12.2. Skrivet 2026-11-17. Det här är inte
 juridisk rådgivning. Licensfrågan bör kontrolleras av någon som kan
 upphovsrätt innan appen delas ut, vilket alternativ som än väljs.
 
@@ -149,7 +150,9 @@ alternativ.
 
 ## Ägaren beslutar
 
-- [ ] (A), (B), (C1) eller (C2).
+- [x] **(C1)**, beslutat 2026-11-18. Det godkänner `zxing2` 0.2.4 och
+  `camera` 0.12.2, med de paket som de drar in enligt låsfilen.
+  `mobile_scanner` tas bort.
 - [ ] Läs de två sidorna om ML Kit ovan, eller låt Claude läsa dem
   (`developers.google.com` måste då tillåtas i miljöns nätverk).
 - [ ] Låt någon som kan upphovsrätt kontrollera licensfrågan före första
