@@ -31,16 +31,16 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
     koden läses av `zxing2` i ren Dart (0012 (C1)). `camera` lägger till
     `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` (och `READ_EXTERNAL_STORAGE`
     följer med), och CameraX videodel drar in media3, som lägger till
-    `ACCESS_NETWORK_STATE`. Appens manifest tar bort alla fyra; skannern
-    använder varken video, lagring eller nätverksstatus. CI kontrollerar debug-APK:ns färdiga manifest
-    (`.github/scripts/check-manifest.py`).
+    `ACCESS_NETWORK_STATE`. Appens manifest tar bort alla fyra. Skannern
+    använder varken video, lagring eller nätverksstatus.
   - `INTERNET` finns i debug- och profilmanifesten. Flutter behöver den där
     för utvecklingsverktygen.
-  - Vilka behörigheter det **färdiga release-manifestet** får är **ej
-    verifierat**. CI kontrollerar bara debug-APK:n. Biblioteken som slås
-    ihop in i det, bland annat CameraX och Guava via `camera` samt
-    androidx-biblioteken som Flutter använder, kan lägga till egna poster.
-    Deras manifest gick inte att hämta.
+  - **Det färdiga release-manifestet** kontrolleras i CI. Emulatorjobbet
+    slår ihop det med `processReleaseMainManifest`, utan att bygga en
+    release-APK. Steget faller om manifestet begär något annat än `CAMERA`,
+    `INTERNET` och appens egen `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
+    eller kräver någon hårdvara (`.github/scripts/check-manifest.py`). Hur
+    ditt eget release-bygge slår ihop manifestet är **ej verifierat**.
   - Kontrollera efter ditt första release-bygge. Sammanslagningsrapporten
     visar vilket bibliotek som lagt till varje post (sökvägen är ej verifierad):
     ```sh

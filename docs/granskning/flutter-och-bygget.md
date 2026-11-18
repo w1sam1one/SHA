@@ -46,9 +46,10 @@ låsta.
 
 ## Android
 
-- **Behörigheter** i appens eget manifest: `CAMERA` och `INTERNET`. Vad
-  biblioteken lägger till i det färdiga manifestet är **ej verifierat**
-  (`docs/release.md`, punkt 0).
+- **Behörigheter** i appens eget manifest: `CAMERA` och `INTERNET`. Det
+  som biblioteken lägger till tas bort med `tools:node="remove"`, och CI
+  kontrollerar det sammanslagna release-manifestet
+  (`.github/scripts/check-manifest.py`, `docs/release.md`, punkt 0).
 - **Ingen backup** (`allowBackup="false"`, `data_extraction_rules.xml`), och
   valvet ligger i `noBackupFilesDir`.
 - **`FLAG_SECURE`** (`MainActivity.kt:16-17`): inga skärmdumpar.
