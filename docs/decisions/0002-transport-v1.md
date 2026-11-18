@@ -42,7 +42,9 @@ inom några minuter.
 
 Beslutat av ägaren 2026-11-13.
 
-- Repot är stängt nu: "All rights reserved" (`LICENSE`).
+- Repot är publikt för insyn sedan 2026-11-18 (ägarens beslut), men koden
+  är "All rights reserved" (`LICENSE`) och får inte kopieras eller delas ut.
+  Före det var repot stängt.
 - Om ett AGPL-bibliotek väljs för protokollet (D3, se
   [0003](0003-protocol-library.md)) byts `LICENSE` till **AGPL-3.0**. Det
   sker senast före första utdelningen av appen, även till testare via

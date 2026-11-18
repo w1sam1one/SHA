@@ -158,10 +158,12 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   Fynden blir F8.
 - **G7 – Säkerhetsuppdateringar.** Slå på Dependency graph, Dependabot alerts
   och security updates, och godkänn planen i 0004 §12.
-- **G8 – AGPL och öppen källkod.** När ägaren säger till förbereder Claude en
-  PR som byter `LICENSE` till AGPL-3.0, uppdaterar README och 0002, och lägger
-  till CONTRIBUTING med ett förslag på CLA. Bara ägaren mergar den och gör
-  repot publikt.
+- **G8 – AGPL och öppen källkod.** Repot är publikt för insyn (ägarens beslut
+  2026-11-18), men koden är "All rights reserved" och får inte kopieras eller
+  delas ut. `LICENSE` byts till AGPL-3.0 före första utdelningen av appen.
+  När ägaren säger till förbereder Claude en PR som byter `LICENSE`,
+  uppdaterar README, `SECURITY.md` och 0002, och lägger till CONTRIBUTING
+  med ett förslag på CLA. Bara ägaren mergar den.
 - **Besluten i F2, F3 och F4.** Ägaren beslutar i varje beslutsunderlag innan
   bygget börjar, som vid G4 och G5.
 - **Besluten i F7.** Ägaren beslutar om VPN-texten och om paket som
@@ -248,6 +250,11 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-18 – Inför att ägaren gör repot publikt: en varning överst i
+  README (ogranskad prototyp, All rights reserved), `SECURITY.md` om att
+  rapportera säkerhetsbuggar privat, och samma sak om licensen i
+  `CLAUDE.md` ("Målet"), G8 och 0002. `LICENSE` är oförändrad. Ägaren
+  mergar.
 - 2026-11-17 – CI använder färre Actions-minuter
   ([0013](decisions/0013-ci-minuter.md)), efter att budgeten tog slut kl.
   10:04 UTC. Ett nytt jobb, `changes`, väljer jobb efter de ändrade
