@@ -16,9 +16,12 @@ void main() {
         .map((p) => p.text)
         .join('\n');
 
-    expect(textOf('Manrope (font)'), contains('SIL OPEN FONT LICENSE'));
-    expect(textOf('JetBrains Mono (font)'), contains('SIL OPEN FONT LICENSE'));
-    final rust = textOf('Rust crates in the Olm library');
+    expect(textOf('Manrope (typsnitt)'), contains('SIL OPEN FONT LICENSE'));
+    expect(
+      textOf('JetBrains Mono (typsnitt)'),
+      contains('SIL OPEN FONT LICENSE'),
+    );
+    final rust = textOf('Rust-paket i krypteringsbiblioteket');
     expect(rust, contains('vodozemac 0.11.2: Apache-2.0'));
     expect(rust, contains('Apache License'));
     // Crates without a license file are still named with their license.
