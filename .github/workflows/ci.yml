@@ -388,6 +388,12 @@ jobs:
             exit 1
           fi
           echo "$manifest"
+          # Which library added each permission and feature (Gradle's merger
+          # report), so that a failure below says where it comes from.
+          report="$(find build/app/outputs/logs -name 'manifest-merger-release-report.txt' | head -n 1)"
+          if [ -n "$report" ]; then
+            grep -A 3 -E '^(uses-permission|uses-feature)#' "$report" || true
+          fi
           python3 -I .github/scripts/check-manifest.py "$manifest" se.sha.sha
 
       # Saved right after the build, before the emulator needs the memory.

@@ -13,6 +13,10 @@
          .github/scripts/check-manifest.py checks the built APK in CI. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
+    <!-- Implied by the plugin's WRITE_EXTERNAL_STORAGE (the manifest merger
+         adds it for a library with an old target SDK). The app reads no
+         shared storage. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
     <uses-feature android:name="android.hardware.camera.any" android:required="false"
         tools:replace="android:required"/>
 
