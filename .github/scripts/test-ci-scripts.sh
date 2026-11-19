@@ -29,6 +29,8 @@ expect "$app" android/app/src/main/AndroidManifest.xml
 expect "$app" pubspec.yaml
 expect "$app" docs/ROADMAP.md pubspec.lock
 expect "$flutter_only" assets/licenses/rust.txt
+expect "$app" assets/licenses/android.txt
+expect "$flutter_only" assets/licenses/zxing.txt
 expect "$flutter_only" tool/build_relay.sh
 expect "$flutter_only" analysis_options.yaml
 expect "$flutter_only" .github/workflows/spike-android.yml
@@ -161,6 +163,62 @@ if ! python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" se.sha.sha > /dev/
 fi
 if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
   echo "FAIL check-manifest: another app's permission must fail"
+  failed=1
+fi
+
+# android-licenses.py: Gradle's list against the license page (F5, 0012).
+cache="$tmp/gradle-cache"
+pom() { # group artifact version body
+  mkdir -p "$cache/$1/$2/$3/abc"
+  printf '%s\n' "$4" > "$cache/$1/$2/$3/abc/$2-$3.pom"
+}
+pom androidx.core core 1.13.1 '<project xmlns="http://maven.apache.org/POM/4.0.0"><licenses><license><name>The Apache Software License, Version 2.0</name></license></licenses></project>'
+pom com.google.guava guava-parent 33.4.0-android '<project><licenses><license><name>Apache License, Version 2.0</name></license></licenses></project>'
+pom com.google.guava guava 33.4.0-android '<project xmlns="http://maven.apache.org/POM/4.0.0"><parent><groupId>com.google.guava</groupId><artifactId>guava-parent</artifactId><version>33.4.0-android</version></parent></project>'
+pom io.flutter flutter_embedding_release 1.0.0-abc '<project></project>'
+cat > "$tmp/deps.txt" <<'DEPS'
+releaseRuntimeClasspath - Runtime classpath of '/release'.
++--- project :camera_android_camerax
+|    +--- androidx.core:core:1.12.0 -> 1.13.1
+|    \--- com.google.guava:guava:{strictly 33.4.0-android} -> 33.4.0-android (*)
++--- io.flutter:flutter_embedding_release:1.0.0-abc
++--- androidx.core:core:1.13.1 (c)
+\--- androidx.lifecycle:lifecycle-common:2.8.0 (c)
+DEPS
+expected='androidx.core:core 1.13.1: The Apache Software License, Version 2.0
+com.google.guava:guava 33.4.0-android: Apache License, Version 2.0
+io.flutter:flutter_embedding_release 1.0.0-abc: BSD-3-Clause (Flutter)'
+got="$(python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --print)"
+if [ "$got" != "$expected" ]; then
+  echo "FAIL android-licenses: the list from Gradle's tree"
+  printf '%s\n' "$got"
+  failed=1
+fi
+printf 'Rubrik\n\n%s\n\n----\nApache License text\n' "$expected" > "$tmp/android.txt"
+if ! python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: a matching list must pass"
+  failed=1
+fi
+# A library missing from the page fails.
+printf 'Rubrik\n\n%s\n\n----\n' "$(printf '%s\n' "$expected" | sed '2d')" > "$tmp/android.txt"
+if python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: a library missing from the page must fail"
+  failed=1
+fi
+# A license that is not known to combine with AGPL-3.0 fails.
+pom org.example lib 1.0 '<project><licenses><license><name>Some Proprietary License</name></license></licenses></project>'
+printf '%s\n' '\--- org.example:lib:1.0' >> "$tmp/deps.txt"
+printf 'Rubrik\n\n%s\n\n----\n' "$(python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --print)" > "$tmp/android.txt"
+if python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: an unknown license must fail"
+  failed=1
+fi
+# A library whose POM names no license fails.
+pom org.example nolicense 2.0 '<project></project>'
+printf '%s\n' '\--- org.example:nolicense:2.0' > "$tmp/deps2.txt"
+printf 'Rubrik\n\n%s\n\n----\n' "$(python3 -I "$here/android-licenses.py" "$tmp/deps2.txt" "$cache" --print)" > "$tmp/android.txt"
+if python3 -I "$here/android-licenses.py" "$tmp/deps2.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: a library without a license must fail"
   failed=1
 fi
 

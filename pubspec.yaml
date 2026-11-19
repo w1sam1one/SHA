@@ -102,6 +102,8 @@ flutter:
     - assets/fonts/Manrope-OFL.txt
     - assets/fonts/JetBrainsMono-OFL.txt
     - assets/licenses/rust.txt
+    - assets/licenses/android.txt
+    - assets/licenses/zxing.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
