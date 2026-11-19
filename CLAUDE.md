@@ -45,6 +45,11 @@ Gäller från och med att den här filen finns på `main`.
      kryptoexpert har granskat de punkterna.
 2. **Claude får merga sina egna PR:er** enligt "Merge" nedan. Det ersätter
    "assistenten mergar aldrig" i 0004 §12.
+3. **Claude mergar också PR:er som förbereder utdelningen** (2026-11-19),
+   enligt "Merge" nedan. Det gäller till exempel `docs/release.md`,
+   integritetspolicyn, Data safety, Play-kraven, butikstexter och
+   versionsnummer. Själva utdelningen, och det som står sist under
+   **Aldrig**, gör fortfarande bara ägaren.
 
 ## Aldrig
 
@@ -62,8 +67,9 @@ Claude gör aldrig följande. Behövs det, stannar Claude och säger till.
 - Force-pushar till `main`, skriver om historiken på `main`, stänger av
   eller hoppar över tester, eller sänker kraven i ett test för att få grönt.
 - Mergar en PR som ändrar `LICENSE`, avsnitten ovan i den här filen,
-  `permissions:` i `.github/workflows/`, signering i Android-bygget eller
-  något som rör utdelning. De lämnas till ägaren.
+  `permissions:` i `.github/workflows/` eller signering i Android-bygget,
+  eller som delar ut appen (till exempel ett jobb som laddar upp till Google
+  Play eller bygger en release). De lämnas till ägaren.
 
 ## Vad Claude bestämmer själv
 

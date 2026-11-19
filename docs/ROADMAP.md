@@ -8,8 +8,9 @@ grinden fortsätter. "Klart när" i `CLAUDE.md` ("Målet") betyder fas 1.
 Arbetssätt (ägarens instruktion 2026-11-16, utöver `CLAUDE.md`):
 - `CLAUDE.md` gäller i allt. Inget här ändrar "Aldrig", utom PR:en vid G8,
   som Claude förbereder när ägaren ber om det och som bara ägaren mergar.
-- PR:er som rör utdelning, till exempel butikstexter och versionsnummer i
-  fas 3, mergar bara ägaren (`CLAUDE.md`, "Aldrig").
+- PR:er som förbereder utdelningen, till exempel butikstexter och
+  versionsnummer i fas 3, mergar Claude (`CLAUDE.md`, "Ägarens beslut",
+  punkt 3, 2026-11-19). Själva utdelningen gör bara ägaren ("Aldrig").
 - Vid varje grind skriver Claude steg för steg, på enkel svenska, vad ägaren
   ska göra.
 - Nya val som ändrar säkerheten blir beslutsunderlag och grindar, som
@@ -267,6 +268,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-19 – Ägarens beslut: Claude mergar också PR:er som förbereder
+  utdelningen (`CLAUDE.md`, "Ägarens beslut", punkt 3). Själva utdelningen,
+  `LICENSE`, avsnitten Målet, Ägarens beslut och Aldrig, `permissions:` och
+  signering är fortfarande ägarens. Ägaren mergar den här PR:en.
 - 2026-11-19 – F2, radering av gamla sessioner enligt (iv) i 0009, med
   24 h marginal (OGRANSKAT (0009)). Varje session har nu tiden för vårt
   senaste paket (`sent`, satt vid `markSent`) och tiden när den blev gammal
