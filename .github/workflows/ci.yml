@@ -217,7 +217,10 @@ jobs:
   # source, runs integration_test/olm_build_test.dart on an Android emulator.
   # P3 adds integration_test/vault_test.dart (the Keystore vault, 0005) and
   # integration_test/olm_service_test.dart (Olm behind CryptoService, R8,
-  # and the 300 ms measurement in 0005).
+  # and the 300 ms measurement in 0005). F11 adds
+  # integration_test/screenshots_test.dart (the store screenshots, through
+  # Flutter's own rendering with FLAG_SECURE on). It runs before the vault
+  # tests, on the new emulator, because it needs an app without an identity.
   # The same steps as .github/workflows/spike-android.yml.
   app-android:
     name: App on Android emulator (Olm in the build)
@@ -504,8 +507,8 @@ jobs:
           "$GITHUB_WORKSPACE/.github/scripts/resource-monitor.sh" 20 &
           monitor=$!
           status=0
-          flutter test integration_test/olm_build_test.dart integration_test/vault_test.dart \
-            integration_test/olm_service_test.dart \
+          flutter test integration_test/olm_build_test.dart integration_test/screenshots_test.dart \
+            integration_test/vault_test.dart integration_test/olm_service_test.dart \
             -d emulator-5554 --reporter expanded || status=$?
           kill "$monitor" 2>/dev/null || true
           exit "$status"

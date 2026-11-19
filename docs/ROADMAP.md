@@ -260,9 +260,10 @@ Version 1.0 är publicerad i produktion på Google Play.
 - [x] **F10 – Integritetspolicy och Data safety.** Ett utkast till
   integritetspolicy på svenska och engelska, och svaren till Data safety.
   Bara det koden faktiskt gör, med fil som källa.
-- [ ] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
+- [x] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
   än appen gör. Ett sätt att ta skärmbilder som bara finns i debug och aldrig
-  i release, där `FLAG_SECURE` alltid gäller.
+  i release, där `FLAG_SECURE` alltid gäller. Texterna i
+  [`docs/butikstexter.md`](butikstexter.md) godkänns av ägaren.
 - [ ] **F12 – Version och ändringslogg.** Versionsnummer, ändringslogg och
   `docs/release.md` uppdaterade.
 
@@ -286,6 +287,18 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-19 – F11. Butikstexterna på svenska och engelska står som utkast i
+  `docs/butikstexter.md`, för ägaren att godkänna: namn, kort och
+  fullständig beskrivning, med det appen gör och det servern ser, och utan
+  det som `release.md`, punkt 7, förbjuder. Ett test stoppar orden som 0002
+  förbjuder och för långa texter, och CI kör det också när bara den filen
+  ändras. Skärmbilderna tas med `integration_test/screenshots_test.dart`,
+  genom Flutters egen ritning i ett debug-bygge, så `FLAG_SECURE` stängs
+  aldrig av. Ett test visar att flaggan sätts utan villkor och att ingen
+  källkod stänger av den. Testet stannar om SHA redan har en identitet på
+  enheten, så att bilderna aldrig visar någons riktiga kontakter. Inte med
+  än: en chatt med meddelanden. Ej kontrollerat: Plays krav på längder och
+  bilder (F9).
 - 2026-11-19 – F5 klart. Under Inställningar › Server och i "Teknisk
   information" står nu vad servern ser: IP-adressen, när du hämtar och hur
   stora paketen är, men inte meddelandena. Där står också att SHA:s
