@@ -104,11 +104,13 @@ if (cd "$repo" && "$here/changed-files.sh" 0000000000000000000000000000000000000
   failed=1
 fi
 
-# check-manifest.py: only CAMERA and INTERNET, and no required feature.
+# check-manifest.py: only CAMERA, INTERNET and USE_BIOMETRIC, and no required
+# feature.
 manifest() {
   printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="se.sha.sha">' \
     '<uses-permission android:name="android.permission.CAMERA"/>' \
     '<uses-permission android:name="android.permission.INTERNET"/>' \
+    '<uses-permission android:name="android.permission.USE_BIOMETRIC"/>' \
     '<uses-permission android:name="se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
     '<uses-feature android:name="android.hardware.camera" android:required="false"/>' \
     "$@" '</manifest>'
@@ -139,10 +141,18 @@ if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
   echo "FAIL check-manifest: a missing CAMERA must fail"
   failed=1
 fi
+printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="se.sha.sha">' \
+  '<uses-permission android:name="android.permission.CAMERA"/>' \
+  '<uses-permission android:name="android.permission.INTERNET"/>' '</manifest>' > "$tmp/manifest.xml"
+if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
+  echo "FAIL check-manifest: a missing USE_BIOMETRIC (the app lock) must fail"
+  failed=1
+fi
 # Without a package attribute, the application id comes from the argument.
 printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' \
   '<uses-permission android:name="android.permission.CAMERA"/>' \
   '<uses-permission android:name="android.permission.INTERNET"/>' \
+  '<uses-permission android:name="android.permission.USE_BIOMETRIC"/>' \
   '<uses-permission android:name="se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
   '</manifest>' > "$tmp/manifest.xml"
 if ! python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" se.sha.sha > /dev/null; then

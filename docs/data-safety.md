@@ -58,13 +58,16 @@ avinstallation allt.
   och appen syns (`lib/features/qr/qr_camera.dart`). Bilderna läses i
   minnet och sparas eller skickas inte. Inget ljud spelas in
   (`enableAudio: false`).
+- `USE_BIOMETRIC`: bara för app-låset (0011 (B)). Telefonens eget
+  fingeravtryck, ansikte eller PIN; appen får bara veta ja eller nej, och
+  inget sparas (`android/app/src/main/kotlin/se/sha/sha/lock/AppLockChannel.kt`).
 - `INTERNET`: i appens egen kod bara för servern
   (`android/app/src/main/AndroidManifest.xml`). Behörigheten gäller hela
   appen, även biblioteken (se CameraX och media3 ovan).
 - Det som biblioteken lägger till (`RECORD_AUDIO`, `WRITE_EXTERNAL_STORAGE`,
   `READ_EXTERNAL_STORAGE` och `ACCESS_NETWORK_STATE`) tas bort ur
   manifestet. CI kontrollerar att release-manifestet bara begär `CAMERA`,
-  `INTERNET` och androidx.core:s interna
+  `INTERNET`, `USE_BIOMETRIC` och androidx.core:s interna
   `se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`
   (`.github/scripts/check-manifest.py`, `docs/release.md`, punkt 0).
 

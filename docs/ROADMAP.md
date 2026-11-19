@@ -135,8 +135,10 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 - [x] **F3 – Historik i version 1** enligt (B) i
   [0010](decisions/0010-historik-i-version-1.md): egna valvposter, 30 dagar
   som standard. Texten i appen godkänns av ägaren.
-- [ ] **F4 – App-lås med PIN eller biometri** (README, "Nästa steg"). Först
-  ett beslutsunderlag och en grind, sedan bygget.
+- [x] **F4 – App-lås med PIN eller biometri**, steg 1 enligt (B) i
+  [0011](decisions/0011-app-las.md): telefonens eget lås när appen öppnas
+  och efter 5 minuter i bakgrunden. Steg 2, att valvets nyckel kräver
+  upplåsning, kommer efter G6 med ett eget beslutsunderlag.
 - [ ] **F5 – Ärliga texter för en fungerande app:**
   - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
     tas bort när transporten fungerar, liksom de andra texterna som då
@@ -273,6 +275,15 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den
+  öppnas och efter 5 minuter i bakgrunden, och låses upp med telefonens eget
+  lås. Från Android 10 med plattformens `BiometricPrompt` (fingeravtryck,
+  ansikte eller PIN), på Android 7–9 med `KeyguardManager` (PIN). Inget nytt
+  beroende, bara behörigheten `USE_BIOMETRIC`, som CI:s manifestkontroll nu
+  kräver. Innehållet bakom låset byggs inte förrän det är upplåst, och ett
+  fel från telefonen håller det låst. Ägaren mergade F3 (#46) med texterna i
+  PR:en. Ej provat: riktiga telefoner (G3), och Android-delen bara byggd i
+  CI.
 - 2026-11-19 – F3, historiken enligt (B) i 0010. Ett meddelande sparas i
   historiken innan det tas bort ur inkorgen eller utkorgen, i egna
   valvposter med slumpade namn (`h.` och 16 hex), högst 100 meddelanden per

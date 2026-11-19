@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sha/app/app.dart';
 import 'package:sha/core/errors.dart';
 import 'package:sha/core/providers.dart';
+import 'package:sha/features/lock/app_lock.dart';
 import 'package:sha/crypto/crypto.dart';
 
 import '../support/in_memory_vault.dart';
+import '../support/no_screen_lock.dart';
 
 /// A vault whose key is gone: every read fails until [reset] is called.
 class _BrokenVault extends InMemoryVault {
@@ -57,7 +59,10 @@ Future<void> _settleCrypto(WidgetTester tester) async {
 Future<void> _launch(WidgetTester tester, KeyVault vault) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [keyVaultProvider.overrideWithValue(vault)],
+      overrides: [
+        keyVaultProvider.overrideWithValue(vault),
+        appLockPlatformProvider.overrideWithValue(const NoScreenLock()),
+      ],
       child: const ShaApp(),
     ),
   );

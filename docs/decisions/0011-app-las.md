@@ -1,7 +1,7 @@
 # 0011 – App-lås med PIN eller biometri (F4)
 
 Status: **Beslutat av ägaren 2026-11-18: (B).** Steg 1 i version 1, med 5
-minuter i bakgrunden. Steg 2 först efter telefontester och kryptoexpertens
+minuter i bakgrunden; byggt i F4 2026-11-19. Steg 2 först efter telefontester och kryptoexpertens
 granskning (G6). Skrivet 2026-11-17.
 
 Underlag för F4 i [`docs/ROADMAP.md`](../ROADMAP.md) (README, "Nästa

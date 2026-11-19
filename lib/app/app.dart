@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/errors.dart';
 import '../crypto/crypto.dart';
 import '../features/home/home_shell.dart';
+import '../features/lock/app_lock.dart';
 import '../features/onboarding/identity_controller.dart';
 import '../features/onboarding/identity_recovery_screen.dart';
 import '../features/onboarding/identity_screen.dart';
@@ -31,7 +32,11 @@ class _Root extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(identityProvider)) {
       AsyncData(:final value) =>
-        value.firstLaunch ? const IdentityScreen() : const HomeShell(),
+        // Behind the app lock (F4, 0011 (B)); the first screen has nothing
+        // to hide yet.
+        value.firstLaunch
+            ? const IdentityScreen()
+            : const AppLockGate(child: HomeShell()),
       // Keyed by the error: the screen keeps its "busy" state while the
       // provider reloads (same error), and starts fresh if it fails again.
       AsyncError(:final error) when _needsRecovery(error) =>

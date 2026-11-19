@@ -46,7 +46,8 @@ låsta.
 
 ## Android
 
-- **Behörigheter** i appens eget manifest: `CAMERA` och `INTERNET`. De
+- **Behörigheter** i appens eget manifest: `CAMERA`, `INTERNET` och
+  `USE_BIOMETRIC` (app-låset). De
   fyra som biblioteken lägger till tas bort med `tools:node="remove"`.
   Kravet `camera.any` är valfritt (`tools:replace`), och androidx.core:s
   interna `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` får finnas. CI

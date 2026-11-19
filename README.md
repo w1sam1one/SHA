@@ -103,13 +103,15 @@ Texten fylls ut till fem fasta storlekar innan Olm krypterar den. Detaljer i
 - `allowBackup="false"` och `data_extraction_rules.xml` – ingen moln-backup
   eller enhetsöverföring.
 - `FLAG_SECURE` – inga skärmdumpar eller förhandsvisning i "senaste appar".
-- Release-bygget begär `CAMERA` och `INTERNET`, inget annat i appens eget
-  manifest.
+- Release-bygget begär `CAMERA`, `INTERNET` och `USE_BIOMETRIC`, inget annat
+  i appens eget manifest.
   - `CAMERA` behövs bara för att skanna QR-koder.
   - `INTERNET` behövs bara för servern som du själv ställer in under
     Inställningar (P6, 0002). Appen lämnar och hämtar krypterade paket där,
     bara över `https` och bara medan appen är öppen. Inga notiser, inga
     konton. Ingen annan kod i appen använder nätet.
+  - `USE_BIOMETRIC` behövs bara för app-låset (F4, 0011 (B)): telefonens eget
+    fingeravtryck, ansikte eller PIN. Appen får bara veta ja eller nej.
 - Typsnitten (Manrope, JetBrains Mono, SIL OFL) är inbäddade i `assets/fonts/`,
   så appen hämtar ingenting från nätet.
 
@@ -118,7 +120,8 @@ Texten fylls ut till fem fasta storlekar innan Olm krypterar den. Detaljer i
 - Se [`docs/ROADMAP.md`](docs/ROADMAP.md). Olm, kontakter som sparas och
   servern finns sedan P3–P6.
 - Tor/mixnät och täcktrafik mot servern.
-- App-lås med biometri/PIN.
+- App-låset steg 2: valvets nyckel kräver att telefonen har låsts upp
+  (0011, efter G6). Steg 1, låsskärmen, finns sedan F4.
 
 ## Licens
 

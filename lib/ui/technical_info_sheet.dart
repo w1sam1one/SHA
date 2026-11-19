@@ -100,11 +100,21 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                 ],
               ),
               _Section(
+                title: 'App-låset',
+                lines: [
+                  'Appen låses när den öppnas och när den har varit i '
+                      'bakgrunden i 5 minuter. Du låser upp med telefonens eget '
+                      'lås: fingeravtryck, ansikte eller PIN-kod. Har telefonen '
+                      'inget skärmlås låses appen inte.',
+                  'Låset döljer skärmen. Nyckeln i Android Keystore kräver '
+                      'ännu inte att du har låst upp appen.',
+                ],
+              ),
+              _Section(
                 title: 'Finns inte än',
                 lines: [
                   'Ingen säkerhetskopia. Tappar du telefonen måste ni träffas '
                       'och skanna varandras QR-koder på nytt.',
-                  'Inget app-lås med biometri eller PIN.',
                 ],
               ),
             ],

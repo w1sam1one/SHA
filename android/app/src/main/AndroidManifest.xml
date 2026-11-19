@@ -6,6 +6,9 @@
          encrypted packets over https, while the app is open. Nothing else in
          the app's own code uses the network. See README.md. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Only for the app lock (F4, 0011 (B)): the phone's own fingerprint,
+         face or PIN prompt. The app gets no biometric data, only yes or no. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <!-- The camera plugin (camera_android_camerax, 0012 (C1)) adds these.
          The app records no sound and writes no files outside its own

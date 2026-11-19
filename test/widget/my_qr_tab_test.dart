@@ -7,8 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sha/app/app.dart';
 import 'package:sha/core/providers.dart';
+import 'package:sha/features/lock/app_lock.dart';
 
 import '../support/in_memory_vault.dart';
+import '../support/no_screen_lock.dart';
 
 void main() {
   testWidgets('no key before the tab is opened, and a new key each time', (
@@ -24,7 +26,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [keyVaultProvider.overrideWithValue(storage)],
+        overrides: [
+          keyVaultProvider.overrideWithValue(storage),
+          appLockPlatformProvider.overrideWithValue(const NoScreenLock()),
+        ],
         child: const ShaApp(),
       ),
     );

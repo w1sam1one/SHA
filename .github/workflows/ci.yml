@@ -378,8 +378,8 @@ jobs:
           ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
           exit "$status"
 
-      # 0012 (C1) and README: the release app asks only for CAMERA and
-      # INTERNET, and requires no hardware feature. The camera plugin adds
+      # 0012 (C1), 0011 (B) and README: the release app asks only for CAMERA,
+      # INTERNET and USE_BIOMETRIC, and requires no hardware feature. The camera plugin adds
       # more; the app's manifest removes it, and this fails if anything gets
       # through. The release manifest is checked, not the debug APK: debug
       # builds also carry the test libraries (integration_test, androidx.test),
