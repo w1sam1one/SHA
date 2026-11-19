@@ -231,8 +231,10 @@ någon annan än ägaren (0003, 0004 §13):
   - libyuvs text mot den som `camera-core` faktiskt har med: texten är
     hämtad ur en kopia i paketet `yuv-sys`, eftersom Googles sidor är
     spärrade i molnmiljön;
-  - `.so`-filerna i APK:n och beroenden som filer (`files()`), som Gradles
-    lista inte visar. Inget plugin har sådana i dag.
+  - `.so`-filerna i APK:n, som Gradles lista inte visar. De kommer från
+    Flutters motor, `flutter_vodozemac` (Rust-paketen står i `rust.txt`) och
+    `camera-core` (libyuv). Inget plugin har beroenden som filer
+    (`files()`) i dag.
 - Spiken och appen är körda på en riktig arm64-telefon (G3, F6).
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
   ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
@@ -306,6 +308,10 @@ Nyast först. En rad per paket eller körning som ändrar något.
   med servern", också i relayns README, integritetspolicyn och underlaget
   till Data safety. Fyra moduler utan egen kod är borta ur listan: två
   BOM-filer och två Kotlin-rotmoduler, vars kod finns i `-jvm`-modulerna.
+  De står på en uttrycklig lista i skriptet, och varje annan sådan modul
+  stoppar CI. Efter den andra granskningen: spamgränsen räknar per
+  IP-adress, inte per app, så texten säger nu att adressen finns kvar så
+  länge det kommer anrop från den, även från andra på samma nät.
   Förhandsvarningen och "Finns inte än" rättades redan i P6. Ej provat:
   riktiga telefoner (G3).
 - 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den

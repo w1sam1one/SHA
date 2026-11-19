@@ -14,16 +14,17 @@ import '../support/in_memory_vault.dart';
 const vpn =
     'Vi rekommenderar VPN om du inte vill att servern ska se din IP-adress.';
 
-/// The rate limit keeps the address while the app is in touch with the
-/// server, and drops it at most 90 seconds after the last request
-/// (`relay/ratelimit.go`; review of #48). And the one who runs or rents out
+/// The rate limit counts per address, not per app (`clientKey` in
+/// `relay/ratelimit.go`): the address is kept while requests come from it,
+/// also from others on the same network, and dropped at most 90 seconds
+/// after the last one (reviews of #48). And the one who runs or rents out
 /// the server can still see and save the traffic (0008 (b)).
 const kept =
     'SHA:s serverprogram sparar inte din IP-adress på disk eller i loggar. '
-    'För spamgränsen finns den i serverns minne medan appen hämtar och '
-    'skickar, och tas bort senast 90 sekunder efter appens senaste kontakt '
-    'med servern. Den som driver servern, och den som hyr ut den, kan ändå '
-    'se och spara trafiken.';
+    'För spamgränsen finns den i serverns minne så länge det kommer anrop '
+    'från den, även från andra på samma nät, och tas bort senast 90 sekunder '
+    'efter det senaste. Den som driver servern, och den som hyr ut den, kan '
+    'ändå se och spara trafiken.';
 
 final class _Settings extends TransportSettingsStore {
   @override
@@ -51,7 +52,7 @@ void main() {
     expect(
       find.text(
         'Servern kan inte läsa dina meddelanden. Den ser din IP-adress, när '
-        'du skickar och hämtar och hur stora paketen är. SHA:s serverprogram '
+        'du skickar och hämtar, och hur stora paketen är. SHA:s serverprogram '
         'sparar inte din IP-adress på disk eller i loggar, men den som driver '
         'servern kan ändå se och spara trafiken. $vpn',
       ),

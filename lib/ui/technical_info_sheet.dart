@@ -96,11 +96,11 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                       'du hämtar och din IP-adress. Brevlådor som hämtas från '
                       'samma IP-adress vid ungefär samma tid kan kopplas ihop.',
                   'SHA:s serverprogram sparar inte din IP-adress på disk eller '
-                      'i loggar. För spamgränsen finns den i serverns minne '
-                      'medan appen hämtar och skickar, och tas bort senast 90 '
-                      'sekunder efter appens senaste kontakt med servern. Den '
-                      'som driver servern, och den som hyr ut den, kan ändå se '
-                      'och spara trafiken.',
+                      'i loggar. För spamgränsen finns den i serverns minne så '
+                      'länge det kommer anrop från den, även från andra på '
+                      'samma nät, och tas bort senast 90 sekunder efter det '
+                      'senaste. Den som driver servern, och den som hyr ut den, '
+                      'kan ändå se och spara trafiken.',
                   'Vi rekommenderar VPN om du inte vill att servern ska se din '
                       'IP-adress.',
                   'Appen hämtar bara när den är öppen, varje brevlåda vid en '

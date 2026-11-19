@@ -90,8 +90,10 @@ Allt annat ger `404`, eller `405` för fel metod på en känd sökväg, även
 - Varje klients räkneverk gäller en minut. Det raderas vid nästa städning
   efter att minuten har gått, alltså **högst 90 sekunder** efter klientens
   första anrop i fönstret. Ett anrop efter minuten startar ett nytt fönster
-  under samma adress, så en klient som fortsätter att anropa finns kvar hela
-  tiden. Adressen är borta senast 90 sekunder efter klientens sista anrop.
+  under samma adress, så en adress som anropar minst en gång i minuten finns
+  kvar hela tiden, även när anropen kommer från olika telefoner bakom samma
+  adress. Adressen är borta senast 90 sekunder efter det sista anropet från
+  den.
 - Go frigör minnet vid skräpsamling men skriver inte över det.
 - Många användare bakom samma VPN-utgång eller operatörs-NAT delar en gräns
   (0002, fråga e).

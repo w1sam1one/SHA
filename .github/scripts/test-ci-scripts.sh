@@ -291,7 +291,8 @@ fi
 licenses_pass "$tmp/deps4.txt" "ranges and rich versions with a resolved version"
 # A line without an exact version fails, instead of dropping out.
 for line in 'org.foo:ranged:[1.0,2.0)' 'org.foo:nover FAILED' 'org.foo:dyn:1.+' \
-  'org.foo:rich:{prefer 2.0}' 'org.foo:gone:1.0 (n)' 'org.foo:odd:1.0 -> [1.0,2.0)'; do
+  'org.foo:rich:{prefer 2.0}' 'org.foo:gone:1.0 (n)' 'org.foo:odd:1.0 -> [1.0,2.0)' \
+  'org.foo:lat:latest.release' 'project :x -> org.foo:bar:3.0'; do
   printf 'releaseRuntimeClasspath\n+--- androidx.core:core:1.13.1\n\\--- %s\n' "$line" > "$tmp/deps5.txt"
   licenses_fail "$tmp/deps5.txt" "a tree line without an exact version ($line)" \
     "no exact version in Gradle's tree: $line"
@@ -307,15 +308,45 @@ for name in 'Apache License 2.0 with Commons Clause' 'Apache Software License 1.
   printf 'releaseRuntimeClasspath\n\\--- org.foo:odd:1.0\n' > "$tmp/deps5.txt"
   licenses_fail "$tmp/deps5.txt" "the license name '$name'" "license to check: org.foo:odd 1.0: $name"
 done
-# A BOM has no code in the APK and is left out; a POM-packaged module with
-# a jar is not.
-pom org.foo some-bom 1.0 '<project><packaging>pom</packaging></project>'
-pom org.foo pom-with-jar 1.0 '<project><packaging>pom</packaging><licenses><license><name>Apache-2.0</name></license></licenses></project>'
-: > "$cache/org.foo/pom-with-jar/1.0/abc/pom-with-jar-1.0.jar"
-printf 'releaseRuntimeClasspath\n+--- org.foo:some-bom:1.0\n\\--- org.foo:pom-with-jar:1.0\n' > "$tmp/deps5.txt"
+# A module in NO_CODE whose POM is only a POM is left out. Any other POM
+# with packaging "pom" stops the check, and so does a NO_CODE module that is
+# no longer only a POM (second review of #48).
+pom org.jetbrains.kotlin kotlin-bom 1.8.0 '<project><packaging>pom</packaging><licenses><license><name>Apache-2.0</name></license></licenses></project>'
+pom org.jetbrains.kotlinx atomicfu 0.29.0 '<project><licenses><license><name>Apache-2.0</name></license></licenses></project>'
+pom org.foo some-bom 1.0 '<project><packaging>pom</packaging><licenses><license><name>Apache-2.0</name></license></licenses></project>'
+printf 'releaseRuntimeClasspath\n+--- org.jetbrains.kotlin:kotlin-bom:1.8.0\n\\--- androidx.core:core:1.13.1\n' > "$tmp/deps5.txt"
 got="$(python3 -I "$here/android-licenses.py" "$tmp/deps5.txt" "$cache" --print)"
-if [ "$got" != 'org.foo:pom-with-jar 1.0: Apache-2.0' ]; then
-  echo "FAIL android-licenses: a BOM is left out, a POM with a jar is not"
+if [ "$got" != 'androidx.core:core 1.13.1: The Apache Software License, Version 2.0' ]; then
+  echo "FAIL android-licenses: a module in NO_CODE is left out"
+  printf '%s\n' "$got"
+  failed=1
+fi
+licenses_pass "$tmp/deps5.txt" "a module in NO_CODE"
+printf 'releaseRuntimeClasspath\n\\--- org.foo:some-bom:1.0\n' > "$tmp/deps5.txt"
+licenses_fail "$tmp/deps5.txt" "a POM with packaging pom outside NO_CODE" \
+  "only a POM: org.foo:some-bom 1.0"
+printf 'releaseRuntimeClasspath\n\\--- org.jetbrains.kotlinx:atomicfu:0.29.0\n' > "$tmp/deps5.txt"
+licenses_fail "$tmp/deps5.txt" "a module in NO_CODE that is not only a POM" \
+  "org.jetbrains.kotlinx:atomicfu 0.29.0 is in NO_CODE"
+# A license without a name stops the check; the parent's is not used.
+pom org.foo unnamed 1.0 '<project><parent><groupId>com.google.guava</groupId><artifactId>guava-parent</artifactId><version>33.4.0-android</version></parent><licenses><license><url>https://www.gnu.org/licenses/gpl-3.0.txt</url></license></licenses></project>'
+printf 'releaseRuntimeClasspath\n\\--- org.foo:unnamed:1.0\n' > "$tmp/deps5.txt"
+licenses_fail "$tmp/deps5.txt" "a license without a name" \
+  "license to check: org.foo:unnamed 1.0: (no name)"
+# A module Gradle replaced by another is listed as the other.
+pom org.bar new 2.0 "$apache_pom"
+printf 'releaseRuntimeClasspath\n\\--- org.foo:old:1.0 -> org.bar:new:2.0\n' > "$tmp/deps5.txt"
+got="$(python3 -I "$here/android-licenses.py" "$tmp/deps5.txt" "$cache" --print)"
+if [ "$got" != 'org.bar:new 2.0: Apache-2.0' ]; then
+  echo "FAIL android-licenses: a module replaced by another is listed as the other"
+  printf '%s\n' "$got"
+  failed=1
+fi
+# A range with a space and a resolved version is read.
+printf 'releaseRuntimeClasspath\n\\--- org.foo:ranged:[1.0, 2.0) -> 1.5\n' > "$tmp/deps5.txt"
+got="$(python3 -I "$here/android-licenses.py" "$tmp/deps5.txt" "$cache" --print)"
+if [ "$got" != 'org.foo:ranged 1.5: Apache-2.0' ]; then
+  echo "FAIL android-licenses: a range with a space"
   printf '%s\n' "$got"
   failed=1
 fi

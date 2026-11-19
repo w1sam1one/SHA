@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// about the server and anonymity. String literals that follow each other,
 /// as Dart joins them, are read as one text, so a phrase split over two lines
 /// is still found. Single, double and triple quotes, raw or not, are read.
-/// Comments and lib/crypto (never shown) are skipped.
+/// Block comments, whole-line comments and lib/crypto (never shown) are
+/// skipped. Not handled: a comment after code on the same line, and quotes
+/// inside `${...}`, which split a text in two (second review of #48).
 const banned = [
   'anonym', // also "anonymt", "helt anonym"
   'spårlös',
@@ -33,7 +35,8 @@ String _inside(String literal) {
 /// The texts of [source]: adjacent string literals joined, one per string.
 List<String> texts(String source) {
   final code = [
-    for (final line in source.split('\n'))
+    for (final line
+        in source.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '').split('\n'))
       if (!line.trimLeft().startsWith('//')) line,
   ].join('\n');
   final run = RegExp('(?:$_literal)(?:\\s*(?:$_literal))*');
@@ -87,6 +90,11 @@ void main() {
       hasLength(1),
     );
     expect(offenders({'c.dart': "// 'anonym' in a comment"}), isEmpty);
+    // An apostrophe in a block comment does not hide the text after it.
+    expect(
+      offenders({'i.dart': "/* don't */ const a = 'anonymt';"}),
+      hasLength(1),
+    );
     expect(
       offenders({'d.dart': "const v = 'Vi rekommenderar VPN.';"}),
       isEmpty,

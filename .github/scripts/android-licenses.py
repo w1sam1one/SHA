@@ -16,9 +16,8 @@ GRADLE_CACHE is ~/.gradle/caches/modules-2/files-2.1, where Gradle keeps the
 POM files it resolved. Each library's license is read from its POM, or from
 the POM of a parent. Modules of the build itself (`project :...`) are the
 Flutter plugins, whose licenses Flutter collects from their Dart packages.
-A module that is only a POM (packaging "pom", and no .jar or .aar in the
-cache) has no code in the APK and is left out: a BOM, or the root of a
-Kotlin Multiplatform library, whose code is in its -jvm module.
+A module that is only a POM (packaging "pom") is left out if it is in
+NO_CODE below; any other one stops the check for a person to look.
 
 Every line of Gradle's tree must give a library with an exact version: a
 line that does not (a version range without a resolved version, FAILED, a
@@ -48,11 +47,15 @@ SEPARATOR = "----"
 # One dependency line of Gradle's tree, after its indentation.
 TREE = re.compile(r"^[\s|]*[+\\]--- (.*?)\s*$")
 # A module in it: "group:artifact[:asked][ -> resolved]". The asked version
-# can be "{strictly 1.0}" or a range; the resolved one is a version, or
-# "group:artifact:version" when Gradle replaced the module.
+# can be "{strictly 1.0}" or a range, also with a space; the resolved one is
+# a version, or "group:artifact:version" when Gradle replaced the module.
 MODULE = re.compile(
-    r"^([\w.\-]+):([\w.\-]+)(?::(\{[^}]*\}|[^\s{]+))?(?: -> (\S+))?$"
+    r"^([\w.\-]+):([\w.\-]+)"
+    r"(?::(\{[^}]*\}|[\[(\]][^\])\[]*[\])\[]|[^\s{]+))?(?: -> (\S+))?$"
 )
+# A module of the build itself, a Flutter plugin. Not one replaced by a
+# library ("project :x -> group:artifact:1.0"): that line is a problem.
+PROJECT = re.compile(r"^project \S+$")
 STRICTLY = re.compile(r"^\{strictly ([^\s{}]+)\}$")
 # An exact version: no range, no "1.+", no "latest.release".
 EXACT = re.compile(r"^\w[\w.\-+]*$")
@@ -81,6 +84,18 @@ OWN_TEXT = {
 }
 # A line of the Apache-2.0 text, which must be after the line "----".
 APACHE_TEXT = "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION"
+
+# Modules that are only a POM, with no code in the APK: two BOMs, and the
+# roots of two Kotlin Multiplatform libraries whose code is in their -jvm
+# modules, which are on the list. Any other module whose POM has packaging
+# "pom" stops the check for a person to look (second review of #48: whether
+# a .jar is in Gradle's cache says nothing about the release build).
+NO_CODE = {
+    "org.jetbrains.kotlin:kotlin-bom",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-bom",
+    "org.jetbrains.kotlinx:atomicfu",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+}
 
 # Groups whose POMs name no license, with where the license is stated.
 KNOWN = {
@@ -113,12 +128,12 @@ def modules(dependencies):
         if not line:
             continue  # the heading, the legend and empty lines
         body = line.group(1)
-        if body.startswith("project "):
-            continue  # a module of the build itself: a Flutter plugin
         if body.endswith(" (c)"):
             continue  # a constraint, not a dependency
         if body.endswith(" (*)"):
             body = body[: -len(" (*)")]
+        if PROJECT.match(body):
+            continue  # a module of the build itself: a Flutter plugin
         m = MODULE.match(body)
         version = None
         if m:
@@ -147,27 +162,23 @@ def pom(cache, group, artifact, version):
     return None
 
 
-def bom(cache, group, artifact, version):
-    """Whether the module is only a POM: packaging "pom", and no code.
-    In CI the debug build has downloaded every .jar and .aar before this
-    runs."""
+def only_pom(cache, group, artifact, version):
+    """Whether the module's POM has packaging "pom"."""
     root = pom(cache, group, artifact, version)
-    if root is None or (root.findtext("packaging") or "").strip() != "pom":
-        return False
-    folder = pathlib.Path(cache) / group / artifact / version
-    return not any(folder.glob("*/*.jar")) and not any(folder.glob("*/*.aar"))
+    return root is not None and (root.findtext("packaging") or "").strip() == "pom"
 
 
 def licenses(cache, group, artifact, version, depth=0):
-    """License names from the POM's <licenses>, or from its parents."""
+    """License names from the POM's <licenses>, or from its parents. A
+    license without a name is "(no name)", which stops the check, instead of
+    falling back to the parent's (second review of #48)."""
     root = pom(cache, group, artifact, version)
     if root is None or depth > 8:
         return []
     names = [
-        " ".join((lic.findtext("name") or "").split())
+        " ".join((lic.findtext("name") or "").split()) or "(no name)"
         for lic in root.findall("./licenses/license")
     ]
-    names = [n for n in names if n]
     if names:
         return names
     parent = root.find("parent")
@@ -190,8 +201,14 @@ def listing(dependencies, cache):
     lines, texts = [], {}
     for key, version in sorted(found.items()):
         group, artifact = key.split(":", 1)
-        if bom(cache, group, artifact, version):
-            continue
+        if key in NO_CODE:
+            if only_pom(cache, group, artifact, version):
+                continue
+            problems.append(f"{key} {version} is in NO_CODE, but its POM is "
+                            "not packaging pom: it may have code")
+        elif only_pom(cache, group, artifact, version):
+            problems.append(f"only a POM: {key} {version}: check whether it has "
+                            "code in the APK, and add it to NO_CODE if not")
         names = licenses(cache, group, artifact, version)
         if not names and group in KNOWN:
             lines.append(f"{key} {version}: {KNOWN[group]}")
