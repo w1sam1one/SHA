@@ -370,7 +370,7 @@ void main() {
     final m1 = await write(bob, alice, clock); // on S1
     await scan(bob, alice);
     final m2 = await write(bob, alice, clock); // on S2
-    // Both waited 100 h, for example in Bob's outbox without a server.
+    // Alice reads them 100 h later, as if they had been held up on the way.
     clock.advance(const Duration(hours: 100));
     expect(await read(alice, bob, m2), isNotNull);
     expect(sessionIds(alice, bob), hasLength(2));
@@ -388,8 +388,8 @@ void main() {
     expect(sessionIds(m.alice, m.bob), [m.s2]);
   });
 
-  test('sessions saved before F2 count as sent when the state is first '
-      'read', () async {
+  test('sessions saved before F2 count as sent when the state is read '
+      'from disk', () async {
     final clock = Clock();
     final alice = await Person(null, clock.call).start();
     final bob = await Person(null, clock.call).start();

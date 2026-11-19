@@ -961,8 +961,8 @@ Det här lägger 0004 till:
 10. Rust i Android-bygget är låst och cargo körs med `--locked`, eller så
     har ägaren, efter granskningen av bygget, godtagit att det inte är det
     (punkt 12).
-11. En raderingsregel för gamla sessioner (punkt 2, 0006). *Senare:* (iv) i
-    0009 är byggd i F2 och ska granskas.
+11. En raderingsregel för gamla sessioner (punkt 2, 0006). I prototypen
+    raderas inga. *Senare:* (iv) i 0009 är byggd i F2 och ska granskas.
 
 ## Kräver granskning av kryptoexpert
 

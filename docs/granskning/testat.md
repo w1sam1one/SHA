@@ -52,8 +52,8 @@ faller (`CLAUDE.md`). De står i respektive PR:
 [#24](https://github.com/w1sam1one/SHA/pull/24),
 [#25](https://github.com/w1sam1one/SHA/pull/25),
 [#26](https://github.com/w1sam1one/SHA/pull/26) och
-[#43](https://github.com/w1sam1one/SHA/pull/43), med rättningar i den här
-PR:en.
+[#43](https://github.com/w1sam1one/SHA/pull/43), med rättningar i
+[#44](https://github.com/w1sam1one/SHA/pull/44).
 
 ## Mätt
 
