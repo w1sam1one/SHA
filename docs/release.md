@@ -42,15 +42,17 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
     eller kräver någon hårdvara (`.github/scripts/check-manifest.py`). Hur
     ditt eget release-bygge slår ihop manifestet är **ej verifierat**.
   - Kontrollera efter ditt första release-bygge. Sammanslagningsrapporten
-    visar vilket bibliotek som lagt till varje post (sökvägen är ej verifierad):
+    visar vilket bibliotek som lagt till varje post. CI hittar den där
+    (`find build/app/outputs/logs`):
     ```sh
     grep -n "uses-permission" build/app/outputs/logs/manifest-merger-release-report.txt
     ```
     Eller öppna AAB-filen i Android Studio (Build › Analyze APK) och läs
     manifestet.
   - Allt utöver `CAMERA` och `INTERNET` påverkar punkt 6. En post som slutar på
-    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` brukar komma från androidx.core
-    och är intern för appen (ej verifierat).
+    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` kommer från androidx.core
+    (`androidx.core:core:1.13.1` i CI:s sammanslagningsrapport) och är
+    intern för appen.
 - **App-ikonen** är fortfarande Flutters standardikon (byte för byte samma
   som Flutters mall). Byt den i `android/app/src/main/res/mipmap-*/` innan
   du släpper.

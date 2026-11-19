@@ -46,8 +46,10 @@ låsta.
 
 ## Android
 
-- **Behörigheter** i appens eget manifest: `CAMERA` och `INTERNET`. Det
-  som biblioteken lägger till tas bort med `tools:node="remove"`, och CI
+- **Behörigheter** i appens eget manifest: `CAMERA` och `INTERNET`. De
+  fyra som biblioteken lägger till tas bort med `tools:node="remove"`.
+  Kravet `camera.any` är valfritt (`tools:replace`), och androidx.core:s
+  interna `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` får finnas. CI
   kontrollerar det sammanslagna release-manifestet
   (`.github/scripts/check-manifest.py`, `docs/release.md`, punkt 0).
 - **Ingen backup** (`allowBackup="false"`, `data_extraction_rules.xml`), och
@@ -71,7 +73,8 @@ låsta.
    `ref.mounted` kontrolleras efter `await`.
 5. Att Rust i Android-bygget inte är låst (se ovan).
 6. CameraX: vad den gör med kamerabilden, och om den använder nätet (ej
-   verifierat). ML Kit är borttaget (0012 (C1)). `zxing2` har ett fel i hur
+   verifierat). Den drar in media3, som begär `ACCESS_NETWORK_STATE`; den
+   behörigheten tas bort ur manifestet. ML Kit är borttaget (0012 (C1)). `zxing2` har ett fel i hur
    den hittar koden: vissa koder läses bara när bilden vrids, så
    `lib/features/qr/qr_decoder.dart` vrider en bild som inte gav något
    (`test/features/qr_decoder_test.dart`).

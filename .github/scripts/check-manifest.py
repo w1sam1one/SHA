@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Checks the manifest of the built APK (ci.yml, job "app-android").
+"""Checks the merged release manifest (ci.yml, job "app-android").
 
 Decision 0012 (C1) and README: the app asks only for CAMERA and INTERNET,
 and no hardware feature is required, so a phone without a camera can still
 install the app and show its QR code. Libraries may add permissions and
 features of their own (the camera plugin adds RECORD_AUDIO and
-WRITE_EXTERNAL_STORAGE); the app's manifest removes them, and this check
-fails if one gets through.
+WRITE_EXTERNAL_STORAGE, the merger READ_EXTERNAL_STORAGE with it, and
+media3 through CameraX's video use case ACCESS_NETWORK_STATE); the app's
+manifest removes them, and this check fails if one gets through.
 
 androidx.core adds the app's own DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION,
 which no other app can hold; it is allowed.

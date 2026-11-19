@@ -291,9 +291,10 @@ Nyast först. En rad per paket eller körning som ändrar något.
   bild som inte gav något vrids därför ett kvarts och ett halvt varv (0 av
   1000 missade i mätningen). Kameran stängs i bakgrunden och startar igen,
   även efter en nekad behörighet. `RECORD_AUDIO`, `WRITE_EXTERNAL_STORAGE`
-  och kravet på kamera tas bort ur manifestet, liksom `READ_EXTERNAL_STORAGE`
-  och `ACCESS_NETWORK_STATE`, som följer med CameraX videodel (media3), som
-  skannern inte använder. CI bygger appen och kontrollerar release-manifestet.
+  och kravet på kamera tas bort ur manifestet. Det gör också
+  `READ_EXTERNAL_STORAGE`, som följer med `WRITE_EXTERNAL_STORAGE`, och
+  `ACCESS_NETWORK_STATE` från media3 i CameraX videodel, som skannern inte
+  använder. CI bygger appen och kontrollerar release-manifestet.
   Ej provat: en riktig kamera (G3).
 - 2026-11-17 – Rättelser efter den oberoende granskningen av PR #39 (0013):
   varje push till `main` har en egen grupp i `concurrency`, så att ingen

@@ -388,18 +388,22 @@ jobs:
       - name: Permissions and features in the release manifest
         run: |
           (cd android && ./gradlew --no-daemon -q :app:processReleaseMainManifest)
-          manifest="$(find build/app/intermediates -path '*merged_manifest*' \
-            -path '*release*' -name AndroidManifest.xml | head -n 1)"
-          if [ -z "$manifest" ]; then
-            echo "::error::the merged release manifest was not found"
+          manifests="$(find build/app/intermediates -path '*merged_manifest*' \
+            -path '*release*' -name AndroidManifest.xml || true)"
+          # Exactly one: a second one (a new Gradle plugin's layout) must
+          # not be left unchecked.
+          if [ "$(printf '%s' "$manifests" | grep -c .)" -ne 1 ]; then
+            echo "::error::expected one merged release manifest, found: $manifests"
             exit 1
           fi
+          manifest="$manifests"
           echo "$manifest"
           # Which library added each permission and feature (Gradle's merger
           # report), so that a failure below says where it comes from.
           report="$(find build/app/outputs/logs -name 'manifest-merger-release-report.txt' | head -n 1)"
           if [ -n "$report" ]; then
-            grep -A 3 -E '^(uses-permission|uses-feature)#' "$report" || true
+            grep -A 3 -E '^(uses-permission|uses-permission-sdk-23|uses-feature)#' \
+              "$report" || true
           fi
           python3 -I .github/scripts/check-manifest.py "$manifest" se.sha.sha
 
