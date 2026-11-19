@@ -77,12 +77,20 @@ final class FakeTimer implements Timer {
 }
 
 /// One phone: its own vault, the shared relay, fake timers and a clock.
+/// With [olmOnAppClock] the Olm service uses [now] too; otherwise it uses
+/// the computer's clock.
 final class App {
-  App(this.relay, [InMemoryVault? vault, RelayClient Function(Uri)? client])
-    : vault = vault ?? InMemoryVault(),
-      _client = client ?? ((_) => relay) {
+  App(
+    this.relay, [
+    InMemoryVault? vault,
+    RelayClient Function(Uri)? client,
+    this.olmOnAppClock = false,
+  ]) : vault = vault ?? InMemoryVault(),
+       _client = client ?? ((_) => relay) {
     _container();
   }
+
+  final bool olmOnAppClock;
 
   /// The fake relay, or one that is never used when [client] is given.
   final FakeRelay relay;
@@ -100,6 +108,13 @@ final class App {
     container = ProviderContainer(
       overrides: [
         keyVaultProvider.overrideWithValue(vault),
+        if (olmOnAppClock)
+          cryptoServiceProvider.overrideWith(
+            (ref) => ShaCryptoService(
+              vault: ref.watch(keyVaultProvider),
+              clock: () => now,
+            ),
+          ),
         relayClientFactoryProvider.overrideWithValue(_client),
         transportTimerProvider.overrideWithValue((d, f) {
           final t = FakeTimer(d, f);

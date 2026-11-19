@@ -157,6 +157,10 @@ final class OlmFailureCounts {
 ///   in memory and runs its calls one at a time. Two live instances on the
 ///   same vault could write back an older state, which 0004 §6 forbids. The
 ///   app has one [CryptoService] for the whole process.
+/// - **Old sessions are removed** by rule (iv) in 0009, with 24 hours for
+///   clocks: only once the contact has written on another session long
+///   enough after our last packet on the old one, so that no message is
+///   lost. OGRANSKAT (0009).
 /// - **A call that throws may still have saved.** A failed vault write can
 ///   leave the new state on disk (`KeyVault.write`). After an exception from
 ///   [encrypt] or [receive], read [outbox] and [inbox] again rather than
@@ -211,12 +215,28 @@ abstract interface class OlmService {
   /// Messages saved but not yet accepted by the relay.
   Future<List<OlmOutgoing>> outbox();
 
-  /// The relay accepted the packet: remove it from the outbox.
+  /// The relay accepted the packet: remove it from the outbox, and note the
+  /// time on the session it was encrypted on (0009 (iv), condition 3).
   Future<void> markSent(String id);
 
   /// Handles one packet from [peer] in the order of 0004 §6 and saves the
   /// result before returning. Show the message only after this returns.
-  Future<OlmReceiveResult> receive(List<int> peer, Uint8List packet);
+  ///
+  /// [writtenAt] reads, from a message's text, when the contact wrote it by
+  /// the contact's own clock (the payload's `t`), or gives null. It is what
+  /// lets an old session be removed (0009 (iv), condition 4): without it no
+  /// session is ever made old.
+  Future<OlmReceiveResult> receive(
+    List<int> peer,
+    Uint8List packet, {
+    DateTime? Function(String text)? writtenAt,
+  });
+
+  /// Removes the sessions that rule (iv) in 0009 allows, and returns how
+  /// many. Every save does the same; this is for the times when nothing
+  /// else is saved. A contact that is silent keeps all its sessions.
+  /// OGRANSKAT (0009).
+  Future<int> removeOldSessions();
 
   /// Messages read and saved but not yet shown.
   Future<List<OlmIncoming>> inbox();

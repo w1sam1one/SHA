@@ -10,8 +10,8 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   SHA-256 av de två nycklarna sorterade och sammanslagna), med de två
   Olm-identitetsnycklarna som indata.
 - **Var:**
-  - `lib/crypto/src/sha_olm_service.dart:628-640` (`verificationDigits`)
-  - `lib/crypto/src/olm_service.dart:199`
+  - `lib/crypto/src/sha_olm_service.dart:743-755` (`verificationDigits`)
+  - `lib/crypto/src/olm_service.dart:203`
 - **Granska:** att 20 siffror (cirka 66 bitar) räcker mot en angripare som
   tar fram nycklar som ger samma kod, och att funktionen är identisk med den
   gamla (`ShaCryptoService.verificationCode`). Det sista är läst, inte testat
@@ -37,7 +37,7 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   innanför Olm, så att chiffertexten blir exakt B.
 - **Var:**
   - `lib/crypto/src/olm_padding.dart:18`, `:27`, `:37`
-  - `lib/crypto/src/sha_olm_service.dart:273` (`encrypt`), `:320` (`receive`)
+  - `lib/crypto/src/sha_olm_service.dart:285` (`encrypt`), `:346` (`receive`)
 - **Storleken visar ändå** hinken, typ 0 (allt före det första svaret, cirka
   106 byte större) och kedjeindex (1 byte till vid 128 och vid 16 384).
   Mätt med riktiga Olm-meddelanden (`test/crypto/olm_sizes_test.dart`).
@@ -61,11 +61,11 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
 - **Valt (c på valvet, 0005 (A)):** hela tillståndet i en valvpost, skriven
   hel vid varje ändring. Varje försök börjar från den sparade pickeln.
 - **Var:**
-  - `lib/crypto/src/sha_olm_service.dart:34` (översikt), `:273` (`encrypt`:
-    spara före sändning), `:320` (`receive`: hash först, sessioner efter
+  - `lib/crypto/src/sha_olm_service.dart:34` (översikt), `:285` (`encrypt`:
+    spara före sändning), `:346` (`receive`: hash först, sessioner efter
     nummer, typ 0 sist mot `createInboundSession`, allt sparat i en
-    skrivning innan meddelandet lämnas ut), `:548` (pickle-nyckeln), `:561`
-    (`_save`), `:603` (feltexten blir en fast typ)
+    skrivning innan meddelandet lämnas ut), `:662` (pickle-nyckeln), `:675`
+    (`_save`), `:718` (feltexten blir en fast typ)
   - `lib/crypto/src/olm_service.dart:149`
   - `android/app/src/main/kotlin/se/sha/sha/keystore/KeystoreVault.kt:76`
     (skrivningen: temporär fil, `fsync`, `rename`, `fsync` av mappen) och
@@ -77,6 +77,39 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   - hanteringen av pickle-nyckeln;
   - att en misslyckad skrivning kan ha landat på disk (`KeyVault.write`) och
     att anroparen då läser om.
+
+## 0009 (iv) – Radering av gamla sessioner (F2)
+
+- **Valt (iv), med 24 h marginal för klockor:** en session S hos kontakten
+  K raderas bara när
+  1. S inte har högst nummer;
+  2. inget i utkorgen är krypterat på S;
+  3. och 4. K har skrivit ett meddelande på en annan session, enligt K:s
+     klocka mer än 48 h + 24 h efter att relayn tog emot vårt senaste paket
+     på S (eller efter att S skapades);
+  5. det har gått minst 48 h + 24 h på vår klocka sedan vi läste det
+     första sådana meddelandet.
+
+  Ett paket som skickas på S efter det nollställer villkor 4. Sessioner
+  och paket i utkorgen som sparades före F2 saknar tiderna. De räknas
+  försiktigt: en session som skickad när tillståndet först läses, och ett
+  paket utan session håller kvar alla kontaktens sessioner tills det är
+  skickat.
+- **Var:**
+  - `lib/crypto/src/sha_olm_service.dart:54` (48 h och 24 h), `:324`
+    (`markSent`: villkor 3), `:470` (`_markOld`: villkor 4), `:492`
+    (`_removeOld`: alla villkor), `:546` (`removeOldSessions`), `:636`
+    (tillstånd från före F2), `:678` (varje skrivning kör regeln)
+  - `lib/crypto/src/olm_service.dart:163`, `:238`
+  - Appen lämnar K:s tid `t` från JSON-texten
+    (`lib/features/chat/messaging_service.dart:76`,
+    `lib/features/transport/transport.dart:256`), och varje runda kör regeln
+    (`transport.dart:286`).
+- **Granska:**
+  - argumentet i 0009 för att inget meddelande går förlorat;
+  - luckorna: en klocka som går mer än 24 h fel, vår egen klocka som
+    ställs om, och en relay som håller kvar paket längre än 48 h;
+  - att tiden `t` kommer från kontakten själv och bara är skyddad av Olm.
 
 ## Byggs inte i prototypen, men står i listan sist i 0004
 
