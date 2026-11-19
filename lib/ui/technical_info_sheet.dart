@@ -103,8 +103,9 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                 title: 'App-låset',
                 lines: [
                   'Appen låses när den öppnas och när den har varit i '
-                      'bakgrunden i 5 minuter. Du låser upp med telefonens eget '
-                      'lås: fingeravtryck, ansikte eller PIN-kod. Har telefonen '
+                      'bakgrunden i 5 minuter. Det som var öppet stängs då. Du '
+                      'låser upp med telefonens eget lås, till exempel '
+                      'fingeravtryck, PIN-kod eller mönster. Har telefonen '
                       'inget skärmlås låses appen inte.',
                   'Låset döljer skärmen. Nyckeln i Android Keystore kräver '
                       'ännu inte att du har låst upp appen.',

@@ -58,8 +58,9 @@ avinstallation allt.
   och appen syns (`lib/features/qr/qr_camera.dart`). Bilderna läses i
   minnet och sparas eller skickas inte. Inget ljud spelas in
   (`enableAudio: false`).
-- `USE_BIOMETRIC`: bara för app-låset (0011 (B)). Telefonens eget
-  fingeravtryck, ansikte eller PIN; appen får bara veta ja eller nej, och
+- `USE_BIOMETRIC`: bara för app-låset (0011 (B)). Telefonens eget lås,
+  till exempel fingeravtryck, PIN-kod eller mönster; appen får bara veta ja
+  eller nej, och
   inget sparas (`android/app/src/main/kotlin/se/sha/sha/lock/AppLockChannel.kt`).
 - `INTERNET`: i appens egen kod bara för servern
   (`android/app/src/main/AndroidManifest.xml`). Behörigheten gäller hela

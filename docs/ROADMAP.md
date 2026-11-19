@@ -277,13 +277,18 @@ Nyast först. En rad per paket eller körning som ändrar något.
 
 - 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den
   öppnas och efter 5 minuter i bakgrunden, och låses upp med telefonens eget
-  lås. Från Android 10 med plattformens `BiometricPrompt` (fingeravtryck,
-  ansikte eller PIN), på Android 7–9 med `KeyguardManager` (PIN). Inget nytt
-  beroende, bara behörigheten `USE_BIOMETRIC`, som CI:s manifestkontroll nu
-  kräver. Innehållet bakom låset byggs inte förrän det är upplåst, och ett
-  fel från telefonen håller det låst. Ägaren mergade F3 (#46) med texterna i
-  PR:en. Ej provat: riktiga telefoner (G3), och Android-delen bara byggd i
-  CI.
+  lås. Från Android 11 med plattformens `BiometricPrompt` (fingeravtryck,
+  ansikte, PIN, mönster eller lösenord), på Android 7–10 med
+  `KeyguardManager` (PIN, mönster eller lösenord). Inget nytt beroende, bara
+  behörigheten `USE_BIOMETRIC`, som CI:s manifestkontroll nu kräver. Låset
+  ligger runt hela navigationen, så att inget som är öppet syns och det
+  stängs när appen låses. Tiden i bakgrunden mäts med telefonens tid sedan
+  start (`elapsedRealtime`), som inte går att ställa om. Ett fel från
+  telefonen håller appen låst. Rättat efter den oberoende granskningen: en
+  öppen chatt syntes ovanpå låset, Android 10 kunde låsas för gott, ett fel i
+  telefonens fråga låste appen tills den startades om, och klockan kunde
+  ställas tillbaka. #46 (F3) mergades med texterna i PR:en. Ej provat:
+  riktiga telefoner (G3), och Android-delen bara byggd i CI.
 - 2026-11-19 – F3, historiken enligt (B) i 0010. Ett meddelande sparas i
   historiken innan det tas bort ur inkorgen eller utkorgen, i egna
   valvposter med slumpade namn (`h.` och 16 hex), högst 100 meddelanden per

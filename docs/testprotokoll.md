@@ -81,7 +81,9 @@ riktiga testet: en kontakt som läggs till så är inte verifierad i person.
 | 5b.3 | Lås upp | Chattarna visas | |
 | 5b.4 | Gå till hemskärmen i 4 minuter och tillbaka | Appen är inte låst | |
 | 5b.5 | Gå till hemskärmen i mer än 5 minuter och tillbaka | Appen är låst och frågar | |
-| 5b.6 | Bara Android 7–9: lås upp med telefonens PIN | Det fungerar, och appen låses inte igen direkt | |
+| 5b.6 | Bara Android 7–10: lås upp med telefonens PIN | Det fungerar, och appen låses inte igen direkt | |
+| 5b.7 | Öppna en chatt, gå till hemskärmen i mer än 5 minuter och tillbaka | Chatten syns inte, inte ens ett ögonblick; efter upplåsning visas hemskärmen | |
+| 5b.8 | På en telefon utan fingeravtrycksläsare, gärna Android 10 | Låset frågar efter PIN-kod och går att låsa upp | |
 
 ## 6. Tillgänglighet (TalkBack)
 

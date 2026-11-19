@@ -16,13 +16,20 @@ enum UnlockResult {
 }
 
 /// The phone's own lock (F4, step 1 of (B) in 0011): fingerprint, face or
-/// the phone's PIN. On Android 10 and later `BiometricPrompt`, before that
-/// `KeyguardManager`. No new dependency, and no key is derived from anything.
+/// the phone's PIN, pattern or password. On Android 11 and later
+/// `BiometricPrompt`, before that `KeyguardManager` (Android 10's
+/// `BiometricPrompt` can fail to show the PIN: review of #47). No new
+/// dependency, and no key is derived from anything.
 abstract interface class AppLockPlatform {
   /// Whether the phone has a screen lock to unlock with.
   Future<bool> canLock();
 
   Future<UnlockResult> unlock({required String title, required String text});
+
+  /// The phone's time since it started, deep sleep included
+  /// (`SystemClock.elapsedRealtime`). Unlike the wall clock, nobody can set
+  /// it back.
+  Future<Duration> elapsed();
 }
 
 /// [AppLockPlatform] on Android (`AppLockChannel.kt`).
@@ -50,15 +57,17 @@ final class MethodChannelAppLock implements AppLockPlatform {
       _ => UnlockResult.cancelled,
     };
   }
+
+  @override
+  Future<Duration> elapsed() async {
+    final ms = await _channel.invokeMethod<int>('elapsed');
+    if (ms == null) throw StateError('No time from the phone');
+    return Duration(milliseconds: ms);
+  }
 }
 
 final appLockPlatformProvider = Provider<AppLockPlatform>(
   (ref) => const MethodChannelAppLock(),
-);
-
-/// The clock for the time in the background, swapped in tests.
-final appLockClockProvider = Provider<DateTime Function()>(
-  (ref) => DateTime.now,
 );
 
 enum AppLockState {
@@ -84,7 +93,10 @@ class AppLock extends Notifier<AppLockState> {
   static const String promptTitle = 'Lås upp SHA';
   static const String promptText = 'Använd telefonens skärmlås.';
 
-  DateTime? _hiddenAt;
+  /// Set when the app goes to the background while open; [_awayAt] is the
+  /// phone's time then, or null if it could not be read.
+  bool _away = false;
+  Future<Duration?>? _awayAt;
 
   @override
   AppLockState build() {
@@ -123,29 +135,42 @@ class AppLock extends Notifier<AppLockState> {
   }
 
   /// The app went to the background. Only counted while it is open: the
-  /// phone's own PIN screen (Android 7–9) also sends the app there.
+  /// phone's own PIN screen (Android 7–10) also sends the app there.
   void hidden() {
-    if (state == AppLockState.open) _hiddenAt ??= _now();
+    if (state != AppLockState.open || _away) return;
+    _away = true;
+    _awayAt = _elapsed();
   }
 
-  /// The app is in front again.
-  void resumed() {
-    final since = _hiddenAt;
-    _hiddenAt = null;
-    if (state != AppLockState.open || since == null) return;
-    if (_now().difference(since) >= backgroundLimit) {
+  /// The app is in front again. If the phone's time cannot be read, the app
+  /// locks: it never opens on a time it does not know.
+  Future<void> resumed() async {
+    if (!_away) return;
+    _away = false;
+    final since = await _awayAt;
+    final now = await _elapsed();
+    if (!ref.mounted || state != AppLockState.open) return;
+    if (since == null || now == null || now - since >= backgroundLimit) {
       state = AppLockState.locked;
-      unawaited(unlock());
+      await unlock();
     }
   }
 
-  DateTime _now() => ref.read(appLockClockProvider)();
+  Future<Duration?> _elapsed() async {
+    try {
+      return await ref.read(appLockPlatformProvider).elapsed();
+    } on Object {
+      return null;
+    }
+  }
 }
 
 final appLockProvider = NotifierProvider<AppLock, AppLockState>(AppLock.new);
 
 /// Shows [child] only while the app is unlocked ([AppLock]). While it is
-/// locked, nothing of [child] is built.
+/// locked, nothing of [child] is built. In the app [child] is the whole
+/// navigator (`MaterialApp.builder`), so a chat or a dialog opened on top is
+/// behind the lock too, and is closed when the app locks (review of #47).
 class AppLockGate extends ConsumerStatefulWidget {
   const AppLockGate({super.key, required this.child});
 
@@ -176,7 +201,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
       case AppLifecycleState.hidden || AppLifecycleState.paused:
         lock.hidden();
       case AppLifecycleState.resumed:
-        lock.resumed();
+        unawaited(lock.resumed());
       case AppLifecycleState.inactive || AppLifecycleState.detached:
         break;
     }
@@ -221,8 +246,8 @@ class _LockScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Lås upp med telefonens eget lås: fingeravtryck, ansikte '
-                  'eller PIN-kod.',
+                  'Lås upp med telefonens eget lås, till exempel '
+                  'fingeravtryck eller PIN-kod.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: ShaColors.textSecondary),
                 ),

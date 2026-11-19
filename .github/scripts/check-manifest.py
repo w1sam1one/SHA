@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Checks the merged release manifest (ci.yml, job "app-android").
 
-Decision 0012 (C1), 0011 (B) and README: the app asks only for CAMERA,
-INTERNET and USE_BIOMETRIC (the app lock), and no hardware feature is required, so a phone without a camera can still
-install the app and show its QR code. Libraries may add permissions and
+Decisions 0012 (C1) and 0011 (B), and README: the app asks only for CAMERA,
+INTERNET and USE_BIOMETRIC (the app lock), and no hardware feature is
+required, so a phone without a camera can still install the app and show
+its QR code. Libraries may add permissions and
 features of their own (the camera plugin adds RECORD_AUDIO and
 WRITE_EXTERNAL_STORAGE, the merger READ_EXTERNAL_STORAGE with it, and
 media3 through CameraX's video use case ACCESS_NETWORK_STATE); the app's
@@ -54,7 +55,10 @@ def main(path, application_id=None):
     for line in found:
         print(line)
     if not found:
-        print("manifest ok: only CAMERA, INTERNET and USE_BIOMETRIC, no required feature")
+        print(
+            "manifest ok: only CAMERA, INTERNET and USE_BIOMETRIC, "
+            "no required feature"
+        )
     return 1 if found else 0
 
 

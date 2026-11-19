@@ -13,4 +13,7 @@ final class NoScreenLock implements AppLockPlatform {
     required String title,
     required String text,
   }) async => UnlockResult.unavailable;
+
+  @override
+  Future<Duration> elapsed() async => Duration.zero;
 }

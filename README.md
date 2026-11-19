@@ -111,7 +111,8 @@ Texten fylls ut till fem fasta storlekar innan Olm krypterar den. Detaljer i
     bara över `https` och bara medan appen är öppen. Inga notiser, inga
     konton. Ingen annan kod i appen använder nätet.
   - `USE_BIOMETRIC` behövs bara för app-låset (F4, 0011 (B)): telefonens eget
-    fingeravtryck, ansikte eller PIN. Appen får bara veta ja eller nej.
+    lås, till exempel fingeravtryck, PIN-kod eller mönster. Appen får bara
+    veta ja eller nej.
 - Typsnitten (Manrope, JetBrains Mono, SIL OFL) är inbäddade i `assets/fonts/`,
   så appen hämtar ingenting från nätet.
 

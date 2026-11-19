@@ -33,10 +33,9 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler(lock)
     }
 
-    @Deprecated("The PIN screen on Android 7-9 answers through this.")
+    // The PIN screen on Android 7-10 answers through this.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (appLock?.onActivityResult(requestCode, resultCode) == true) return
-        @Suppress("DEPRECATION")
         super.onActivityResult(requestCode, resultCode, data)
     }
 }

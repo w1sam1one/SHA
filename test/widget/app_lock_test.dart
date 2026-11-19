@@ -1,9 +1,11 @@
 // F4, step 1 of (B) in 0011: the app is locked with the phone's own lock
-// when it opens and after 5 minutes in the background. The phone's prompt is
-// a fake here; on a phone it is BiometricPrompt or KeyguardManager.
+// when it opens and after 5 minutes in the background. The phone's prompt and
+// its clock are fakes here; on a phone they are BiometricPrompt or
+// KeyguardManager, and SystemClock.elapsedRealtime.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sha/app/app.dart';
@@ -18,6 +20,10 @@ final class FakeLock implements AppLockPlatform {
   bool secure;
   Object? failCanLock;
   Object? failUnlock;
+  Object? failElapsed;
+
+  /// The phone's time since it started, which no one can set.
+  Duration now = const Duration(hours: 1);
 
   /// Each call to [unlock] waits for the next answer given here.
   final List<Completer<UnlockResult>> asked = [];
@@ -37,22 +43,39 @@ final class FakeLock implements AppLockPlatform {
     asked.add(c);
     return c.future;
   }
+
+  @override
+  Future<Duration> elapsed() async {
+    final e = failElapsed;
+    if (e != null) throw e;
+    return now;
+  }
 }
 
-final class Clock {
-  DateTime now = DateTime.utc(2026, 11, 19, 12);
-
-  DateTime call() => now;
-}
-
-Future<void> pumpGate(WidgetTester tester, FakeLock lock, Clock clock) async {
+/// The lock around the whole navigator, as in the app: a page opened on
+/// top of the first one is behind it too.
+Future<void> pumpGate(WidgetTester tester, FakeLock lock) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        appLockPlatformProvider.overrideWithValue(lock),
-        appLockClockProvider.overrideWithValue(clock.call),
-      ],
-      child: const MaterialApp(home: AppLockGate(child: Text('innehållet'))),
+      overrides: [appLockPlatformProvider.overrideWithValue(lock)],
+      child: MaterialApp(
+        builder: (context, child) => AppLockGate(child: child!),
+        home: Builder(
+          builder: (context) => Column(
+            children: [
+              const Text('innehållet'),
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const Scaffold(body: Text('en chatt')),
+                  ),
+                ),
+                child: const Text('öppna'),
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -61,10 +84,14 @@ Future<void> pumpGate(WidgetTester tester, FakeLock lock, Clock clock) async {
 final content = find.text('innehållet');
 final locked = find.text('SHA är låst');
 
-void lifecycle(WidgetTester tester, List<AppLifecycleState> states) {
+Future<void> lifecycle(
+  WidgetTester tester,
+  List<AppLifecycleState> states,
+) async {
   for (final s in states) {
     tester.binding.handleAppLifecycleStateChanged(s);
   }
+  await tester.pumpAndSettle();
 }
 
 const toBackground = [
@@ -78,11 +105,19 @@ const toFront = [
   AppLifecycleState.resumed,
 ];
 
+Future<FakeLock> unlocked(WidgetTester tester) async {
+  final lock = FakeLock();
+  await pumpGate(tester, lock);
+  lock.asked.single.complete(UnlockResult.unlocked);
+  await tester.pumpAndSettle();
+  return lock;
+}
+
 void main() {
   testWidgets('locked when it opens: nothing behind the lock is built until '
       'the phone says yes', (tester) async {
     final lock = FakeLock();
-    await pumpGate(tester, lock, Clock());
+    await pumpGate(tester, lock);
     expect(content, findsNothing);
     expect(locked, findsOneWidget);
     expect(lock.asked, hasLength(1), reason: 'the prompt opens by itself');
@@ -97,7 +132,7 @@ void main() {
     tester,
   ) async {
     final lock = FakeLock();
-    await pumpGate(tester, lock, Clock());
+    await pumpGate(tester, lock);
     lock.asked.single.complete(UnlockResult.cancelled);
     await tester.pumpAndSettle();
     expect(content, findsNothing);
@@ -113,59 +148,102 @@ void main() {
   testWidgets('locks again after 5 minutes in the background, not before', (
     tester,
   ) async {
-    final lock = FakeLock();
-    final clock = Clock();
-    await pumpGate(tester, lock, clock);
-    lock.asked.single.complete(UnlockResult.unlocked);
-    await tester.pumpAndSettle();
+    final lock = await unlocked(tester);
 
-    lifecycle(tester, toBackground);
-    clock.now = clock.now.add(
-      const Duration(minutes: 5) - const Duration(seconds: 1),
-    );
-    lifecycle(tester, toFront);
-    await tester.pumpAndSettle();
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 5) - const Duration(seconds: 1);
+    await lifecycle(tester, toFront);
     expect(content, findsOneWidget);
     expect(lock.asked, hasLength(1));
 
-    lifecycle(tester, toBackground);
-    clock.now = clock.now.add(const Duration(minutes: 5));
-    lifecycle(tester, toFront);
-    await tester.pumpAndSettle();
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 5);
+    await lifecycle(tester, toFront);
     expect(content, findsNothing);
     expect(locked, findsOneWidget);
     expect(lock.asked, hasLength(2));
+  });
+
+  testWidgets('a page opened on top is hidden when the app locks again, and '
+      'is closed (review of #47)', (tester) async {
+    final lock = await unlocked(tester);
+    await tester.tap(find.text('öppna'));
+    await tester.pumpAndSettle();
+    expect(find.text('en chatt'), findsOneWidget);
+
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 6);
+    await lifecycle(tester, toFront);
+    expect(find.text('en chatt'), findsNothing);
+    expect(locked, findsOneWidget);
+
+    lock.asked.last.complete(UnlockResult.unlocked);
+    await tester.pumpAndSettle();
+    expect(content, findsOneWidget);
+    expect(find.text('en chatt'), findsNothing);
+  });
+
+  testWidgets('the time is the phone\'s own since it started, so setting the '
+      'clock back does not open the app (review of #47)', (tester) async {
+    final lock = await unlocked(tester);
+    await lifecycle(tester, toBackground);
+    // The wall clock is not read at all: only the phone's own time moves.
+    lock.now += const Duration(minutes: 30);
+    await lifecycle(tester, toFront);
+    expect(locked, findsOneWidget);
+  });
+
+  testWidgets('if the phone\'s time cannot be read, the app locks again', (
+    tester,
+  ) async {
+    final lock = await unlocked(tester);
+    await lifecycle(tester, toBackground);
+    lock.failElapsed = StateError('x');
+    await lifecycle(tester, toFront);
+    expect(locked, findsOneWidget);
+  });
+
+  testWidgets('each trip to the background is counted on its own', (
+    tester,
+  ) async {
+    final lock = await unlocked(tester);
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 1);
+    await lifecycle(tester, toFront);
+    lock.now += const Duration(minutes: 10); // in use
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 1);
+    await lifecycle(tester, toFront);
+    expect(content, findsOneWidget);
+    expect(lock.asked, hasLength(1));
   });
 
   testWidgets('the phone\'s own prompt does not lock the app again', (
     tester,
   ) async {
     final lock = FakeLock();
-    final clock = Clock();
-    await pumpGate(tester, lock, clock);
-    // On Android 7–9 the PIN screen is an activity of its own: the app goes
+    await pumpGate(tester, lock);
+    // On Android 7–10 the PIN screen is an activity of its own: the app goes
     // to the background and back while it is shown.
-    lifecycle(tester, toBackground);
-    clock.now = clock.now.add(const Duration(minutes: 6));
-    lifecycle(tester, toFront);
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 6);
+    await lifecycle(tester, toFront);
     lock.asked.single.complete(UnlockResult.unlocked);
     await tester.pumpAndSettle();
     expect(content, findsOneWidget);
     expect(lock.asked, hasLength(1));
   });
 
-  testWidgets('a slow PIN screen on Android 7–9 does not lock the app again '
-      'when it answers before the app is back in front', (tester) async {
+  testWidgets('a slow PIN screen does not lock the app again when it answers '
+      'before the app is back in front', (tester) async {
     final lock = FakeLock();
-    final clock = Clock();
-    await pumpGate(tester, lock, clock);
-    lifecycle(tester, toBackground);
-    clock.now = clock.now.add(const Duration(minutes: 6));
+    await pumpGate(tester, lock);
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 6);
     // Android delivers the PIN screen's answer before the app is resumed.
     lock.asked.single.complete(UnlockResult.unlocked);
     await tester.pumpAndSettle();
-    lifecycle(tester, toFront);
-    await tester.pumpAndSettle();
+    await lifecycle(tester, toFront);
     expect(content, findsOneWidget);
     expect(lock.asked, hasLength(1));
   });
@@ -174,7 +252,7 @@ void main() {
     tester,
   ) async {
     final lock = FakeLock(secure: false);
-    await pumpGate(tester, lock, Clock());
+    await pumpGate(tester, lock);
     expect(content, findsOneWidget);
     expect(lock.asked, isEmpty);
   });
@@ -183,7 +261,7 @@ void main() {
     tester,
   ) async {
     final lock = FakeLock();
-    await pumpGate(tester, lock, Clock());
+    await pumpGate(tester, lock);
     lock.asked.single.complete(UnlockResult.unavailable);
     await tester.pumpAndSettle();
     expect(content, findsOneWidget);
@@ -205,6 +283,7 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 200)),
     );
     await tester.pumpAndSettle();
+    expect(locked, findsNothing, reason: 'the first screen has nothing yet');
     await tester.tap(find.text('Fortsätt'));
     await tester.pumpAndSettle();
     expect(locked, findsOneWidget);
@@ -214,14 +293,102 @@ void main() {
     expect(find.text('Chattar'), findsWidgets);
   });
 
+  testWidgets('in the app, a screen opened on top of the home screen is '
+      'behind the lock too (review of #47)', (tester) async {
+    final lock = FakeLock();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          keyVaultProvider.overrideWithValue(InMemoryVault()),
+          appLockPlatformProvider.overrideWithValue(lock),
+        ],
+        child: const ShaApp(),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fortsätt'));
+    await tester.pumpAndSettle();
+    lock.asked.single.complete(UnlockResult.unlocked);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Min QR').last);
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Skanna en kontakts kod'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(find.text('Skanna en kontakts kod'));
+    await tester.pumpAndSettle();
+    expect(find.text('Skanna kontakt'), findsOneWidget);
+
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 6);
+    await lifecycle(tester, toFront);
+    expect(find.text('Skanna kontakt'), findsNothing);
+    expect(locked, findsOneWidget);
+  });
+
   testWidgets('an error from the phone keeps it locked', (tester) async {
     final lock = FakeLock()
       ..failCanLock = StateError('x')
       ..failUnlock = StateError('y');
-    await pumpGate(tester, lock, Clock());
-    await tester.pumpAndSettle();
+    await pumpGate(tester, lock);
     expect(content, findsNothing);
     expect(locked, findsOneWidget);
     expect(find.text('Lås upp'), findsOneWidget);
+  });
+
+  group('the channel to Android', () {
+    const channel = MethodChannel('se.sha.sha/app_lock');
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+
+    void answer(Object? Function(MethodCall call) reply) {
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (call) async => reply(call),
+      );
+      addTearDown(
+        () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        ),
+      );
+    }
+
+    test('only "unlocked" unlocks; anything else is cancelled', () async {
+      const platform = MethodChannelAppLock();
+      for (final (reply, want) in [
+        ('unlocked', UnlockResult.unlocked),
+        ('unavailable', UnlockResult.unavailable),
+        ('cancelled', UnlockResult.cancelled),
+        ('something else', UnlockResult.cancelled),
+        (null, UnlockResult.cancelled),
+      ]) {
+        answer((_) => reply);
+        expect(
+          await platform.unlock(title: 't', text: 'x'),
+          want,
+          reason: '$reply',
+        );
+      }
+    });
+
+    test('no answer to canLock is "no lock", and elapsed is in ms', () async {
+      const platform = MethodChannelAppLock();
+      answer((call) => call.method == 'elapsed' ? 90000 : null);
+      expect(await platform.canLock(), isFalse);
+      expect(await platform.elapsed(), const Duration(seconds: 90));
+    });
   });
 }
