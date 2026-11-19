@@ -1,7 +1,7 @@
 # 0009 – Radering av gamla sessioner (F2)
 
 Status: **Beslutat av ägaren 2026-11-18: (iv), med 24 h marginal för
-klockor.** Skrivet 2026-11-17. **Kräver
+klockor. Byggt i F2 2026-11-19.** Skrivet 2026-11-17. **Kräver
 granskning av kryptoexpert** (gamla nycklar i telefonen och regeln för när
 de får raderas).
 

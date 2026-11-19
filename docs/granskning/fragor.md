@@ -36,5 +36,6 @@ Numren följer listan "Kräver granskning av kryptoexpert" sist i 0004.
     råden i dem, till exempel "träffas och skanna igen", rätt då?
 13. **En översvämmad brevlåda** (1 000 paket) ger en valvskrivning per nytt
     paket. Behövs en gräns?
-14. **Raderingen av gamla sessioner** (0006 (iii) i prototypen): vilken regel
-    före utdelningen (F2)?
+14. **Raderingen av gamla sessioner** (F2, 0009 (iv) med 24 h marginal):
+    håller argumentet för att inget meddelande går förlorat, och är
+    luckorna godtagbara (se `ogranskat.md`)?

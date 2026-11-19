@@ -128,9 +128,9 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   - öppna frågor till kryptoexperten.
 
   Ett motsvarande paket för granskningen av Flutter/Dart-lagret och bygget.
-- [ ] **F2 – Radering av gamla sessioner** enligt (iv) i
-  [0009](decisions/0009-radering-av-gamla-sessioner.md), märkt
-  `OGRANSKAT (0009)`. Beslutsunderlaget och grinden är klara.
+- [x] **F2 – Radering av gamla sessioner** enligt (iv) i
+  [0009](decisions/0009-radering-av-gamla-sessioner.md), med 24 h marginal
+  för klockor, märkt `OGRANSKAT (0009)`. Granskas av kryptoexperten (G6).
 - [ ] **F3 – Historik i version 1** (0004 §7, 0005 (C) eller (ii)). Först ett
   beslutsunderlag och en grind, sedan bygget om ägaren vill ha det.
 - [ ] **F4 – App-lås med PIN eller biometri** (README, "Nästa steg"). Först
@@ -206,10 +206,10 @@ någon annan än ägaren (0003, 0004 §13):
     tillståndet i en enda valvpost (0005).
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
     alternativ C, §7 (historiken) och ett yttre lager.
-- En raderingsregel för gamla sessioner (0004 §2, F2): (iv) i 0009, märkt
-  `OGRANSKAT (0009)` och granskad av kryptoexperten (G6). I prototypen
-  raderas inga sessioner, och utan en regel ligger gamla sessioners nycklar
-  kvar i riktiga användares telefoner.
+- Raderingsregeln för gamla sessioner (0004 §2, F2) är granskad av
+  kryptoexperten (G6). Den är byggd enligt (iv) i 0009 och märkt
+  `OGRANSKAT (0009)`; utan den låg gamla sessioners nycklar kvar i
+  telefonen.
 - Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
   alerts och security updates är påslagna (G7).
@@ -266,6 +266,14 @@ Version 1.0 är publicerad i produktion på Google Play.
 ## Logg
 
 Nyast först. En rad per paket eller körning som ändrar något.
+
+- 2026-11-19 – F2, radering av gamla sessioner enligt (iv) i 0009, med
+  24 h marginal (OGRANSKAT (0009)). Varje session har nu tiden för vårt
+  senaste paket (`sent`, satt vid `markSent`) och tiden när den blev gammal
+  (`qualified`). Varje paket i utkorgen vet sin session. Appen lämnar
+  kontaktens tid `t` till `receive`, och regeln körs vid varje skrivning och
+  i varje runda. Tillstånd från före F2 räknas försiktigt. Testerna i 0009,
+  med mutationer för varje villkor. Ej provat: riktiga telefoner (G3).
 
 - 2026-11-18 – Inför att ägaren gör repot publikt: en varning överst i
   README (ogranskad prototyp, All rights reserved), `SECURITY.md` om att

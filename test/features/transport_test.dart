@@ -2,6 +2,7 @@
 // 507 and 429, duplicates, failures (0004 §10), restarting, and the
 // rounds of 0004 §9 (b). Needs the native library
 // (tool/build_native_host.sh).
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -370,6 +371,63 @@ void main() {
     await bob.fetchAll();
     expect(bob.texts, ['två gånger']);
     expect(await bob.crypto.olm.inbox(), hasLength(1));
+  });
+
+  test('the contact\'s time reaches the session rule, and a round removes '
+      'the old session (0009 (iv))', () async {
+    final relay = FakeRelay();
+    final alice = App(relay, null, null, true);
+    final bob = App(relay, null, null, true);
+    // The payload's time comes from the computer's clock (MessagingService).
+    for (final app in [alice, bob]) {
+      app.now = DateTime.now().toUtc();
+    }
+    await alice.start();
+    await bob.start();
+    await exchange(alice, bob);
+    List<Map<String, Object?>> bobsSessions() {
+      final state =
+          jsonDecode(utf8.decode(bob.vault.values['olm.state.v1']!)) as Map;
+      final c =
+          (state['contacts'] as Map)[base64.encode(bob.peer.olm!.identityKey)]
+              as Map;
+      return (c['sessions'] as List).cast<Map<String, Object?>>();
+    }
+
+    // Bob scanned Alice, so he has a session of his own. Alice writes on
+    // hers, which becomes his newest.
+    await alice.send('hej');
+    await bob.fetchAll();
+    expect(bob.texts, ['hej']);
+    expect(bobsSessions().map((s) => s['qualified']), [null, null]);
+
+    // Three days later Alice writes again, and the payload's time says so.
+    for (final app in [alice, bob]) {
+      app.now = app.now.add(const Duration(hours: 73));
+    }
+    final json = MessagePayload(
+      id: 'senare',
+      sentAt: alice.now,
+      text: 'tre dagar senare',
+    ).encode();
+    await alice.crypto.olm.encrypt(alice.peer.olm!.identityKey, json);
+    await alice.transport.sendPending();
+    await bob.fetchAll();
+    expect(bob.texts, ['hej', 'tre dagar senare']);
+    expect(bobsSessions().first['qualified'], isA<int>());
+    // A first round shows the saved messages; it is too early to remove.
+    bob.transport.resume();
+    await pumpEventQueue();
+    bob.transport.pause();
+    expect(bobsSessions(), hasLength(2));
+
+    // 72 h later a round removes Bob's own, unused session, with nothing
+    // else to save.
+    bob.now = bob.now.add(const Duration(hours: 72));
+    bob.transport.resume();
+    await pumpEventQueue();
+    bob.transport.pause();
+    expect(bobsSessions(), hasLength(1));
   });
 
   test('a text that is too long is refused before anything is saved', () async {
