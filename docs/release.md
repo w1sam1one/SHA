@@ -165,8 +165,12 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
 - **Data safety-formuläret:** se punkt 6.
 - **Skärmbilder.** Appen sätter `FLAG_SECURE` i alla byggtyper
   (`android/app/src/main/kotlin/se/sha/sha/MainActivity.kt`), så
-  skärmdumpar blockeras eller blir svarta (ej verifierat på telefon).
-  Planera hur du tar dem. Bilderna ska visa den riktiga appen.
+  skärmdumpar blockeras eller blir svarta (ej verifierat på telefon). Ta
+  bilderna med testet i [`docs/butikstexter.md`](butikstexter.md),
+  "Skärmbilder", på en emulator. De visar den riktiga appen, genom Flutters
+  egen ritning, och flaggan stängs aldrig av.
+- **Butikstexterna:** utkastet i [`docs/butikstexter.md`](butikstexter.md),
+  som ägaren godkänner.
 - **Ikon:** byt app-ikonen (punkt 0). Butikssidan har dessutom en egen ikon
   som laddas upp i Play Console; storlekskraven står där.
 

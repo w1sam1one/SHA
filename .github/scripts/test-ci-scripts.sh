@@ -41,6 +41,8 @@ expect "flutter=true android=true spike=true relay=false docs_only=false" spike/
 expect "flutter=true android=true spike=true relay=false docs_only=false" rust/Cargo.toml
 expect "flutter=true android=true spike=true relay=false docs_only=false" rust-toolchain.toml
 expect "$flutter_only" LICENSE
+expect "$flutter_only" docs/butikstexter.md
+expect "$flutter_only" test_driver/screenshots.dart
 expect "$app" "lib/säkerhet.dart"
 expect "$all" .github/workflows/ci.yml
 expect "$all" .github/scripts/resource-monitor.sh

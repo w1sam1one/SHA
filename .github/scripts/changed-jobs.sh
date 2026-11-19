@@ -7,7 +7,8 @@
 # - Documentation only (*.md anywhere, docs/): none of the four jobs; the
 #   quick check in "changes" is enough. LICENSE is not documentation here:
 #   Flutter puts it in the app's license notices (NOTICES), so the Flutter
-#   job builds and tests it.
+#   job builds and tests it. Nor is docs/butikstexter.md, the store texts:
+#   test/security/store_texts_test.dart checks them (F11).
 # - Anything else runs "flutter": its tests also read files outside lib/ and
 #   test/ (android/app/src/main/kotlin, spike/vodozemac/pubspec.yaml, relay/).
 # - "android" (the emulator): lib/, test/ (integration_test/ imports from
@@ -25,6 +26,7 @@ while IFS= read -r f; do
   [ -n "$f" ] || continue
   seen=true
   case "$f" in
+    docs/butikstexter.md) ;;
     *.md | docs/*) continue ;;
   esac
   docs_only=false
