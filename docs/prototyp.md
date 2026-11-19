@@ -119,8 +119,9 @@ appen avinstalleras först, och då måste ni skanna varandra igen.
    hämtar vid en slumpad tid inom intervallet, bara när appen är öppen.
 4. **Omstart:** stäng appen helt och öppna den igen. Identiteten och
    kontakterna ska finnas kvar, och ni ska kunna skriva vidare utan att
-   skanna igen (fas 1, "Klart när" punkt 2). Meddelanden som har visats
-   sparas inte (0005 (i)).
+   skanna igen (fas 1, "Klart när" punkt 2). Meddelanden som har skickats
+   eller visats finns kvar i 30 dagar, eller den tid du väljer under
+   Inställningar (0010 (B)).
 
 ## Vad du kan se
 
@@ -137,7 +138,7 @@ appen avinstalleras först, och då måste ni skanna varandra igen.
 ## Det här är inte klart
 
 - Kryptot är inte granskat (fas 2, G6).
-- Ingen historik, ingen säkerhetskopia, inget app-lås.
+- Ingen säkerhetskopia och inget app-lås.
 - Appen hämtar inte i bakgrunden och skickar inga notiser (0002).
 - Körningen på en riktig arm64-telefon är inte gjord (G3).
 

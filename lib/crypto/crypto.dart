@@ -15,6 +15,7 @@ export 'src/olm_service.dart'
         OlmContact,
         OlmContactBundle,
         OlmFailureCounts,
+        OlmHistoryItem,
         OlmIncoming,
         OlmOutgoing,
         OlmReceiveFailure,

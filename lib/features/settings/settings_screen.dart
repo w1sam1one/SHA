@@ -145,6 +145,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
         const SizedBox(height: 28),
+        const Text(
+          'Spara meddelanden',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Meddelanden sparas krypterade på telefonen och tas bort ur appen '
+          'efter den tid du väljer.',
+          style: TextStyle(color: ShaColors.textSecondary),
+        ),
+        RadioGroup<HistoryLength>(
+          groupValue: current.history,
+          onChanged: (h) {
+            if (h != null && !_busy) _save(current.copyWith(history: h));
+          },
+          child: Column(
+            children: [
+              for (final h in HistoryLength.values)
+                RadioListTile<HistoryLength>(
+                  contentPadding: EdgeInsets.zero,
+                  value: h,
+                  title: Text(h.label),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Licenser'),

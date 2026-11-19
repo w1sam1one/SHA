@@ -7,7 +7,7 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
 
 > **Viktigt först:** detta är en förhandsversion. Kryptot är inte granskat
 > av en kryptoexpert (G6), och appen får inte delas ut förrän det är gjort.
-> Historik, app-lås och hämtning i bakgrunden finns inte än (punkt 7).
+> App-lås och hämtning i bakgrunden finns inte än (punkt 7).
 > Butikstexten får inte lova något annat.
 
 ## 0. Innan du börjar
@@ -177,7 +177,8 @@ krypterade paket till servern och begär `INTERNET`.
 ## 7. Lova inget som saknas
 
 Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
-historik, har app-lås, hämtar i bakgrunden eller har forward secrecy (F3,
+att raderad historik inte går att läsa, att den har app-lås, att den hämtar
+i bakgrunden eller att den har forward secrecy (0010 (B),
 F4, 0002; brevlåde-ID:n har ingen forward secrecy enligt 0004 §3 (A), och
 kryptot är ogranskat till G6). Det som
 saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)

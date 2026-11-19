@@ -111,6 +111,15 @@ utdelningen.
   (b)), hashar av behandlade paket i 72 timmar, utkorgen, mottagna meddelanden
   som inte har visats (0005 (i)) och räknarna för fel. Varje ändring är en
   enda skrivning av hela posten.
+- **Historiken (F3, 0010 (B))** ligger i egna valvposter, `h.` och 16
+  slumpade hexsiffror, högst 100 meddelanden per post. Listan över dem
+  ligger i `olm.state.v1`. Ett meddelande sparas där innan det tas bort ur
+  inkorgen eller utkorgen (`markShown`/`markSent` med `keep`). Namnet bokas
+  i tillståndet innan posten skrivs, och ett meddelande som redan finns
+  sparas inte igen. `pruneHistory` tar bort det som är äldre än en tid, hela
+  poster först och tillståndet sedan. Valvets nyckel är densamma som för
+  allt annat, så en raderad post kan finnas kvar på flashminnet och läsas
+  tills `resetIdentity()` (0004 §7 gäller fortfarande).
 - **Pickle-nyckeln** är 32 byte från den blandade slumpkällan, i en egen post
   `olm.pickle-key.v1` (0004 §6). Pickles krypteras av vodozemac med den, och
   valvposten krypteras dessutom av Keystore.

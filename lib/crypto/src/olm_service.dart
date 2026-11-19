@@ -95,6 +95,30 @@ final class OlmIncoming {
   final String text;
 }
 
+/// A message kept in the history (0010 (B), F3): its text as it was in the
+/// inbox or the outbox.
+final class OlmHistoryItem {
+  OlmHistoryItem({
+    required this.id,
+    required this.peer,
+    required this.text,
+    required this.outgoing,
+    required this.at,
+  });
+
+  /// The id it had in the inbox or the outbox.
+  final String id;
+
+  /// The contact's Olm identity key.
+  final Uint8List peer;
+  final String text;
+  final bool outgoing;
+
+  /// When it was kept, on this phone's clock (UTC). The history is pruned by
+  /// this time.
+  final DateTime at;
+}
+
 /// Why a packet gave no message (0004 §10). A fixed type: the library's own
 /// error text can contain keys and is never kept, shown or logged.
 enum OlmReceiveFailure {
@@ -144,7 +168,9 @@ final class OlmFailureCounts {
 
 /// Olm (vodozemac) behind the crypto module: the account, the sessions per
 /// contact and the order of saving in 0004 §6. The whole state is one vault
-/// entry (0005 (A)); messages are kept only until shown or sent (0005 (i)).
+/// entry (0005 (A)); messages are kept there only until shown or sent (0005
+/// (i)), and in the history, in vault entries of their own, if the app asks
+/// (0010 (B)).
 ///
 /// OGRANSKAT (0004 §6): the order on crashes, the pickles and the pickle
 /// key, that a type 0 message is tried on saved sessions first, and that
@@ -216,8 +242,9 @@ abstract interface class OlmService {
   Future<List<OlmOutgoing>> outbox();
 
   /// The relay accepted the packet: remove it from the outbox, and note the
-  /// time on the session it was encrypted on (0009 (iv), condition 3).
-  Future<void> markSent(String id);
+  /// time on the session it was encrypted on (0009 (iv), condition 3). With
+  /// [keep] the message is kept in the history first (0010 (B)).
+  Future<void> markSent(String id, {bool keep = false});
 
   /// Handles one packet from [peer] in the order of 0004 §6 and saves the
   /// result before returning. Show the message only after this returns.
@@ -242,8 +269,19 @@ abstract interface class OlmService {
   /// Messages read and saved but not yet shown.
   Future<List<OlmIncoming>> inbox();
 
-  /// The app has shown the message: remove it.
-  Future<void> markShown(String id);
+  /// The app has shown the message: remove it. With [keep] it is kept in
+  /// the history first (0010 (B)).
+  Future<void> markShown(String id, {bool keep = false});
+
+  /// Every message kept in the history, per contact in the order kept. An
+  /// entry that cannot be read is left out.
+  Future<List<OlmHistoryItem>> history();
+
+  /// Removes from the history every message kept before [olderThan].
+  Future<void> pruneHistory(DateTime olderThan);
+
+  /// Removes the whole history.
+  Future<void> clearHistory();
 
   /// Packets from [peer] that gave no message.
   Future<OlmFailureCounts> failureCounts(List<int> peer);

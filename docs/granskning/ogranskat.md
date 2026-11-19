@@ -128,7 +128,9 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
 ## Byggs inte i prototypen, men står i listan sist i 0004
 
 - §4 alternativ C (utfyllnad utanför Olm).
-- §7: krypteringen av historiken (F3).
+- §7: en egen nyckel för historiken. Historiken är byggd i F3 med (B) i
+  0010, med valvets egen nyckel (`sha_olm_service.dart`, `_keepInHistory`
+  och `_pruneHistory`); punkt 7 i 0004 gäller fortfarande.
 - Ett yttre AEAD-lager med en hemlighet från QR-koden (0003).
 
 ## Annat som granskaren bör känna till

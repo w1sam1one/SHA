@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// A message in a conversation, as text.
 ///
 /// Olm cannot read back what this phone sent, so the text is kept in memory
-/// while the app runs. On disk a message exists only until it has been sent
-/// or shown (0005 (i)): in the outbox or the inbox of the Olm state.
+/// while the app runs. On disk a message is in the outbox or the inbox of
+/// the Olm state until it has been sent or shown (0005 (i)), and then in the
+/// history for as long as the settings say (0010 (B)).
 class ChatMessage {
   const ChatMessage({
     required this.id,

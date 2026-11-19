@@ -26,9 +26,15 @@ final class CrashingVault extends InMemoryVault {
   bool failNextWrite = false;
   int writes = 0;
 
+  /// The write with this number, counted from 0 from when it is set, fails
+  /// instead.
+  int? failWriteAt;
+
   @override
   Future<void> write(String name, Uint8List value) async {
-    if (failNextWrite) {
+    final at = failWriteAt;
+    if (at != null) failWriteAt = at == 0 ? null : at - 1;
+    if (failNextWrite || at == 0) {
       failNextWrite = false;
       throw const CryptoException('crash', CryptoErrorKind.unavailable);
     }

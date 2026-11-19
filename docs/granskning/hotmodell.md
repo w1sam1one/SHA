@@ -20,7 +20,7 @@ användas (0002, "Formuleringar i appen").
 | Pickle-nyckeln (32 byte) | Valvposten `olm.pickle-key.v1` | Keystore-nyckeln |
 | X25519-nyckeln för brevlådor | Valvposten för identiteten | Keystore-nyckeln |
 | Meddelanden som inte har skickats eller visats | Utkorg och inkorg i `olm.state.v1` | Som ovan; bara tills de har skickats eller visats (0005 (i)) |
-| Visade meddelanden | Bara i minnet tills appen stängs | Ingen kopia på disk |
+| Skickade och visade meddelanden (historiken) | Egna valvposter `h.<16 slumpade hex>`, listade i `olm.state.v1`, den tid användaren valt (0010 (B)) | Samma Keystore-nyckel; en raderad post kan finnas kvar på flashminnet och läsas tills `resetIdentity()` eller avinstallation |
 | Kontakter: namn, när ni möttes, nycklar | `olm.state.v1` | Som ovan |
 | Inställningar: serverns adress, intervallet | `olm.state.v1` | Som ovan |
 
@@ -43,5 +43,5 @@ användas (0002, "Formuleringar i appen").
 - Trafikanalys över tid, och att flera brevlådor från samma IP kan kopplas
   ihop (0002, fråga a; 0004 §9).
 - Att leverantören av servern loggar (0002, fråga b).
-- Historik och säkerhetskopior (F3).
+- Säkerhetskopior.
 - Ett yttre lager med en hemlighet från QR-koden (0003, öppen fråga).

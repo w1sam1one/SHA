@@ -52,7 +52,23 @@ class TransportSettingsStore extends AsyncNotifier<TransportSettings> {
     await olm.ensureAccount();
     await olm.saveAppSettings(settings.toMap());
     state = AsyncData(settings);
+    // A shorter time takes effect at once (0010 (B)).
+    await pruneHistory(
+      olm,
+      settings.history,
+      ref.read(transportClockProvider)(),
+    );
   }
+
+  /// Removes from the history what is older than [length] allows, or all
+  /// of it with [HistoryLength.none].
+  static Future<void> pruneHistory(
+    OlmService olm,
+    HistoryLength length,
+    DateTime now,
+  ) => length.keeps
+      ? olm.pruneHistory(now.subtract(length.duration))
+      : olm.clearHistory();
 }
 
 final transportSettingsProvider =
@@ -149,10 +165,15 @@ class Transport {
   Future<void> restoreSaved() async {
     if (_restored) return;
     final olm = _crypto.olm;
+    final store = _ref.read(messageStoreProvider.notifier);
+    // The history first (0010 (B)): a message that is both there and still
+    // in the inbox or the outbox, after a crash, is shown once.
+    for (final h in await olm.history()) {
+      store.add(await _contactId(h.peer), _messaging.historyMessage(h));
+    }
     for (final m in await olm.inbox()) {
       await _addIncoming(await _contactId(m.peer), m);
     }
-    final store = _ref.read(messageStoreProvider.notifier);
     for (final o in await olm.outbox()) {
       final message = _messaging.outgoingMessage(o);
       if (message != null) store.add(await _contactId(o.peer), message);
@@ -196,6 +217,7 @@ class Transport {
     await _ref.read(contactsProvider.notifier).ready;
     final contacts = _ref.read(contactsProvider);
     final store = _ref.read(messageStoreProvider.notifier);
+    final keep = (await _ref.read(transportSettingsProvider.future)).history;
     final full = <String>{};
     for (final out in await _crypto.olm.outbox()) {
       final contact = _contactFor(contacts, out.peer);
@@ -212,7 +234,7 @@ class Transport {
         continue;
       }
       if (error != null) return;
-      await _crypto.olm.markSent(out.id);
+      await _crypto.olm.markSent(out.id, keep: keep.keeps);
       final message = _messaging.outgoingMessage(out);
       if (message != null) {
         store.update(
@@ -280,6 +302,17 @@ class Transport {
         (settings?.interval ?? TransportSettings.defaultInterval).duration;
     bool current() => _running && generation == _generation;
     try {
+      // What the history may no longer keep goes first, also before a server
+      // is set (0010 (B)). A failure here does not stop the round.
+      try {
+        await TransportSettingsStore.pruneHistory(
+          _crypto.olm,
+          settings?.history ?? TransportSettings.defaultHistory,
+          _now(),
+        );
+      } on Object {
+        // The text is not kept. The next round tries again.
+      }
       // Saved messages are shown even before a server is set.
       await restoreSaved();
       // Old sessions go even when nothing else is saved (0009 (iv)).

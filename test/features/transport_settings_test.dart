@@ -17,14 +17,38 @@ void main() {
     final s = TransportSettings(
       server: Uri.parse('https://server.example.se'),
       interval: FetchInterval.sixty,
+      history: HistoryLength.year,
     );
     expect(s.toMap(), {
       'server': 'https://server.example.se',
       'interval': '60',
+      'history': '365',
     });
     final back = TransportSettings.fromMap(s.toMap());
     expect(back.server, s.server);
     expect(back.interval, FetchInterval.sixty);
+    expect(back.history, HistoryLength.year);
+  });
+
+  test('the history: the owner\'s four choices, 30 days by default '
+      '(0010 (B))', () {
+    expect(HistoryLength.values.map((h) => h.label), [
+      'Spara inte',
+      '7 dagar',
+      '30 dagar',
+      '1 år',
+    ]);
+    expect(TransportSettings.fromMap(const {}).history, HistoryLength.month);
+    expect(
+      TransportSettings.fromMap(const {'history': '12'}).history,
+      HistoryLength.month,
+    );
+    expect(
+      TransportSettings.fromMap(const {'history': '0'}).history,
+      HistoryLength.none,
+    );
+    expect(HistoryLength.none.keeps, isFalse);
+    expect(HistoryLength.week.keeps, isTrue);
   });
 
   test('anything broken in the saved map falls back to the default', () {

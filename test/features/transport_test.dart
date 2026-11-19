@@ -164,8 +164,10 @@ void main() {
     expect(bob.texts, ['läs mig']);
     await alice.restart();
     await alice.transport.restoreSaved();
-    expect(alice.texts, ['inte skickat']);
-    expect(alice.messages.single.pending, isTrue);
+    // The sent one from the history (30 days by default), the other from
+    // the outbox.
+    expect(alice.texts, ['läs mig', 'inte skickat']);
+    expect(alice.messages.map((m) => m.pending), [false, true]);
 
     final sub = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
     addTearDown(sub.close);
@@ -178,6 +180,73 @@ void main() {
     await bob.fetchAll();
     expect(bob.texts, ['läs mig', 'inte skickat']);
   });
+
+  test('with history, sent and shown messages are there after a restart; '
+      'with "Spara inte" they are not, and the history is removed '
+      '(0010 (B))', () async {
+    final (alice, bob) = await met();
+    await alice.send('hej Bob');
+    await bob.fetchAll();
+    final sub = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
+    await pumpEventQueue();
+    sub.close();
+    expect(await bob.crypto.olm.inbox(), isEmpty);
+    await bob.send('hej Alice');
+    await alice.fetchAll();
+
+    for (final app in [alice, bob]) {
+      await app.restart();
+      await app.transport.restoreSaved();
+      expect(app.texts, ['hej Bob', 'hej Alice']);
+    }
+
+    // "Spara inte": the history goes at once, and nothing is kept after.
+    for (final app in [alice, bob]) {
+      final now = await app.container.read(transportSettingsProvider.future);
+      await app.container
+          .read(transportSettingsProvider.notifier)
+          .save(now.copyWith(history: HistoryLength.none));
+      expect(await app.crypto.olm.history(), isEmpty);
+    }
+    await alice.send('inte sparat');
+    await bob.fetchAll();
+    final again = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
+    await pumpEventQueue();
+    again.close();
+    expect(await bob.crypto.olm.history(), isEmpty);
+    expect(await alice.crypto.olm.history(), isEmpty);
+    for (final app in [alice, bob]) {
+      await app.restart();
+      await app.transport.restoreSaved();
+    }
+    expect(bob.texts, isEmpty);
+    // Alice never opened the chat: "hej Alice" has not been shown, so it is
+    // still in the inbox (0005 (i)). "inte sparat" was sent and not kept.
+    expect(alice.texts, ['hej Alice']);
+  });
+
+  test(
+    'a round removes what is older than the chosen time (0010 (B))',
+    () async {
+      final (alice, bob) = await met();
+      await alice.send('gammalt');
+      await bob.fetchAll();
+      final sub = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
+      await pumpEventQueue();
+      sub.close();
+      final now = await bob.container.read(transportSettingsProvider.future);
+      await bob.container
+          .read(transportSettingsProvider.notifier)
+          .save(now.copyWith(history: HistoryLength.week));
+      expect(await bob.crypto.olm.history(), hasLength(1));
+      // The history is pruned by the transport's clock.
+      bob.now = DateTime.now().toUtc().add(const Duration(days: 8));
+      bob.transport.resume();
+      await pumpEventQueue();
+      bob.transport.pause();
+      expect(await bob.crypto.olm.history(), isEmpty);
+    },
+  );
 
   test('rounds: every mailbox once inside the interval, then a new round; '
       'pause stops every timer', () async {

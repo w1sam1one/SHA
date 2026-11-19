@@ -57,6 +57,10 @@ final class ShaOlmService implements OlmService {
   /// decision 2026-11-18).
   static const Duration clockMargin = Duration(hours: 24);
 
+  /// Messages per history entry (0010 (B)). A full entry is left as it is
+  /// and a new one is started, so a write stays small.
+  static const int historyEntrySize = 100;
+
   /// Conditions 4 and 5 of rule (iv) in 0009, in milliseconds.
   static final int _oldAfter = (relayKeepsPackets + clockMargin).inMilliseconds;
 
@@ -321,12 +325,17 @@ final class ShaOlmService implements OlmService {
   });
 
   @override
-  Future<void> markSent(String id) => _serial(() async {
+  Future<void> markSent(String id, {bool keep = false}) => _serial(() async {
     // No pickle key needed: the outbox can be cleared even if it is lost.
-    final state = await _load();
+    var state = await _load();
     if (state == null) return;
     final sent = state.outbox.where((o) => o.id == id).firstOrNull;
     if (sent == null) return;
+    if (keep) {
+      // In the history before it leaves the outbox (0010 (B)).
+      await _keepInHistory(sent.peer, id: id, text: sent.text, outgoing: true);
+      state = (await _load())!;
+    }
     final next = state.copy()..outbox.removeWhere((o) => o.id == id);
     // 0009 (iv), condition 3: the relay has our latest packet on the
     // session from now, so a message that made it old no longer counts. A
@@ -535,12 +544,180 @@ final class ShaOlmService implements OlmService {
   });
 
   @override
-  Future<void> markShown(String id) => _serial(() async {
-    final state = await _load();
+  Future<void> markShown(String id, {bool keep = false}) => _serial(() async {
+    var state = await _load();
     if (state == null) return;
-    final next = state.copy()..inbox.removeWhere((m) => m.id == id);
-    if (next.inbox.length != state.inbox.length) await _save(next);
+    final shown = state.inbox.where((m) => m.id == id).firstOrNull;
+    if (shown == null) return;
+    if (keep) {
+      // In the history before it leaves the inbox (0010 (B)).
+      await _keepInHistory(
+        shown.peer,
+        id: id,
+        text: shown.text,
+        outgoing: false,
+      );
+      state = (await _load())!;
+    }
+    await _save(state.copy()..inbox.removeWhere((m) => m.id == id));
   });
+
+  @override
+  Future<List<OlmHistoryItem>> history() => _serial(() async {
+    final state = await _load();
+    if (state == null) return const [];
+    final out = <OlmHistoryItem>[];
+    for (final MapEntry(key: peer, value: refs) in state.history.entries) {
+      for (final ref in refs) {
+        for (final i in await _readEntry(ref.name) ?? const <_HistoryItem>[]) {
+          out.add(
+            OlmHistoryItem(
+              id: i.id,
+              peer: base64.decode(peer),
+              text: i.text,
+              outgoing: i.outgoing,
+              at: DateTime.fromMillisecondsSinceEpoch(i.at, isUtc: true),
+            ),
+          );
+        }
+      }
+    }
+    return out;
+  });
+
+  @override
+  Future<void> pruneHistory(DateTime olderThan) =>
+      _serial(() => _pruneHistory(olderThan.millisecondsSinceEpoch));
+
+  @override
+  Future<void> clearHistory() => _serial(() => _pruneHistory(null));
+
+  /// Keeps one message in the history (0010 (B)), in two writes and in this
+  /// order:
+  ///
+  /// 1. the state, with a new entry's random name reserved, or the newest
+  ///    time of the entry moved forward. So the state never knows less than
+  ///    the entries hold: no entry is left that the state does not list, and
+  ///    pruning never removes a message too early;
+  /// 2. the entry itself, written whole.
+  ///
+  /// The caller takes the message off the inbox or the outbox only after
+  /// this, so a crash cannot lose it. A message already in the entry, kept
+  /// before a crash, is not kept again.
+  Future<void> _keepInHistory(
+    String peer, {
+    required String id,
+    required String text,
+    required bool outgoing,
+  }) async {
+    final state = (await _load())!;
+    final now = _now();
+    final refs = state.history[peer] ?? const <_HistoryRef>[];
+    final last = refs.isEmpty ? null : refs.last;
+    final items = last == null ? null : await _readEntry(last.name);
+    if (items != null && items.any((i) => i.id == id)) return;
+    final next = state.copy();
+    final nextRefs = next.history.putIfAbsent(peer, () => []);
+    final _HistoryRef ref;
+    final List<_HistoryItem> kept;
+    var changed = true;
+    if (items == null || items.length >= historyEntrySize) {
+      // None yet, full, or damaged: a damaged entry is never written over.
+      ref = _HistoryRef(name: _newEntryName(state), newest: now);
+      nextRefs.add(ref);
+      kept = [];
+    } else {
+      ref = nextRefs.last;
+      kept = items;
+      changed = ref.newest < now;
+      if (changed) ref.newest = now;
+    }
+    if (changed) await _save(next);
+    kept.add(_HistoryItem(id: id, outgoing: outgoing, at: now, text: text));
+    final bytes = _encodeEntry(kept);
+    try {
+      await _vault.write(ref.name, bytes);
+    } finally {
+      wipe(bytes);
+    }
+  }
+
+  /// Removes what was kept before [cutoff] (ms), or everything if it is
+  /// null. A whole entry's vault entry is deleted first and the state saved
+  /// after, so a crash leaves at most a name the state still lists, never an
+  /// entry it does not.
+  Future<void> _pruneHistory(int? cutoff) async {
+    final state = await _load();
+    if (state == null || state.history.isEmpty) return;
+    final next = state.copy();
+    var changed = false;
+    for (final refs in next.history.values) {
+      for (final ref in [...refs]) {
+        if (cutoff == null || ref.newest < cutoff) {
+          await _vault.delete(ref.name);
+          refs.remove(ref);
+          changed = true;
+          continue;
+        }
+        final items = await _readEntry(ref.name);
+        if (items == null) continue;
+        final left = [
+          for (final i in items)
+            if (i.at >= cutoff) i,
+        ];
+        if (left.length == items.length) continue;
+        final bytes = _encodeEntry(left);
+        try {
+          await _vault.write(ref.name, bytes);
+        } finally {
+          wipe(bytes);
+        }
+      }
+    }
+    next.history.removeWhere((_, refs) => refs.isEmpty);
+    if (changed) await _save(next);
+  }
+
+  /// The messages in a history entry: empty if it is not there (a name
+  /// reserved before a crash), null if it cannot be read.
+  Future<List<_HistoryItem>?> _readEntry(String name) async {
+    final bytes = await _vault.read(name);
+    if (bytes == null) return [];
+    try {
+      final j = jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
+      if (j['v'] != 1) return null;
+      return [
+        for (final i in j['items']! as List<Object?>)
+          _HistoryItem.fromJson(i! as Map<String, Object?>),
+      ];
+    } catch (_) {
+      return null;
+    } finally {
+      wipe(bytes);
+    }
+  }
+
+  static Uint8List _encodeEntry(List<_HistoryItem> items) => Uint8List.fromList(
+    utf8.encode(
+      jsonEncode({
+        'v': 1,
+        'items': [for (final i in items) i.toJson()],
+      }),
+    ),
+  );
+
+  /// A random vault name: it says nothing about the contact or the time
+  /// (0010 (B)). Vault names are file names, at most 64 characters.
+  String _newEntryName(_State state) {
+    final taken = {
+      for (final refs in state.history.values)
+        for (final r in refs) r.name,
+    };
+    while (true) {
+      final name = 'h.${_hex(List.generate(8, (_) => _ids.nextInt(256)))}';
+      if (!taken.contains(name)) return name;
+    }
+  }
 
   @override
   Future<int> removeOldSessions() => _serial(() async {
@@ -801,7 +978,9 @@ final class _State {
     List<_Incoming>? inbox,
     Map<String, int>? shown,
     Map<String, String>? settings,
-  }) : contacts = contacts ?? {},
+    Map<String, List<_HistoryRef>>? history,
+  }) : history = history ?? {},
+       contacts = contacts ?? {},
        seen = seen ?? {},
        outbox = outbox ?? [],
        inbox = inbox ?? [],
@@ -833,6 +1012,15 @@ final class _State {
       settings: Map<String, String>.from(
         (j['settings'] as Map<String, Object?>?) ?? const {},
       ),
+      // Missing in states saved before F3.
+      history: {
+        for (final e
+            in ((j['history'] as Map<String, Object?>?) ?? const {}).entries)
+          e.key: [
+            for (final r in e.value! as List<Object?>)
+              _HistoryRef.fromJson(r! as Map<String, Object?>),
+          ],
+      },
     );
   }
 
@@ -853,6 +1041,9 @@ final class _State {
 
   /// The app's settings (0005, item 9).
   final Map<String, String> settings;
+
+  /// The history entries per contact, oldest first (0010 (B)).
+  final Map<String, List<_HistoryRef>> history;
 
   int nextNumber() => ++counter;
 
@@ -878,6 +1069,10 @@ final class _State {
     'inbox': [for (final m in inbox) m.toJson()],
     'shown': shown,
     'settings': settings,
+    'history': {
+      for (final e in history.entries)
+        e.key: [for (final r in e.value) r.toJson()],
+    },
   };
 
   Uint8List encode() => Uint8List.fromList(utf8.encode(jsonEncode(toJson())));
@@ -1066,4 +1261,47 @@ final class _Incoming {
       OlmIncoming(id: id, peer: base64.decode(peer), text: text);
 
   Map<String, Object?> toJson() => {'id': id, 'peer': peer, 'text': text};
+}
+
+/// One history entry in the state: its vault name, and a time no earlier
+/// than the newest message in it, in ms on our clock (0010 (B)).
+final class _HistoryRef {
+  _HistoryRef({required this.name, required this.newest});
+
+  factory _HistoryRef.fromJson(Map<String, Object?> j) =>
+      _HistoryRef(name: j['name']! as String, newest: j['newest']! as int);
+
+  final String name;
+  int newest;
+
+  Map<String, Object?> toJson() => {'name': name, 'newest': newest};
+}
+
+/// One message in a history entry.
+final class _HistoryItem {
+  _HistoryItem({
+    required this.id,
+    required this.outgoing,
+    required this.at,
+    required this.text,
+  });
+
+  factory _HistoryItem.fromJson(Map<String, Object?> j) => _HistoryItem(
+    id: j['id']! as String,
+    outgoing: j['out']! as bool,
+    at: j['at']! as int,
+    text: j['text']! as String,
+  );
+
+  final String id;
+  final bool outgoing;
+  final int at;
+  final String text;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'out': outgoing,
+    'at': at,
+    'text': text,
+  };
 }
