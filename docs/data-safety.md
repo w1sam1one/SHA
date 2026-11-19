@@ -14,7 +14,7 @@ Allt nedan är läst i koden, inte provat på en telefon (G3).
 | --- | --- | --- | --- |
 | Krypterade meddelanden (paket) | Den server som användaren skriver in under Inställningar | `https`, bara medan appen är öppen; innehållet är krypterat med Olm från telefon till telefon, och servern kan inte läsa det | `lib/features/transport/relay_client.dart`, `lib/features/transport/transport.dart`, `lib/crypto/src/sha_olm_service.dart` |
 | Brevlåde-ID (16 byte, byts varje dygn) | Samma server, i adressen | En pseudonym per kontakt, riktning och dygn | `lib/features/chat/messaging_service.dart`, `lib/crypto/src/sha_crypto_service.dart` |
-| IP-adress | Servern ser den, som vid all trafik | Relayns kod sparar den inte på disk eller i loggar. För spamgränsen finns den i RAM i högst 90 sekunder | `relay/README.md`, `relay/ratelimit.go`, 0002 |
+| IP-adress | Servern ser den, som vid all trafik | Relayns kod sparar den inte på disk eller i loggar. För spamgränsen finns den i RAM så länge det kommer anrop från adressen, även från andra på samma nät, och högst 90 sekunder efter det sista | `relay/README.md`, `relay/ratelimit.go`, 0002 |
 
 Inget annat skickas av appens egen kod: inga konton, ingen analys, inga
 kraschrapporter, inga annonser och ingen push. Det enda stället i `lib/`

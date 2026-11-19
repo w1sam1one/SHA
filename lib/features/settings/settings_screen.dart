@@ -95,6 +95,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'Meddelanden går via servern på den här adressen.',
           style: TextStyle(color: ShaColors.textSecondary),
         ),
+        const SizedBox(height: 6),
+        // What the server sees, and the VPN sentence the owner approved
+        // (0002, 0008). Only SHA's own server program is known not to keep
+        // the address: the user can enter any server.
+        const Text(
+          'Servern kan inte läsa dina meddelanden. Den ser din IP-adress, när '
+          'du skickar och hämtar, och hur stora paketen är. SHA:s '
+          'serverprogram sparar inte din IP-adress på disk eller i loggar, men '
+          'den som driver servern kan ändå se och spara trafiken. Vi '
+          'rekommenderar VPN om du inte vill att servern ska se din '
+          'IP-adress.',
+          style: TextStyle(color: ShaColors.textSecondary),
+        ),
         const SizedBox(height: 12),
         TextField(
           controller: _address,

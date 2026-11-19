@@ -11,8 +11,9 @@
 # - Anything else runs "flutter": its tests also read files outside lib/ and
 #   test/ (android/app/src/main/kotlin, spike/vodozemac/pubspec.yaml, relay/).
 # - "android" (the emulator): lib/, test/ (integration_test/ imports from
-#   it), integration_test/, android/, pubspec.yaml, pubspec.lock and Rust
-#   files.
+#   it), integration_test/, android/, pubspec.yaml, pubspec.lock, Rust files
+#   and the license page's list of Android libraries, which that job checks
+#   (assets/licenses/android.txt, 0012).
 # - "spike": spike/ and Rust files.
 # - "relay": relay/.
 # - ci.yml and .github/scripts/: everything.
@@ -34,7 +35,7 @@ while IFS= read -r f; do
   esac
   case "$f" in
     .github/workflows/ci.yml | .github/scripts/*) android=true spike=true relay=true ;;
-    lib/* | test/* | integration_test/* | android/* | pubspec.yaml | pubspec.lock) android=true ;;
+    lib/* | test/* | integration_test/* | android/* | pubspec.yaml | pubspec.lock | assets/licenses/android.txt) android=true ;;
     spike/*) spike=true ;;
     relay/*) relay=true ;;
   esac

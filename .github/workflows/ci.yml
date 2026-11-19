@@ -407,6 +407,19 @@ jobs:
           fi
           python3 -I .github/scripts/check-manifest.py "$manifest" se.sha.sha
 
+      # 0012 (C1), "Testa": every Android library in the release app is on
+      # the license page, with a license name on the script's short list of
+      # those that combine with AGPL-3.0 (any other stops it for a person).
+      # The list comes from Gradle itself and the libraries' own POM files,
+      # with no new plugin; nothing is built for release.
+      - name: Android libraries on the license page
+        run: |
+          (cd android && ./gradlew --no-daemon -q :app:dependencies \
+            --configuration releaseRuntimeClasspath) > "$RUNNER_TEMP/deps.txt"
+          python3 -I .github/scripts/android-licenses.py "$RUNNER_TEMP/deps.txt" \
+            "$HOME/.gradle/caches/modules-2/files-2.1" \
+            --check assets/licenses/android.txt
+
       # Saved right after the build, before the emulator needs the memory.
       - name: Save the pub cache
         if: github.event_name == 'push' && steps.pub-cache.outputs.cache-hit != 'true'

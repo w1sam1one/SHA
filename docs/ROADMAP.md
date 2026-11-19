@@ -139,7 +139,7 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   [0011](decisions/0011-app-las.md): telefonens eget lås när appen öppnas
   och efter 5 minuter i bakgrunden. Steg 2, att valvets nyckel kräver
   upplåsning, kommer efter G6 med ett eget beslutsunderlag.
-- [ ] **F5 – Ärliga texter för en fungerande app:**
+- [x] **F5 – Ärliga texter för en fungerande app:**
   - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
     tas bort när transporten fungerar, liksom de andra texterna som då
     inte stämmer: "Finns inte än" i `lib/ui/technical_info_sheet.dart`
@@ -147,7 +147,7 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
   - en enkel förklaring i appen av vad servern ser, och rekommendationen om
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
-    Apache-paketen;
+    Apache-paketen, och Android-biblioteken i release-bygget;
   - QR-skannern utan ML Kit (0012 (C1)): `zxing2` med `camera`. Klar i en
     egen PR, se loggen.
 - [x] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
@@ -223,7 +223,18 @@ någon annan än ägaren (0003, 0004 §13):
   alerts och security updates är påslagna (G7).
 - `LICENSE` är bytt till AGPL-3.0 (G8).
 - Varje bibliotek i APK:n går att dela ut under AGPL-3.0 tillsammans med
-  `flutter_vodozemac`, och licenssidan visar dem alla (0012).
+  `flutter_vodozemac`, och licenssidan visar dem alla (0012). Sedan F5
+  jämför CI listan över Android-bibliotek med Gradles lista, och ett
+  bibliotek under BSD eller MIT måste ha sin text på sidan. Ej kontrollerat:
+  - om något Apache-bibliotek, eller ZXing, har en NOTICE-fil som också ska
+    med (Apache 2.0 §4 d);
+  - libyuvs text mot den som `camera-core` faktiskt har med: texten är
+    hämtad ur en kopia i paketet `yuv-sys`, eftersom Googles sidor är
+    spärrade i molnmiljön;
+  - `.so`-filerna i APK:n, som Gradles lista inte visar. De kommer från
+    Flutters motor, `flutter_vodozemac` (Rust-paketen står i `rust.txt`) och
+    `camera-core` (libyuv). Inget plugin har beroenden som filer
+    (`files()`) i dag.
 - Spiken och appen är körda på en riktig arm64-telefon (G3, F6).
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
   ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
@@ -275,6 +286,34 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-19 – F5 klart. Under Inställningar › Server och i "Teknisk
+  information" står nu vad servern ser: IP-adressen, när du hämtar och hur
+  stora paketen är, men inte meddelandena. Där står också att SHA:s
+  serverprogram inte sparar IP-adressen på disk eller i loggar, och
+  VPN-meningen från 0008. Ett test stoppar orden som 0002 förbjuder, som
+  "anonym" och "inga loggar". Licenssidan har nu alla 66 Android-bibliotek
+  i release-bygget och ZXing. Listan jämförs i CI med Gradles egen lista,
+  med licensen ur varje biblioteks POM-fil. Alla har Apache 2.0, utom
+  Flutters motor (BSD-3, texten finns under "flutter"), och `camera-core`
+  har dessutom libyuv (BSD-3). Libyuvs text är
+  hämtad ur den kopia som paketet `yuv-sys` på crates.io har med, eftersom
+  Googles egna sidor är spärrade i molnmiljön. Ett bibliotek under BSD eller
+  MIT måste ha sin text på sidan, annars faller CI. Rättat efter den
+  oberoende granskningen: en rad i Gradles träd med ett versionsintervall
+  föll bort ur kontrollen utan fel; nu måste varje rad ha en exakt version.
+  Licensnamnen jämfördes ord för ord, så att till exempel "Apache 2.0 with
+  Commons Clause" gick igenom; nu måste namnet stå på en kort lista. Texten
+  om spamgränsen sade "högst 90 sekunder", men servern har adressen så länge
+  appen hämtar; nu står det "senast 90 sekunder efter appens senaste kontakt
+  med servern", också i relayns README, integritetspolicyn och underlaget
+  till Data safety. Fyra moduler utan egen kod är borta ur listan: två
+  BOM-filer och två Kotlin-rotmoduler, vars kod finns i `-jvm`-modulerna.
+  De står på en uttrycklig lista i skriptet, och varje annan sådan modul
+  stoppar CI. Efter den andra granskningen: spamgränsen räknar per
+  IP-adress, inte per app, så texten säger nu att adressen finns kvar så
+  länge det kommer anrop från den, även från andra på samma nät.
+  Förhandsvarningen och "Finns inte än" rättades redan i P6. Ej provat:
+  riktiga telefoner (G3).
 - 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den
   öppnas och efter 5 minuter i bakgrunden, och låses upp med telefonens eget
   lås. Från Android 11 med plattformens `BiometricPrompt` (fingeravtryck,

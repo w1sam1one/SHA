@@ -179,12 +179,12 @@ krypterade paket till servern och begär `INTERNET`.
 
 ## 7. Lova inget som saknas
 
-Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
-att raderad historik inte går att läsa, att app-låset skyddar nyckeln eller
-meddelandena på lagringen, att den hämtar
-i bakgrunden eller att den har forward secrecy (0010 (B),
-F4, 0002; brevlåde-ID:n har ingen forward secrecy enligt 0004 §3 (A), och
-kryptot är ogranskat till G6). Det som
+Butikstext, skärmbilder och beskrivning får inte påstå att raderad
+historik inte går att läsa, att app-låset skyddar nyckeln eller
+meddelandena på lagringen, att appen hämtar i bakgrunden eller att den har
+forward secrecy (0010 (B), F4, 0002; brevlåde-ID:n har ingen forward
+secrecy enligt 0004 §3 (A), och kryptot är ogranskat till G6). Det som
 saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)
 och i `docs/granskning/`. Orden i 0002, "Formuleringar i appen", gäller
-också butikssidan.
+också butikssidan. `test/security/wording_test.dart` kontrollerar bara
+appens egna texter, inte butikssidan.
