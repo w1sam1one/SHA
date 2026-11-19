@@ -78,6 +78,11 @@ enum AppLockState {
   /// The phone's prompt is shown.
   unlocking,
   open,
+
+  /// Open, but in the background: the screen is covered until the time away
+  /// is checked on return, so not even one frame of it shows if the app
+  /// locks then (second review of #47).
+  covered,
 }
 
 /// Locked when the app opens, and again after [backgroundLimit] in the
@@ -93,10 +98,13 @@ class AppLock extends Notifier<AppLockState> {
   static const String promptTitle = 'Lås upp SHA';
   static const String promptText = 'Använd telefonens skärmlås.';
 
-  /// Set when the app goes to the background while open; [_awayAt] is the
-  /// phone's time then, or null if it could not be read.
-  bool _away = false;
+  /// The phone's time when the app went to the background while open, or
+  /// null if it could not be read.
   Future<Duration?>? _awayAt;
+
+  /// False from the app's last trip to the background until it is in front
+  /// again.
+  bool _inFront = true;
 
   @override
   AppLockState build() {
@@ -137,22 +145,27 @@ class AppLock extends Notifier<AppLockState> {
   /// The app went to the background. Only counted while it is open: the
   /// phone's own PIN screen (Android 7–10) also sends the app there.
   void hidden() {
-    if (state != AppLockState.open || _away) return;
-    _away = true;
+    _inFront = false;
+    if (state != AppLockState.open) return;
+    state = AppLockState.covered;
     _awayAt = _elapsed();
   }
 
   /// The app is in front again. If the phone's time cannot be read, the app
-  /// locks: it never opens on a time it does not know.
+  /// locks: it never opens on a time it does not know. If it goes to the
+  /// background again before the time is known, nothing happens until it is
+  /// back, and the time is still counted from the first trip.
   Future<void> resumed() async {
-    if (!_away) return;
-    _away = false;
+    _inFront = true;
+    if (state != AppLockState.covered) return;
     final since = await _awayAt;
     final now = await _elapsed();
-    if (!ref.mounted || state != AppLockState.open) return;
+    if (!ref.mounted || state != AppLockState.covered || !_inFront) return;
     if (since == null || now == null || now - since >= backgroundLimit) {
       state = AppLockState.locked;
       await unlock();
+    } else {
+      state = AppLockState.open;
     }
   }
 
@@ -210,7 +223,26 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appLockProvider);
-    if (state == AppLockState.open) return widget.child;
+    if (state == AppLockState.open || state == AppLockState.covered) {
+      final covered = state == AppLockState.covered;
+      // The same tree in both states, so a short trip to the background keeps
+      // what was open. The app's own messenger goes with the navigator: a
+      // notice shown when the app locks is gone with it (second review of
+      // #47).
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Offstage(
+            offstage: covered,
+            child: TickerMode(
+              enabled: !covered,
+              child: ScaffoldMessenger(child: widget.child),
+            ),
+          ),
+          if (covered) const ColoredBox(color: ShaColors.background),
+        ],
+      );
+    }
     return _LockScreen(
       showButton: state == AppLockState.locked,
       onUnlock: () => ref.read(appLockProvider.notifier).unlock(),

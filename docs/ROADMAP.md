@@ -287,7 +287,9 @@ Nyast först. En rad per paket eller körning som ändrar något.
   telefonen håller appen låst. Rättat efter den oberoende granskningen: en
   öppen chatt syntes ovanpå låset, Android 10 kunde låsas för gott, ett fel i
   telefonens fråga låste appen tills den startades om, och klockan kunde
-  ställas tillbaka. #46 (F3) mergades med texterna i PR:en. Ej provat:
+  ställas tillbaka. Efter den andra granskningen: en notis kunde synas på
+  låsskärmen; skärmen täcks nu direkt när appen går till bakgrunden, tills
+  tiden är kontrollerad. #46 (F3) mergades med texterna i PR:en. Ej provat:
   riktiga telefoner (G3), och Android-delen bara byggd i CI.
 - 2026-11-19 – F3, historiken enligt (B) i 0010. Ett meddelande sparas i
   historiken innan det tas bort ur inkorgen eller utkorgen, i egna

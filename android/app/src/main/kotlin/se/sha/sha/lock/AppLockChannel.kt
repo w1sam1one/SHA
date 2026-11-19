@@ -30,6 +30,9 @@ class AppLockChannel(private val activity: Activity) : MethodChannel.MethodCallH
 
     private var pending: MethodChannel.Result? = null
 
+    /** Counts the requests, so that a late answer to an old one is dropped. */
+    private var request = 0
+
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "canLock" -> result.success(keyguard().isDeviceSecure)
@@ -58,22 +61,30 @@ class AppLockChannel(private val activity: Activity) : MethodChannel.MethodCallH
             return
         }
         pending = result
+        val id = ++request
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                prompt(title, text)
+                try {
+                    prompt(id, title, text)
+                } catch (e: RuntimeException) {
+                    // A framework bug in BiometricPrompt: the phone's PIN
+                    // screen instead, so the app can still be unlocked
+                    // (second review of #47). The text is not kept.
+                    confirmCredential(id, title, text)
+                }
             } else {
-                confirmCredential(title, text)
+                confirmCredential(id, title, text)
             }
         } catch (e: RuntimeException) {
-            // A framework bug while showing the prompt: answer, so that
-            // "Lås upp" can ask again (review of #47). The text is not kept.
-            finish("cancelled")
+            // Neither could be shown: answer, so that "Lås upp" can ask
+            // again (review of #47).
+            finish(id, "cancelled")
         }
     }
 
     // A platform annotation: no androidx library is added for it.
     @TargetApi(Build.VERSION_CODES.R)
-    private fun prompt(title: String, text: String) {
+    private fun prompt(id: Int, title: String, text: String) {
         BiometricPrompt.Builder(activity)
             .setTitle(title)
             .setDescription(text)
@@ -88,22 +99,22 @@ class AppLockChannel(private val activity: Activity) : MethodChannel.MethodCallH
                 object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(
                         authResult: BiometricPrompt.AuthenticationResult,
-                    ) = finish("unlocked")
+                    ) = finish(id, "unlocked")
 
                     // A wrong finger is not the end: the prompt asks again.
                     // An error (cancelled, too many tries) ends it; its text
                     // is not passed on.
                     override fun onAuthenticationError(code: Int, message: CharSequence) =
-                        finish("cancelled")
+                        finish(id, "cancelled")
                 },
             )
     }
 
-    private fun confirmCredential(title: String, text: String) {
+    private fun confirmCredential(id: Int, title: String, text: String) {
         @Suppress("DEPRECATION")
         val intent: Intent? = keyguard().createConfirmDeviceCredentialIntent(title, text)
         if (intent == null) {
-            finish("unavailable")
+            finish(id, "unavailable")
             return
         }
         activity.startActivityForResult(intent, REQUEST)
@@ -112,11 +123,13 @@ class AppLockChannel(private val activity: Activity) : MethodChannel.MethodCallH
     /** From MainActivity: true if the result was the PIN screen's. */
     fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {
         if (requestCode != REQUEST) return false
-        finish(if (resultCode == Activity.RESULT_OK) "unlocked" else "cancelled")
+        finish(request, if (resultCode == Activity.RESULT_OK) "unlocked" else "cancelled")
         return true
     }
 
-    private fun finish(answer: String) {
+    /** Answers request [id] once; an answer to an older request is dropped. */
+    private fun finish(id: Int, answer: String) {
+        if (id != request) return
         val result = pending ?: return
         pending = null
         result.success(answer)

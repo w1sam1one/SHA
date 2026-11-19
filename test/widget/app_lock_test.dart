@@ -25,6 +25,9 @@ final class FakeLock implements AppLockPlatform {
   /// The phone's time since it started, which no one can set.
   Duration now = const Duration(hours: 1);
 
+  /// While set, [elapsed] waits for it: the channel's answer is on its way.
+  Completer<void>? holdElapsed;
+
   /// Each call to [unlock] waits for the next answer given here.
   final List<Completer<UnlockResult>> asked = [];
 
@@ -48,6 +51,8 @@ final class FakeLock implements AppLockPlatform {
   Future<Duration> elapsed() async {
     final e = failElapsed;
     if (e != null) throw e;
+    final hold = holdElapsed;
+    if (hold != null) await hold.future;
     return now;
   }
 }
@@ -60,19 +65,31 @@ Future<void> pumpGate(WidgetTester tester, FakeLock lock) async {
       overrides: [appLockPlatformProvider.overrideWithValue(lock)],
       child: MaterialApp(
         builder: (context, child) => AppLockGate(child: child!),
-        home: Builder(
-          builder: (context) => Column(
-            children: [
-              const Text('innehållet'),
-              TextButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const Scaffold(body: Text('en chatt')),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Column(
+              children: [
+                const Text('innehållet'),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const Scaffold(body: Text('en chatt')),
+                    ),
                   ),
+                  child: const Text('öppna'),
                 ),
-                child: const Text('öppna'),
-              ),
-            ],
+                TextButton(
+                  // As after adding a contact with TalkBack on: it stays.
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Alice är tillagd.'),
+                      duration: Duration(days: 1),
+                    ),
+                  ),
+                  child: const Text('notis'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -181,6 +198,79 @@ void main() {
     await tester.pumpAndSettle();
     expect(content, findsOneWidget);
     expect(find.text('en chatt'), findsNothing);
+  });
+
+  testWidgets('a notice shown when the app locks is not on the lock screen '
+      '(second review of #47)', (tester) async {
+    final lock = await unlocked(tester);
+    await tester.tap(find.text('notis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Alice är tillagd.'), findsOneWidget);
+
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 6);
+    await lifecycle(tester, toFront);
+    expect(locked, findsOneWidget);
+    expect(find.text('Alice är tillagd.'), findsNothing);
+  });
+
+  testWidgets('back from the background, the first frame is covered until '
+      'the time is checked; a short trip keeps what was open (second review '
+      'of #47)', (tester) async {
+    final lock = await unlocked(tester);
+    await tester.tap(find.text('öppna'));
+    await tester.pumpAndSettle();
+
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 1);
+    // The channel's answer about the time is still on its way.
+    final hold = lock.holdElapsed = Completer<void>();
+    for (final s in toFront) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+    }
+    await tester.pump();
+    expect(find.text('en chatt'), findsNothing);
+    expect(locked, findsNothing);
+
+    hold.complete();
+    lock.holdElapsed = null;
+    await tester.pumpAndSettle();
+    expect(find.text('en chatt'), findsOneWidget);
+    expect(lock.asked, hasLength(1));
+  });
+
+  testWidgets('if the phone\'s time cannot be read when the app goes to the '
+      'background, it locks on return', (tester) async {
+    final lock = await unlocked(tester);
+    lock.failElapsed = StateError('x');
+    await lifecycle(tester, toBackground);
+    lock.failElapsed = null;
+    await lifecycle(tester, toFront);
+    expect(locked, findsOneWidget);
+  });
+
+  testWidgets('back in the background while the time is checked: nothing '
+      'opens and nothing is asked until the app is in front again', (
+    tester,
+  ) async {
+    final lock = await unlocked(tester);
+    await lifecycle(tester, toBackground);
+    lock.now += const Duration(minutes: 6);
+    final hold = lock.holdElapsed = Completer<void>();
+    for (final s in toFront) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+    }
+    await tester.pump();
+    await lifecycle(tester, toBackground);
+    hold.complete();
+    lock.holdElapsed = null;
+    await tester.pumpAndSettle();
+    expect(lock.asked, hasLength(1), reason: 'no prompt in the background');
+    expect(content, findsNothing);
+
+    await lifecycle(tester, toFront);
+    expect(locked, findsOneWidget);
+    expect(lock.asked, hasLength(2));
   });
 
   testWidgets('the time is the phone\'s own since it started, so setting the '

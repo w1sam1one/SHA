@@ -38,7 +38,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Inga loggar, inga felobjekt i texter, inget som liknar nycklar | 5 | `test/security/no_logging_test.dart` | Datorn |
 | Inga kryptoord i texter, låsta Olm-versioner | 2 | `test/security/` | Datorn |
 | Skärmar: chatten, QR-fliken, livscykeln, återställning, licenssidan (F5), valet av historik (F3), kontrast | 21 | `test/widget/`, `test/ui/` | Datorn |
-| App-låset (F4): låst vid start, avbrutet, 5 minuter i bakgrunden mätt med telefonens tid sedan start, telefonens egen fråga, en långsam PIN-skärm, inget skärmlås, fel håller det låst, en öppen sida bakom låset, hemskärmen bakom låset, kanalen till Android | 16 | `test/widget/app_lock_test.dart` | Datorn (en låtsastelefon) |
+| App-låset (F4): låst vid start, avbrutet, 5 minuter i bakgrunden mätt med telefonens tid sedan start, telefonens egen fråga, en långsam PIN-skärm, inget skärmlås, fel håller det låst, en öppen sida bakom låset, hemskärmen bakom låset, en notis, skärmen täckt vid återkomst, åter i bakgrunden under kontrollen, kanalen till Android | 20 | `test/widget/app_lock_test.dart` | Datorn (en låtsastelefon) |
 | Relayn: gränser, loggar utan IP, spamgräns | – | `relay/*_test.go` | Datorn |
 | Slumptal för långlivade nycklar (`entropy.dart`) | 3 | `test/crypto/entropy_test.dart` | Datorn |
 | X25519, HKDF och brevlåde-ID (används för §3 (A)), och det gamla formatet 2 | 19 | `test/crypto/crypto_service_test.dart` | Datorn |
