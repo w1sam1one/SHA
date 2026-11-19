@@ -8,8 +8,9 @@ grinden fortsätter. "Klart när" i `CLAUDE.md` ("Målet") betyder fas 1.
 Arbetssätt (ägarens instruktion 2026-11-16, utöver `CLAUDE.md`):
 - `CLAUDE.md` gäller i allt. Inget här ändrar "Aldrig", utom PR:en vid G8,
   som Claude förbereder när ägaren ber om det och som bara ägaren mergar.
-- PR:er som rör utdelning, till exempel butikstexter och versionsnummer i
-  fas 3, mergar bara ägaren (`CLAUDE.md`, "Aldrig").
+- PR:er som förbereder utdelningen, till exempel butikstexter och
+  versionsnummer i fas 3, mergar Claude (`CLAUDE.md`, "Ägarens beslut",
+  punkt 3, 2026-11-19). Själva utdelningen gör bara ägaren ("Aldrig").
 - Vid varje grind skriver Claude steg för steg, på enkel svenska, vad ägaren
   ska göra.
 - Nya val som ändrar säkerheten blir beslutsunderlag och grindar, som
@@ -279,6 +280,10 @@ Nyast först. En rad per paket eller körning som ändrar något.
   Spara inte, 7 dagar, 30 dagar (standard) och 1 år. Varje runda tar bort
   det som är äldre, och ett kortare val gäller direkt. Texten i appen läggs
   fram för ägaren. Ej provat: riktiga telefoner (G3).
+- 2026-11-19 – Ägarens beslut: Claude mergar också PR:er som förbereder
+  utdelningen (`CLAUDE.md`, "Ägarens beslut", punkt 3). Själva utdelningen,
+  `LICENSE`, avsnitten Målet, Ägarens beslut och Aldrig, `permissions:` och
+  signering är fortfarande ägarens. Ägaren mergar PR:en (#45).
 - 2026-11-19 – Rättningar efter granskningen av F2 (#43): tre delar av
   regeln saknade tester, så att ett fel där inte märktes. Nu har de det:
   `markSent` flyttar tiden för vårt senaste paket, villkor 4 räknar med när
