@@ -26,25 +26,33 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
   - Står det lägre än 36: uppgradera Flutter (`flutter upgrade`) i stället för
     att ändra filen.
 - **Behörigheter.**
-  - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) och
-    `mobile_scanner` begär bara `CAMERA`.
+  - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) begär
+    bara `CAMERA` och `INTERNET`. Kameran tas via `camera` (CameraX), och
+    koden läses av `zxing2` i ren Dart (0012 (C1)). `camera` lägger till
+    `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` (och `READ_EXTERNAL_STORAGE`
+    följer med), och CameraX videodel drar in media3, som lägger till
+    `ACCESS_NETWORK_STATE`. Appens manifest tar bort alla fyra. Skannern
+    använder varken video, lagring eller nätverksstatus.
   - `INTERNET` finns i debug- och profilmanifesten. Flutter behöver den där
     för utvecklingsverktygen.
-  - Vilka behörigheter det **färdiga release-manifestet** får är **ej
-    verifierat**. Biblioteken som slås ihop in i det, bland annat Google ML
-    Kit `barcode-scanning:17.3.0` och CameraX `1.6.1` via `mobile_scanner`
-    samt androidx-biblioteken som Flutter använder, kan lägga till egna
-    poster, t.ex. nätverksbehörigheter. Deras manifest gick inte att hämta.
+  - **Det färdiga release-manifestet** kontrolleras i CI. Emulatorjobbet
+    slår ihop det med `processReleaseMainManifest`, utan att bygga en
+    release-APK. Steget faller om manifestet begär något annat än `CAMERA`,
+    `INTERNET` och appens egen `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
+    eller kräver någon hårdvara (`.github/scripts/check-manifest.py`). Hur
+    ditt eget release-bygge slår ihop manifestet är **ej verifierat**.
   - Kontrollera efter ditt första release-bygge. Sammanslagningsrapporten
-    visar vilket bibliotek som lagt till varje post (sökvägen är ej verifierad):
+    visar vilket bibliotek som lagt till varje post. CI hittar den där
+    (`find build/app/outputs/logs`):
     ```sh
     grep -n "uses-permission" build/app/outputs/logs/manifest-merger-release-report.txt
     ```
     Eller öppna AAB-filen i Android Studio (Build › Analyze APK) och läs
     manifestet.
-  - Allt utöver `CAMERA` påverkar punkt 6. En post som slutar på
-    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` brukar komma från androidx.core
-    och är intern för appen (ej verifierat).
+  - Allt utöver `CAMERA` och `INTERNET` påverkar punkt 6. En post som slutar på
+    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` kommer från androidx.core
+    (`androidx.core:core:1.13.1` i CI:s sammanslagningsrapport) och är
+    intern för appen.
 - **App-ikonen** är fortfarande Flutters standardikon (byte för byte samma
   som Flutters mall). Byt den i `android/app/src/main/res/mipmap-*/` innan
   du släpper.
@@ -162,7 +170,7 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
 
 **Du måste själv kontrollera varje svar innan du skickar in.** Listan visar
 bara vad SHA:s egen kod gör. Den säger inte hur Googles definitioner ska
-tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
+tolkas och täcker inte vad Googles bibliotek (CameraX) gör.
 
 - **Nätverk:**
   - Appens egen kod gör inga nätverksanrop. Varken `lib/` eller
@@ -171,14 +179,15 @@ tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
     (`android/app/src/main/AndroidManifest.xml`), och
     `android/app/src/main/res/xml/network_security_config.xml` stänger av
     okrypterad trafik.
-  - Om det färdiga release-manifestet ändå får nätverksbehörighet, och om
-    ML Kit eller CameraX skickar något: **ej verifierat** (punkt 0).
+  - Om CameraX skickar något: **ej verifierat** (punkt 0).
 - **Kamera:**
-  - Används bara för att skanna QR-koder (`lib/features/qr/scan_screen.dart`,
-    via `mobile_scanner`).
-  - Appens kod ber inte om bilderna (`returnImage` är `false` som standard i
-    `MobileScannerController`) och sparar inga bilder.
-  - Hur ML Kit behandlar kamerabilden: **ej verifierat**.
+  - Används bara för att skanna QR-koder (`lib/features/qr/qr_camera.dart`,
+    via `camera` och CameraX), och bara medan skannern är öppen och appen
+    syns.
+  - Bilderna läses i appen av `zxing2` (`lib/features/qr/qr_decoder.dart`),
+    i minnet. Inga bilder sparas eller skickas, och inget ljud spelas in
+    (`enableAudio: false`, och `RECORD_AUDIO` är borttagen ur manifestet).
+  - Hur CameraX behandlar kamerabilden: **ej verifierat**.
 - **På telefonen sparas** bara identitetens nyckelpar.
   - Det krypteras med en Android Keystore-nyckel och ligger i appens privata
     `noBackupFilesDir`
@@ -196,9 +205,7 @@ tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
   `lib/crypto/src/sha_crypto_service.dart`).
 - **Dart-paket:** inga för analys, kraschrapporter eller annonser
   (`pubspec.yaml`: `flutter_riverpod`, `cryptography`, `qr_flutter`,
-  `mobile_scanner`). Om ML Kit skickar användnings- eller
-  diagnostikdata till Google: **ej verifierat**, kontrollera Googles
-  dokumentation för ML Kit.
+  `camera`, `zxing2`). ML Kit är borttaget (0012 (C1)).
 - **Ingen loggning** i appkoden (`test/security/no_logging_test.dart`).
 - **Urklipp:** appens egna kopieringsknappar finns bara i debugbyggen
   (`kDebugMode` i `lib/features/onboarding/identity_screen.dart` och
