@@ -208,8 +208,10 @@ någon annan än ägaren (0003, 0004 §13):
     först provas mot sparade sessioner, och att varje försök börjar från den
     sparade pickeln (P3). Prototypen använder §6 (c) på valvet: hela
     tillståndet i en enda valvpost (0005).
+  - **§7** – historiken (F3) delar valvets nyckel enligt (B) i 0010, inte
+    en nyckel per konversation, och märks `OGRANSKAT (0004 §7)`.
   - Byggs inte i prototypen men står också i listan sist i 0004: §4
-    alternativ C, §7 (historiken) och ett yttre lager.
+    alternativ C och ett yttre lager.
 - Raderingsregeln för gamla sessioner (0004 §2, F2) är granskad av
   kryptoexperten (G6). Den är byggd enligt (iv) i 0009 och märkt
   `OGRANSKAT (0009)`. Utan den skulle gamla sessioners nycklar ligga kvar i
@@ -278,8 +280,12 @@ Nyast först. En rad per paket eller körning som ändrar något.
   skrivs, så att ingen post blir kvar som tillståndet inte känner till, och
   ett meddelande som redan finns sparas inte igen. Under Inställningar:
   Spara inte, 7 dagar, 30 dagar (standard) och 1 år. Varje runda tar bort
-  det som är äldre, och ett kortare val gäller direkt. Texten i appen läggs
-  fram för ägaren. Ej provat: riktiga telefoner (G3).
+  det som är äldre, och ett kortare val gäller direkt. Rättat efter den
+  oberoende granskningen: en kallstart rensar efter det sparade valet, inte
+  standardvalet; en post som valvet inte kan läsa stoppar inte rundorna; en
+  dubblett vid gränsen 100 hindras; historiken som visas vid start följer
+  valet. Texten i appen läggs fram för ägaren. Ej provat: riktiga telefoner
+  (G3).
 - 2026-11-19 – Ägarens beslut: Claude mergar också PR:er som förbereder
   utdelningen (`CLAUDE.md`, "Ägarens beslut", punkt 3). Själva utdelningen,
   `LICENSE`, avsnitten Målet, Ägarens beslut och Aldrig, `permissions:` och

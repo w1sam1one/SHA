@@ -78,8 +78,9 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                   'Historiken sparas i egna poster, krypterade med samma '
                       'nyckel, så länge du har valt under Inställningar. Sedan '
                       'tas den bort ur appen. Kopior kan finnas kvar i '
-                      'telefonens minne tills du avinstallerar appen. Väljer du '
-                      '"Spara inte" finns ett meddelande bara i minnet tills '
+                      'telefonens lagring tills du avinstallerar appen. Väljer '
+                      'du "Spara inte" finns ett meddelande bara i appens '
+                      'arbetsminne tills '
                       'appen stängs.',
                 ],
               ),

@@ -115,8 +115,9 @@ utdelningen.
   slumpade hexsiffror, högst 100 meddelanden per post. Listan över dem
   ligger i `olm.state.v1`. Ett meddelande sparas där innan det tas bort ur
   inkorgen eller utkorgen (`markShown`/`markSent` med `keep`). Namnet bokas
-  i tillståndet innan posten skrivs, och ett meddelande som redan finns
-  sparas inte igen. `pruneHistory` tar bort det som är äldre än en tid, hela
+  i tillståndet innan posten skrivs, och ett meddelande som redan finns i
+  posten, eller i posten före, sparas inte igen. En post som valvet inte kan
+  läsa hoppas över. `pruneHistory` tar bort det som är äldre än en tid, hela
   poster först och tillståndet sedan. Valvets nyckel är densamma som för
   allt annat, så en raderad post kan finnas kvar på flashminnet och läsas
   tills `resetIdentity()` (0004 §7 gäller fortfarande).

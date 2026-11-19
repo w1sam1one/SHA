@@ -60,15 +60,16 @@ lib/
 │   ├── contacts/      Kontaktlistan (sparas i Olm-tillståndet)
 │   ├── chat/          Chattlista, chatt, meddelandets JSON-text, felraderna
 │   ├── transport/     Servern: klienten, hämtningen och inställningarna
-│   ├── settings/      Serverns adress och hur ofta appen hämtar
+│   ├── settings/      Serverns adress, hur ofta appen hämtar, och historiken
 │   └── home/          Bottennavigering
 └── ui/                Delade widgets (avatar, identicon) och formatering
 ```
 
 Appen pratar bara med kryptot via `CryptoService` (`lib/crypto/crypto.dart`).
-Meddelanden krypteras med Olm. På disk finns ett meddelande bara tills det
-har skickats eller visats (0005 (i)); sedan finns texten bara i minnet tills
-appen stängs.
+Meddelanden krypteras med Olm. På disk ligger ett meddelande i Olm-tillståndet
+tills det har skickats eller visats (0005 (i)), och sedan i historiken så
+länge användaren har valt under Inställningar, 30 dagar som standard (0010
+(B)). Med "Spara inte" finns texten bara i minnet tills appen stängs.
 
 Säkerhetsgranskning, hotmodell och nästa steg: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
 

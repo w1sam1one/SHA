@@ -16,6 +16,7 @@ import 'package:sha/features/transport/relay_client.dart';
 import 'package:sha/features/transport/transport.dart';
 import 'package:sha/features/transport/transport_settings.dart';
 
+import '../support/in_memory_vault.dart';
 import '../support/two_apps.dart';
 
 void main() {
@@ -223,6 +224,83 @@ void main() {
     // Alice never opened the chat: "hej Alice" has not been shown, so it is
     // still in the inbox (0005 (i)). "inte sparat" was sent and not kept.
     expect(alice.texts, ['hej Alice']);
+  });
+
+  test('a cold start prunes by the saved choice, not the default, even if '
+      'the settings are not read yet (review of #46)', () async {
+    final (alice, bob) = await met();
+    await alice.send('ett år');
+    await bob.fetchAll();
+    final sub = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
+    await pumpEventQueue();
+    sub.close();
+    final now = await bob.container.read(transportSettingsProvider.future);
+    await bob.container
+        .read(transportSettingsProvider.notifier)
+        .save(now.copyWith(history: HistoryLength.year));
+    // 60 days later the app starts again, and the transport starts before
+    // anything has read the settings.
+    bob.now = DateTime.now().toUtc().add(const Duration(days: 60));
+    bob.container.dispose();
+    bob.newContainer();
+    bob.transport.resume();
+    await pumpEventQueue();
+    bob.transport.pause();
+    expect(await bob.crypto.olm.history(), hasLength(1));
+    expect(bob.texts, ['ett år']);
+  });
+
+  test('a shorter time takes effect when it is saved, and the history shown '
+      'at start follows the choice (0010 (B))', () async {
+    final (alice, bob) = await met();
+    await alice.send('gammalt');
+    await bob.fetchAll();
+    final sub = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
+    await pumpEventQueue();
+    sub.close();
+    final now = await bob.container.read(transportSettingsProvider.future);
+    // Shown with 7 days chosen, and read back 8 days later without a round.
+    await bob.container
+        .read(transportSettingsProvider.notifier)
+        .save(now.copyWith(history: HistoryLength.week));
+    expect(await bob.crypto.olm.history(), hasLength(1));
+    await bob.restart();
+    bob.now = DateTime.now().toUtc().add(const Duration(days: 8));
+    await bob.transport.restoreSaved();
+    expect(bob.texts, isEmpty);
+    // Saved again with the clock 8 days on: it goes at once.
+    await bob.container
+        .read(transportSettingsProvider.notifier)
+        .save(now.copyWith(history: HistoryLength.week));
+    expect(await bob.crypto.olm.history(), isEmpty);
+  });
+
+  test('a history entry the vault cannot read does not stop the rounds '
+      '(review of #46)', () async {
+    final relay = FakeRelay();
+    final vault = _UnreadableHistoryVault();
+    final alice = await App(relay).start();
+    final bob = await App(relay, vault).start();
+    await exchange(alice, bob);
+    await alice.send('först');
+    await bob.fetchAll();
+    final sub = bob.container.listen(chatProvider(bob.peer.id), (_, _) {});
+    await pumpEventQueue();
+    sub.close();
+    expect(await bob.crypto.olm.history(), hasLength(1));
+    vault.historyUnreadable = true;
+    await bob.restart();
+    await alice.send('sedan');
+    final fetches = relay.fetches;
+    bob.transport.resume();
+    await pumpEventQueue();
+    for (final t in [...bob.timers]) {
+      t.fire();
+    }
+    await pumpEventQueue();
+    bob.transport.pause();
+    expect(relay.fetches, greaterThan(fetches));
+    expect(bob.texts, ['sedan']);
   });
 
   test(
@@ -530,4 +608,18 @@ void main() {
     await alice.transport.sendPending();
     expect(relay.dropped, isEmpty);
   });
+}
+
+/// A vault whose history entries cannot be decrypted once
+/// [historyUnreadable] is set, as a damaged file on Android.
+final class _UnreadableHistoryVault extends InMemoryVault {
+  bool historyUnreadable = false;
+
+  @override
+  Future<Uint8List?> read(String name) async {
+    if (historyUnreadable && name.startsWith('h.')) {
+      throw const CryptoException('damaged', CryptoErrorKind.corrupt);
+    }
+    return super.read(name);
+  }
 }

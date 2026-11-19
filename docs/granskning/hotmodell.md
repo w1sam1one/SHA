@@ -20,7 +20,7 @@ användas (0002, "Formuleringar i appen").
 | Pickle-nyckeln (32 byte) | Valvposten `olm.pickle-key.v1` | Keystore-nyckeln |
 | X25519-nyckeln för brevlådor | Valvposten för identiteten | Keystore-nyckeln |
 | Meddelanden som inte har skickats eller visats | Utkorg och inkorg i `olm.state.v1` | Som ovan; bara tills de har skickats eller visats (0005 (i)) |
-| Skickade och visade meddelanden (historiken) | Egna valvposter `h.<16 slumpade hex>`, listade i `olm.state.v1`, den tid användaren valt (0010 (B)) | Samma Keystore-nyckel; en raderad post kan finnas kvar på flashminnet och läsas tills `resetIdentity()` eller avinstallation |
+| Skickade och visade meddelanden (historiken) | Egna valvposter `h.<16 slumpade hex>`, en eller flera per kontakt, listade i `olm.state.v1`, den tid användaren valt (0010 (B)) | Samma Keystore-nyckel; en raderad post kan finnas kvar på flashminnet och läsas tills `resetIdentity()` eller avinstallation. Filernas tider visar ungefär när man skrivit med varje kontakt, utan att visa vem |
 | Kontakter: namn, när ni möttes, nycklar | `olm.state.v1` | Som ovan |
 | Inställningar: serverns adress, intervallet | `olm.state.v1` | Som ovan |
 

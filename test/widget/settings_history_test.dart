@@ -58,8 +58,9 @@ void main() {
     expect(find.text('Spara meddelanden'), findsOneWidget);
     expect(
       find.text(
-        'Meddelanden sparas krypterade på telefonen och tas bort ur appen '
-        'efter den tid du väljer.',
+        'Hur länge appen sparar meddelanden som har skickats eller visats. '
+        'De sparas krypterade på telefonen och tas bort ur appen när tiden '
+        'har gått.',
       ),
       findsOneWidget,
     );

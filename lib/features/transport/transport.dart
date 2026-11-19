@@ -167,8 +167,12 @@ class Transport {
     final olm = _crypto.olm;
     final store = _ref.read(messageStoreProvider.notifier);
     // The history first (0010 (B)): a message that is both there and still
-    // in the inbox or the outbox, after a crash, is shown once.
+    // in the inbox or the outbox, after a crash, is shown once. Only what the
+    // chosen time keeps, even if a round could not prune.
+    final length = (await _ref.read(transportSettingsProvider.future)).history;
+    final from = _now().subtract(length.duration);
     for (final h in await olm.history()) {
+      if (!length.keeps || h.at.isBefore(from)) continue;
       store.add(await _contactId(h.peer), _messaging.historyMessage(h));
     }
     for (final m in await olm.inbox()) {
@@ -305,9 +309,12 @@ class Transport {
       // What the history may no longer keep goes first, also before a server
       // is set (0010 (B)). A failure here does not stop the round.
       try {
+        // The saved choice, read first: never the default before the
+        // settings are loaded (review of #46).
+        final saved = await _ref.read(transportSettingsProvider.future);
         await TransportSettingsStore.pruneHistory(
           _crypto.olm,
-          settings?.history ?? TransportSettings.defaultHistory,
+          saved.history,
           _now(),
         );
       } on Object {

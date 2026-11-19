@@ -602,8 +602,10 @@ final class ShaOlmService implements OlmService {
   /// 2. the entry itself, written whole.
   ///
   /// The caller takes the message off the inbox or the outbox only after
-  /// this, so a crash cannot lose it. A message already in the entry, kept
-  /// before a crash, is not kept again.
+  /// this, so a crash cannot lose it. A message already in the entry, or in
+  /// the one before it, kept before a crash, is not kept again.
+  ///
+  /// OGRANSKAT (0004 §7): the history shares the vault's key (0010 (B)).
   Future<void> _keepInHistory(
     String peer, {
     required String id,
@@ -616,6 +618,12 @@ final class ShaOlmService implements OlmService {
     final last = refs.isEmpty ? null : refs.last;
     final items = last == null ? null : await _readEntry(last.name);
     if (items != null && items.any((i) => i.id == id)) return;
+    // A retry after a crash can come after a full entry was written and a
+    // new one started for the next message (review of #46).
+    if (refs.length > 1) {
+      final before = await _readEntry(refs[refs.length - 2].name);
+      if (before != null && before.any((i) => i.id == id)) return;
+    }
     final next = state.copy();
     final nextRefs = next.history.putIfAbsent(peer, () => []);
     final _HistoryRef ref;
@@ -645,7 +653,8 @@ final class ShaOlmService implements OlmService {
   /// Removes what was kept before [cutoff] (ms), or everything if it is
   /// null. A whole entry's vault entry is deleted first and the state saved
   /// after, so a crash leaves at most a name the state still lists, never an
-  /// entry it does not.
+  /// entry it does not. A removed entry may stay on the flash memory, readable
+  /// with the vault's key. OGRANSKAT (0004 §7).
   Future<void> _pruneHistory(int? cutoff) async {
     final state = await _load();
     if (state == null || state.history.isEmpty) return;
@@ -681,7 +690,15 @@ final class ShaOlmService implements OlmService {
   /// The messages in a history entry: empty if it is not there (a name
   /// reserved before a crash), null if it cannot be read.
   Future<List<_HistoryItem>?> _readEntry(String name) async {
-    final bytes = await _vault.read(name);
+    final Uint8List? bytes;
+    try {
+      bytes = await _vault.read(name);
+    } on CryptoException catch (e) {
+      // One damaged file must not stop the app (review of #46). Any other
+      // failure, such as a locked phone, is passed on and tried again.
+      if (e.kind == CryptoErrorKind.corrupt) return null;
+      rethrow;
+    }
     if (bytes == null) return [];
     try {
       final j = jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;

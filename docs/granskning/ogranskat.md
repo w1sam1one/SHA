@@ -11,8 +11,8 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   SHA-256 av de två nycklarna sorterade och sammanslagna), med de två
   Olm-identitetsnycklarna som indata.
 - **Var:**
-  - `lib/crypto/src/sha_olm_service.dart:743-755` (`verificationDigits`)
-  - `lib/crypto/src/olm_service.dart:203`
+  - `lib/crypto/src/sha_olm_service.dart:937-949` (`verificationDigits`)
+  - `lib/crypto/src/olm_service.dart:229`
 - **Granska:** att 20 siffror (cirka 66 bitar) räcker mot en angripare som
   tar fram nycklar som ger samma kod, och att funktionen är identisk med den
   gamla (`ShaCryptoService.verificationCode`). Det sista är läst, inte testat
@@ -38,7 +38,7 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   innanför Olm, så att chiffertexten blir exakt B.
 - **Var:**
   - `lib/crypto/src/olm_padding.dart:18`, `:27`, `:37`
-  - `lib/crypto/src/sha_olm_service.dart:285` (`encrypt`), `:346` (`receive`)
+  - `lib/crypto/src/sha_olm_service.dart:289` (`encrypt`), `:355` (`receive`)
 - **Storleken visar ändå** hinken, typ 0 (allt före det första svaret, cirka
   106 byte större) och kedjeindex (1 byte till vid 128 och vid 16 384).
   Mätt med riktiga Olm-meddelanden (`test/crypto/olm_sizes_test.dart`).
@@ -62,12 +62,12 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
 - **Valt (c på valvet, 0005 (A)):** hela tillståndet i en valvpost, skriven
   hel vid varje ändring. Varje försök börjar från den sparade pickeln.
 - **Var:**
-  - `lib/crypto/src/sha_olm_service.dart:34` (översikt), `:285` (`encrypt`:
-    spara före sändning), `:346` (`receive`: hash först, sessioner efter
+  - `lib/crypto/src/sha_olm_service.dart:34` (översikt), `:289` (`encrypt`:
+    spara före sändning), `:355` (`receive`: hash först, sessioner efter
     nummer, typ 0 sist mot `createInboundSession`, allt sparat i en
-    skrivning innan meddelandet lämnas ut), `:662` (pickle-nyckeln), `:675`
-    (`_save`), `:718` (feltexten blir en fast typ)
-  - `lib/crypto/src/olm_service.dart:149`
+    skrivning innan meddelandet lämnas ut), `:856` (pickle-nyckeln), `:869`
+    (`_save`), `:912` (feltexten blir en fast typ)
+  - `lib/crypto/src/olm_service.dart:175`
   - `android/app/src/main/kotlin/se/sha/sha/keystore/KeystoreVault.kt:76`
     (skrivningen: temporär fil, `fsync`, `rename`, `fsync` av mappen) och
     `:138` (återställningen raderar nyckeln först)
@@ -97,11 +97,11 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   när tillståndet läses från disken, tills tillståndet sparas igen. Ett paket utan session håller kvar alla
   kontaktens sessioner tills det är skickat.
 - **Var:**
-  - `lib/crypto/src/sha_olm_service.dart:54` och `:58` (48 h och 24 h), `:324`
-    (`markSent`: villkor 3), `:470` (`_markOld`: villkor 4), `:492`
-    (`_removeOld`: alla villkor), `:546` (`removeOldSessions`), `:636`
-    (tillstånd från före F2), `:678` (varje skrivning kör regeln)
-  - `lib/crypto/src/olm_service.dart:163`, `:239`
+  - `lib/crypto/src/sha_olm_service.dart:54` och `:58` (48 h och 24 h), `:328`
+    (`markSent`: villkor 3), `:479` (`_markOld`: villkor 4), `:501`
+    (`_removeOld`: alla villkor), `:740` (`removeOldSessions`), `:830`
+    (tillstånd från före F2), `:872` (varje skrivning kör regeln)
+  - `lib/crypto/src/olm_service.dart:189`, `:266`
   - Appen lämnar K:s tid `t` från JSON-texten
     (`lib/features/chat/messaging_service.dart:76`,
     `lib/features/transport/transport.dart:256`), och varje runda kör regeln
@@ -125,12 +125,29 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   nycklarna kan läsa en sådan kopia fram till `resetIdentity()`. Skyddet i
   0004 §7, att nyckeln är borta, gäller alltså inte här.
 
+## §7 – Historiken (F3, 0010 (B))
+
+- **Valt (B), ägarens beslut, inte det rekommenderade (a) i 0004:**
+  historiken ligger i egna valvposter med slumpade namn och valvets egen
+  nyckel, inte en nyckel per konversation. Märkt `OGRANSKAT (0004 §7)`.
+- **Var:** `lib/crypto/src/sha_olm_service.dart:609` (`_keepInHistory`:
+  tillståndet först, posten sedan, ingen dubblett), `:658` (`_pruneHistory`:
+  posten raderas först, tillståndet sparas sedan), `:692` (`_readEntry`: en
+  skadad post hoppas över).
+- **Granska:**
+  - en raderad post kan finnas kvar på flashminnet och läsas med valvets
+    nyckel tills `resetIdentity()` eller avinstallation; appen lovar bara
+    att historiken tas bort ur appen;
+  - posterna är per kontakt, så filernas tider och storlekar visar ungefär
+    när och hur mycket man skrivit med varje (namnlös) kontakt, och hur
+    många kontakter som har historik;
+  - ett inkommande meddelandes id i historiken är hashen av paketet, som
+    sparas så länge historiken finns (`seen` sparar den bara 72 h).
+
 ## Byggs inte i prototypen, men står i listan sist i 0004
 
 - §4 alternativ C (utfyllnad utanför Olm).
-- §7: en egen nyckel för historiken. Historiken är byggd i F3 med (B) i
-  0010, med valvets egen nyckel (`sha_olm_service.dart`, `_keepInHistory`
-  och `_pruneHistory`); punkt 7 i 0004 gäller fortfarande.
+- §7 (a): en egen nyckel per konversation för historiken (se ovan).
 - Ett yttre AEAD-lager med en hemlighet från QR-koden (0003).
 
 ## Annat som granskaren bör känna till

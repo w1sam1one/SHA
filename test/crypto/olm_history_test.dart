@@ -201,6 +201,51 @@ void main() {
     },
   );
 
+  test('an entry the vault cannot decrypt is skipped, and the next message '
+      'starts a new one (review of #46)', () async {
+    final (_, bob, inbox) = await received(['a', 'b']);
+    await bob.olm.markShown(inbox.first.id, keep: true);
+    bob.vault.unreadable.add(historyEntries(bob).single);
+    bob.restart();
+    expect(await bob.olm.history(), isEmpty);
+    await bob.olm.markShown(inbox.last.id, keep: true);
+    expect((await bob.olm.history()).map((h) => h.text), ['b']);
+    expect(historyEntries(bob), hasLength(2));
+    await bob.olm.pruneHistory(DateTime.utc(2000));
+  });
+
+  test('a message is not kept twice when a full entry was written just '
+      'before a crash (review of #46)', () async {
+    final vault = CrashingVault();
+    final size = ShaOlmService.historyEntrySize;
+    final texts = [for (var i = 0; i <= size; i++) 'm$i'];
+    // A clock that stands still: appending writes only the entry, so the
+    // write after it is the one that takes the message off the inbox.
+    final (_, bob, inbox) = await received(
+      texts,
+      clock: Clock(),
+      bobVault: vault,
+    );
+    for (final m in inbox.take(size - 1)) {
+      await bob.olm.markShown(m.id, keep: true);
+    }
+    // The last message of the full entry: kept, then a crash before it
+    // leaves the inbox.
+    vault.failWriteAt = 1;
+    await expectLater(
+      bob.olm.markShown(inbox[size - 1].id, keep: true),
+      throwsA(isA<CryptoException>()),
+    );
+    bob.restart();
+    // The next message starts a new entry; then the first is shown again.
+    await bob.olm.markShown(inbox[size].id, keep: true);
+    await bob.olm.markShown(inbox[size - 1].id, keep: true);
+    final ids = [for (final h in await bob.olm.history()) h.id];
+    expect(ids.toSet(), hasLength(ids.length));
+    expect(ids, hasLength(size + 1));
+    expect(await bob.olm.inbox(), isEmpty);
+  });
+
   test('resetIdentity deletes the history', () async {
     final (_, bob, inbox) = await received(['a']);
     await bob.olm.markShown(inbox.single.id, keep: true);
