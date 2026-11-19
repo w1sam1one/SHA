@@ -65,10 +65,14 @@ class ChatController extends Notifier<ChatView> {
 
   Future<void> _markShown() async {
     final olm = ref.read(cryptoServiceProvider).olm;
+    if (!state.messages.any((m) => !m.outgoing && !m.shown)) return;
+    // Kept in the history if the settings say so (0010 (B)).
+    final keep = (await ref.read(transportSettingsProvider.future)).history;
+    if (!ref.mounted) return;
     for (final m in state.messages) {
       final saved = m.savedId;
       if (m.outgoing || m.shown || saved == null) continue;
-      await olm.markShown(saved);
+      await olm.markShown(saved, keep: keep.keeps);
       if (!ref.mounted) return;
       ref
           .read(messageStoreProvider.notifier)

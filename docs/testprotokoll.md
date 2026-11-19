@@ -66,10 +66,11 @@ riktiga testet: en kontakt som läggs till så är inte verifierad i person.
 
 | # | Gör | Förväntat | Resultat |
 | --- | --- | --- | --- |
-| 5.1 | Stäng SHA helt på A (svep bort den) och öppna igen | Identiteten och kontakten finns kvar. Chatten är tom: visade meddelanden sparas inte (0005 (i)), och det är inte ett fel | |
+| 5.1 | Stäng SHA helt på A (svep bort den) och öppna igen | Identiteten och kontakten finns kvar, och chatten visar de meddelanden som har skickats och visats (historiken, 30 dagar som standard, 0010 (B)) | |
 | 5.2 | Skriv till B | Det fungerar utan ny skanning | |
 | 5.3 | Låt B skriva medan A:s app är stängd. Öppna A | Meddelandet visas | |
-| 5.4 | Starta om telefonen A och öppna SHA | Som 5.1–5.2, också att chatten är tom | |
+| 5.4 | Starta om telefonen A och öppna SHA | Som 5.1–5.2 | |
+| 5.5 | Välj "Spara inte" under Inställningar på A, stäng SHA helt och öppna igen | Chatten är tom, utom meddelanden som inte har visats än | |
 
 ## 6. Tillgänglighet (TalkBack)
 

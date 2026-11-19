@@ -17,6 +17,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | R1–R7 från spiken, krascher enligt §6, sessionsnummer, `resetIdentity()` | 26 | `test/crypto/olm_service_cases.dart` | Datorn och emulatorn (R8) |
 | Kontakter, sessionsregeln 0006, engångsnycklar §8 | 15 | `test/crypto/olm_contacts_test.dart` | Datorn |
 | Radering av gamla sessioner, 0009 (iv): varje villkor, motexemplet, utkorgen, omstart, tillstånd från före F2 | 16 | `test/crypto/olm_session_removal_test.dart` | Datorn |
+| Historiken, 0010 (B): egna poster med slumpade namn, krasch vid varje skrivning, full post och dubbletter vid gränsen, rensning, skadad eller oläsbar post, återställning | 14 | `test/crypto/olm_history_test.dart` | Datorn |
 | Storlekstabellen §4 med riktiga Olm-meddelanden, kedjeindex 127/128/16 384 | 6 | `test/crypto/olm_sizes_test.dart` | Datorn |
 | Utfyllnaden (A) | 8 | `test/crypto/olm_padding_test.dart` | Datorn |
 | Paketformat 3 | 6 | `test/crypto/olm_wire_format_test.dart` | Datorn |
@@ -30,18 +31,18 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Release-manifestet: bara `CAMERA` och `INTERNET`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
 | JSON-texten v3 | 6 | `test/features/message_payload_test.dart` | Datorn |
 | Relay-klienten mot en server på datorn | 11 | `test/features/relay_client_test.dart` | Datorn |
-| Transporten med två appar och en låtsasserver: 204, 507, 429, dubbletter, krascher, rundor, kontaktens tid till 0009 | 21 | `test/features/transport_test.dart` | Datorn |
+| Transporten med två appar och en låtsasserver: 204, 507, 429, dubbletter, krascher, rundor, kontaktens tid till 0009, historiken efter en omstart, "Spara inte", kallstart, kortare tid och en oläsbar post | 26 | `test/features/transport_test.dart` | Datorn |
 | Rundorna i §9 (b) och spamgränsen | 4 | `test/features/fetch_plan_test.dart` | Datorn |
 | Hela kedjan mot den riktiga relayn | 5 | `test/chain/relay_chain_test.dart` | Datorn |
 | Texterna i §10 | 5 | `test/features/notice_texts_test.dart` | Datorn |
 | Inga loggar, inga felobjekt i texter, inget som liknar nycklar | 5 | `test/security/no_logging_test.dart` | Datorn |
 | Inga kryptoord i texter, låsta Olm-versioner | 2 | `test/security/` | Datorn |
-| Skärmar: chatten, QR-fliken, livscykeln, återställning, licenssidan (F5), kontrast | 20 | `test/widget/`, `test/ui/` | Datorn |
+| Skärmar: chatten, QR-fliken, livscykeln, återställning, licenssidan (F5), valet av historik (F3), kontrast | 21 | `test/widget/`, `test/ui/` | Datorn |
 | Relayn: gränser, loggar utan IP, spamgräns | – | `relay/*_test.go` | Datorn |
 | Slumptal för långlivade nycklar (`entropy.dart`) | 3 | `test/crypto/entropy_test.dart` | Datorn |
 | X25519, HKDF och brevlåde-ID (används för §3 (A)), och det gamla formatet 2 | 19 | `test/crypto/crypto_service_test.dart` | Datorn |
 | AES-256-GCM och utfyllnaden i format 2 | 9 | `test/crypto/aes_gcm_test.dart`, `test/crypto/padding_test.dart` | Datorn |
-| Serverns adress och intervallet | 4 | `test/features/transport_settings_test.dart` | Datorn |
+| Serverns adress, intervallet och historikens längd | 5 | `test/features/transport_settings_test.dart` | Datorn |
 | "Verifierad i person" | 3 | `test/security/trust_display_test.dart` | Datorn |
 | Olm i appbygget: biblioteket laddas och en session går åt båda hållen | 2 | `integration_test/olm_build_test.dart` | Emulatorn |
 

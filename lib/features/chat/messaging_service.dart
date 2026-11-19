@@ -70,6 +70,17 @@ class MessagingService {
     );
   }
 
+  /// A message from the history (0010 (B)): sent or shown, nothing waits.
+  ChatMessage historyMessage(OlmHistoryItem h) {
+    final p = MessagePayload.decode(h.text);
+    return ChatMessage(
+      id: p?.id ?? h.id,
+      outgoing: h.outgoing,
+      sentAt: (p?.sentAt ?? h.at).toLocal(),
+      text: p?.text,
+    );
+  }
+
   /// When the contact wrote [text], an Olm message's text, by the contact's
   /// own clock (the payload's `t`); null if it is not a payload. The Olm
   /// service needs it to remove old sessions (0009 (iv), condition 4).

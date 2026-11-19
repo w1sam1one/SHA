@@ -41,7 +41,8 @@ Backup och enhetsöverföring är avstängda (`allowBackup="false"`,
 | Engångsnycklar som har visats i en QR-kod men inte använts | 30 dagar | `lib/crypto/src/sha_olm_service.dart` (`keepUnusedOneTimeKeys`) |
 | Räknare för paket som inte gick att läsa | Tills appen har visat dem | `lib/crypto/src/sha_olm_service.dart` (`clearFailureCounts`) |
 | Kontakter: namnet användaren skriver, när ni möttes, kontaktens offentliga nycklar | Som ovan | `lib/crypto/src/sha_olm_service.dart` |
-| Meddelanden | Bara tills de har skickats eller visats; sedan bara i minnet tills appen stängs | 0005 (i), `lib/features/chat/message_store.dart` |
+| Meddelanden som inte har skickats eller visats | Tills de har skickats eller visats | 0005 (i), `lib/crypto/src/sha_olm_service.dart` |
+| Historiken: skickade och visade meddelanden | Den tid användaren väljer under Inställningar: Spara inte, 7 dagar, 30 dagar (standard) eller 1 år. Sedan tas de bort ur appen; kopior kan finnas kvar i telefonens minne tills appen avinstalleras | 0010 (B), `lib/crypto/src/sha_olm_service.dart` (`_keepInHistory`, `_pruneHistory`) |
 | Serverns adress och hur ofta appen hämtar | Som identiteten | `lib/features/transport/transport_settings.dart` |
 | Hashar av hämtade paket (för att känna igen dubbletter) | Minst 72 timmar; de rensas vid nästa skrivning efter det | `lib/crypto/src/sha_olm_service.dart` (`keepHashes`) |
 

@@ -73,9 +73,15 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                       'innan det krypteras.',
                   'Kontot, sessionerna och kontakterna sparas i en enda post '
                       'som krypteras med en nyckel i Android Keystore. Ett '
-                      'meddelande sparas bara tills det har skickats eller '
-                      'visats. Efter det finns det bara i minnet tills appen '
-                      'stängs.',
+                      'meddelande ligger där tills det har skickats eller '
+                      'visats.',
+                  'Historiken sparas i egna poster, krypterade med samma '
+                      'nyckel, så länge du har valt under Inställningar. Sedan '
+                      'tas den bort ur appen. Kopior kan finnas kvar i '
+                      'telefonens lagring tills du avinstallerar appen. Väljer '
+                      'du "Spara inte" finns ett meddelande bara i appens '
+                      'arbetsminne tills '
+                      'appen stängs.',
                 ],
               ),
               _Section(
@@ -96,7 +102,6 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
               _Section(
                 title: 'Finns inte än',
                 lines: [
-                  'Ingen historik: meddelanden som har visats sparas inte.',
                   'Ingen säkerhetskopia. Tappar du telefonen måste ni träffas '
                       'och skanna varandras QR-koder på nytt.',
                   'Inget app-lås med biometri eller PIN.',

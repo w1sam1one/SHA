@@ -43,7 +43,10 @@ när ni träffades och kontaktens nycklar), inställningarna, meddelanden som
 inte har skickats eller visats än, och uppgifter som appen behöver för
 krypteringen. Allt är krypterat med en nyckel som telefonen skyddar, och
 inget säkerhetskopieras. Hur väl nyckeln skyddas beror på telefonen; appen
-visar det under Teknisk information. Meddelanden som har visats sparas inte.
+visar det under Teknisk information. Meddelanden som har skickats eller
+visats sparas så länge du väljer under Inställningar (30 dagar om du inte
+väljer något annat) och tas sedan bort ur appen. Väljer du "Spara inte"
+sparas de inte.
 
 **Kameran** används bara för att skanna QR-koder, och bara medan skannern
 är öppen. Appen läser bilden och sparar den inte. Inget ljud spelas in.
@@ -80,7 +83,10 @@ type, when you met and the contact's keys), the settings, messages not yet
 sent or shown, and what the app needs for the encryption. All of it is
 encrypted with a key the phone protects, and none of it is backed up. How
 well the key is protected depends on the phone; the app shows it under
-Technical information. Messages that have been shown are not saved.
+Technical information. Messages that have been sent or shown are kept for
+as long as you choose under Settings (30 days unless you choose otherwise)
+and are then removed from the app. If you choose "Spara inte" (do not
+keep), they are not saved.
 
 **The camera** is used only to scan QR codes, and only while the scanner is
 open. The app reads the picture and does not save it. No sound is recorded.

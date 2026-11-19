@@ -26,9 +26,27 @@ final class CrashingVault extends InMemoryVault {
   bool failNextWrite = false;
   int writes = 0;
 
+  /// The write with this number, counted from 0 from when it is set, fails
+  /// instead.
+  int? failWriteAt;
+
+  /// Entries the vault cannot decrypt: reading them throws as a damaged
+  /// file does on Android (`KeystoreVault`, "CORRUPT").
+  final Set<String> unreadable = {};
+
+  @override
+  Future<Uint8List?> read(String name) async {
+    if (unreadable.contains(name)) {
+      throw const CryptoException('damaged', CryptoErrorKind.corrupt);
+    }
+    return super.read(name);
+  }
+
   @override
   Future<void> write(String name, Uint8List value) async {
-    if (failNextWrite) {
+    final at = failWriteAt;
+    if (at != null) failWriteAt = at == 0 ? null : at - 1;
+    if (failNextWrite || at == 0) {
       failNextWrite = false;
       throw const CryptoException('crash', CryptoErrorKind.unavailable);
     }

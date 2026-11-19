@@ -1,7 +1,8 @@
 # 0010 – Historik i version 1 (F3)
 
 Status: **Beslutat av ägaren 2026-11-18: (B)**, historik i egna valvposter
-med valvets nyckel, 30 dagar som standard. Skrivet 2026-11-17.
+med valvets nyckel, 30 dagar som standard. Byggt i F3 2026-11-19. Skrivet
+2026-11-17.
 
 Underlag för F3 i [`docs/ROADMAP.md`](../ROADMAP.md) (0004 §7, 0005 (C) och
 (ii)). I prototypen sparas ett meddelande bara tills det har skickats eller
