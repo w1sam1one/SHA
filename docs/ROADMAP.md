@@ -208,7 +208,7 @@ någon annan än ägaren (0003, 0004 §13):
     alternativ C, §7 (historiken) och ett yttre lager.
 - Raderingsregeln för gamla sessioner (0004 §2, F2) är granskad av
   kryptoexperten (G6). Den är byggd enligt (iv) i 0009 och märkt
-  `OGRANSKAT (0009)`; utan den låg gamla sessioners nycklar kvar i
+  `OGRANSKAT (0009)`. Utan den skulle gamla sessioners nycklar ligga kvar i
   telefonen.
 - Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
