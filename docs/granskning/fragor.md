@@ -12,7 +12,9 @@ Numren följer listan "Kräver granskning av kryptoexpert" sist i 0004.
 5. **Huvudet** (§5): behövs brevlåde-ID:t inuti det krypterade, med en
    kontroll efter avkrypteringen?
 6. **Olm-version** (§5): version 1 (8 byte MAC) eller version 2 (32 byte)?
-7. **Historiken** (§7): byggs inte i fas 1; se F3.
+7. **Historiken** (§7): byggs inte i fas 1. Ägaren valde 2026-11-18 (B) i
+   0010: egna valvposter med valvets nyckel, inte en nyckel per
+   konversation. Räcker det, och vad får appen lova om raderad historik?
 8. **Pickles och återställning** (§6):
    - Hindrar ordningen i `sha_olm_service.dart` att ett gammalt läge läses
      in, och att en meddelandenyckel används två gånger?
@@ -29,10 +31,11 @@ Numren följer listan "Kräver granskning av kryptoexpert" sist i 0004.
     kontakt?
 11. **Hashar rensas efter väggklockan** (72 timmar). Ett hopp i klockan kan
     ge fel felrad. Räcker det, eller behövs en monoton klocka?
-12. **Raden "kunde inte läsas"** kan visas av vem som helst som kan
-    brevlådans ID (0004 §10). Är rådet "träffas och skanna igen" rätt
-    då?
+12. **Raderna "kunde inte läsas", "saknas" och "kom fram för sent"** kan
+    visas av vem som helst som kan brevlådans ID (0004 §10, 0008 (i)). Är
+    råden i dem, till exempel "träffas och skanna igen", rätt då?
 13. **En översvämmad brevlåda** (1 000 paket) ger en valvskrivning per nytt
     paket. Behövs en gräns?
-14. **Raderingen av gamla sessioner** (0006 (iii) i prototypen): vilken regel
-    före utdelningen (F2)?
+14. **Raderingen av gamla sessioner** (F2, 0009 (iv) med 24 h marginal):
+    håller argumentet för att inget meddelande går förlorat, och är
+    luckorna godtagbara (se `ogranskat.md`)?

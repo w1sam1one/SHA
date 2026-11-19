@@ -50,6 +50,16 @@ final class ShaOlmService implements OlmService {
   /// long (0004 §8 (a)); the owner may choose another number of days.
   static const Duration keepUnusedOneTimeKeys = Duration(days: 30);
 
+  /// How long the relay keeps a packet (`relay/limits.go`, `packetTTL`).
+  static const Duration relayKeepsPackets = Duration(hours: 48);
+
+  /// For a clock that is wrong, ours or the contact's (0009, the owner's
+  /// decision 2026-11-18).
+  static const Duration clockMargin = Duration(hours: 24);
+
+  /// Conditions 4 and 5 of rule (iv) in 0009, in milliseconds.
+  static final int _oldAfter = (relayKeepsPackets + clockMargin).inMilliseconds;
+
   final KeyVault _vault;
   final MixedEntropy _entropy;
   final DateTime Function() _clock;
@@ -263,6 +273,8 @@ final class ShaOlmService implements OlmService {
           id: session.sessionId,
           pickle: session.toPickleEncrypted(key),
           number: next.nextNumber(),
+          // Never sent on yet: counted from now (0009, condition 3).
+          sent: _now(),
         ),
       );
     if (profile != null) contact.profile ??= profile;
@@ -291,6 +303,7 @@ final class ShaOlmService implements OlmService {
       peer: peerKey,
       packet: base64.encode(packet),
       text: text,
+      session: chosen.id,
     );
     chosen.pickle = session.toPickleEncrypted(key);
     next.outbox.add(outgoing);
@@ -312,110 +325,194 @@ final class ShaOlmService implements OlmService {
     // No pickle key needed: the outbox can be cleared even if it is lost.
     final state = await _load();
     if (state == null) return;
+    final sent = state.outbox.where((o) => o.id == id).firstOrNull;
+    if (sent == null) return;
     final next = state.copy()..outbox.removeWhere((o) => o.id == id);
-    if (next.outbox.length != state.outbox.length) await _save(next);
+    // 0009 (iv), condition 3: the relay has our latest packet on the
+    // session from now, so a message that made it old no longer counts. A
+    // packet saved before F2 has no session: then every session with the
+    // contact counts as sent on now. OGRANSKAT (0009).
+    for (final s in next.contacts[sent.peer]?.sessions ?? const <_Session>[]) {
+      if (sent.session == null || s.id == sent.session) {
+        s
+          ..sent = _now()
+          ..qualified = null;
+      }
+    }
+    await _save(next);
   });
 
   @override
-  Future<OlmReceiveResult> receive(List<int> peer, Uint8List packet) =>
-      _serial(() async {
-        final (state, key) = await _require();
-        final peerKey = _peerKey(peer);
-        final hash = _hex(await _hasher.hash(packet));
+  Future<OlmReceiveResult> receive(
+    List<int> peer,
+    Uint8List packet, {
+    DateTime? Function(String text)? writtenAt,
+  }) => _serial(() async {
+    final (state, key) = await _require();
+    final peerKey = _peerKey(peer);
+    final hash = _hex(await _hasher.hash(packet));
 
-        // 1. Skip packets already handled: the relay hands out the same
-        // packet on every fetch for 48 hours (0004 §6).
-        if (state.seen.containsKey(hash)) {
-          return const OlmReceiveResult.failed(OlmReceiveFailure.duplicate);
-        }
-        final next = state.copy()..seen[hash] = _now();
+    // 1. Skip packets already handled: the relay hands out the same
+    // packet on every fetch for 48 hours (0004 §6).
+    if (state.seen.containsKey(hash)) {
+      return const OlmReceiveResult.failed(OlmReceiveFailure.duplicate);
+    }
+    final next = state.copy()..seen[hash] = _now();
 
-        final type = packet.isEmpty ? -1 : packet[0];
-        if (packet.length < 2 || (type != 0 && type != 1)) {
-          next.contact(peerKey).malformed++;
-          await _save(next);
-          return const OlmReceiveResult.failed(OlmReceiveFailure.malformed);
-        }
-        final ciphertext = base64
-            .encode(Uint8List.sublistView(packet, 1))
-            .replaceAll('=', '');
+    final type = packet.isEmpty ? -1 : packet[0];
+    if (packet.length < 2 || (type != 0 && type != 1)) {
+      next.contact(peerKey).malformed++;
+      await _save(next);
+      return const OlmReceiveResult.failed(OlmReceiveFailure.malformed);
+    }
+    final ciphertext = base64
+        .encode(Uint8List.sublistView(packet, 1))
+        .replaceAll('=', '');
 
-        // 2. Decrypt in memory: the saved sessions first, newest number
-        // first, each from its saved pickle (0004 §6).
-        final contact = next.contact(peerKey);
-        var failure = OlmReceiveFailure.unreadable;
-        for (final saved in contact.byNumber) {
-          final session = _session(saved, key);
-          final String text;
-          try {
-            text = OlmPadding.unpad(
-              session.decrypt(messageType: type, ciphertext: ciphertext),
-            );
-          } catch (e) {
-            // Classify only; the text itself is dropped here.
-            final kind = _classify(e);
-            if (type == 1 && kind != OlmReceiveFailure.unreadable) {
-              failure = kind;
-            }
-            continue;
-          }
-          saved
-            ..pickle = session.toPickleEncrypted(key)
-            ..number = next.nextNumber();
-          return _keep(next, peerKey, hash, text);
+    // 2. Decrypt in memory: the saved sessions first, newest number
+    // first, each from its saved pickle (0004 §6).
+    final contact = next.contact(peerKey);
+    var failure = OlmReceiveFailure.unreadable;
+    for (final saved in contact.byNumber) {
+      final session = _session(saved, key);
+      final String text;
+      try {
+        text = OlmPadding.unpad(
+          session.decrypt(messageType: type, ciphertext: ciphertext),
+        );
+      } catch (e) {
+        // Classify only; the text itself is dropped here.
+        final kind = _classify(e);
+        if (type == 1 && kind != OlmReceiveFailure.unreadable) {
+          failure = kind;
         }
+        continue;
+      }
+      saved
+        ..pickle = session.toPickleEncrypted(key)
+        ..number = next.nextNumber();
+      _markOld(contact, saved.id, _timeOf(text, writtenAt));
+      return _keep(next, peerKey, hash, text);
+    }
 
-        // A first message no saved session could read: try a new inbound
-        // session, checked against the contact's identity key (0004 §6).
-        if (type == 0) {
-          final account = _account(state, key);
-          ({Session session, String plaintext})? inbound;
-          try {
-            inbound = account.createInboundSession(
-              theirIdentityKey: Curve25519PublicKey.fromBytes(
-                base64.decode(peerKey),
-              ),
-              preKeyMessageBase64: ciphertext,
-            );
-          } catch (_) {
-            // Whatever the error, the account in memory is dropped: the
-            // binding can fail after the one-time key was removed (0004 §6).
-            // A type 0 message is always "unreadable" (0004 §10).
-            inbound = null;
-          }
-          if (inbound != null) {
-            next.account = account.toPickleEncrypted(key);
-            contact.sessions.add(
-              _Session(
-                id: inbound.session.sessionId,
-                pickle: inbound.session.toPickleEncrypted(key),
-                number: next.nextNumber(),
-              ),
-            );
-            // Outside the try: a failed save must reach the caller as an
-            // error, never turn into "unreadable".
-            return _keep(
-              next,
-              peerKey,
-              hash,
-              OlmPadding.unpad(inbound.plaintext),
-            );
-          }
-          failure = OlmReceiveFailure.unreadable;
-        }
+    // A first message no saved session could read: try a new inbound
+    // session, checked against the contact's identity key (0004 §6).
+    if (type == 0) {
+      final account = _account(state, key);
+      ({Session session, String plaintext})? inbound;
+      try {
+        inbound = account.createInboundSession(
+          theirIdentityKey: Curve25519PublicKey.fromBytes(
+            base64.decode(peerKey),
+          ),
+          preKeyMessageBase64: ciphertext,
+        );
+      } catch (_) {
+        // Whatever the error, the account in memory is dropped: the
+        // binding can fail after the one-time key was removed (0004 §6).
+        // A type 0 message is always "unreadable" (0004 §10).
+        inbound = null;
+      }
+      if (inbound != null) {
+        next.account = account.toPickleEncrypted(key);
+        final text = OlmPadding.unpad(inbound.plaintext);
+        final id = inbound.session.sessionId;
+        contact.sessions.add(
+          _Session(
+            id: id,
+            pickle: inbound.session.toPickleEncrypted(key),
+            number: next.nextNumber(),
+            // Never sent on: counted from now (0009, condition 3).
+            sent: _now(),
+          ),
+        );
+        _markOld(contact, id, _timeOf(text, writtenAt));
+        // Outside the try: a failed save must reach the caller as an
+        // error, never turn into "unreadable".
+        return _keep(next, peerKey, hash, text);
+      }
+      failure = OlmReceiveFailure.unreadable;
+    }
 
-        // No message: save the hash and the counter together (0005, item 8).
-        switch (failure) {
-          case OlmReceiveFailure.tooLate:
-            contact.tooLate++;
-          case OlmReceiveFailure.gapTooBig:
-            contact.gapTooBig++;
-          default:
-            contact.unreadable++;
-        }
-        await _save(next);
-        return OlmReceiveResult.failed(failure);
+    // No message: save the hash and the counter together (0005, item 8).
+    switch (failure) {
+      case OlmReceiveFailure.tooLate:
+        contact.tooLate++;
+      case OlmReceiveFailure.gapTooBig:
+        contact.gapTooBig++;
+      default:
+        contact.unreadable++;
+    }
+    await _save(next);
+    return OlmReceiveResult.failed(failure);
+  });
+
+  /// When the contact wrote [text], by the contact's clock, or null. The
+  /// app's function reads it; if that fails, the time is unknown, which
+  /// only keeps sessions longer.
+  static DateTime? _timeOf(
+    String text,
+    DateTime? Function(String text)? writtenAt,
+  ) {
+    try {
+      return writtenAt?.call(text);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 0009 (iv), condition 4: the contact wrote a message on [readOn] at
+  /// [writtenAt] (the contact's clock). Each other session where that is
+  /// more than 48 h at the relay and 24 h for clocks after our latest packet
+  /// is old from now on our clock, unless it already was: only the first
+  /// such message counts (condition 5). [_removeOld] removes it later.
+  /// OGRANSKAT (0009).
+  void _markOld(_Contact contact, String readOn, DateTime? writtenAt) {
+    if (writtenAt == null) return;
+    final at = writtenAt.millisecondsSinceEpoch;
+    for (final s in contact.sessions) {
+      if (s.id == readOn || s.qualified != null) continue;
+      final sent = s.sent;
+      if (sent != null && at > sent + _oldAfter) s.qualified = _now();
+    }
+  }
+
+  /// Rule (iv) in 0009: removes every session that all of this holds for,
+  /// and returns how many.
+  ///
+  /// 1. It is not the one we send on (the highest number, 0006 (b)).
+  /// 2. Nothing in the outbox is encrypted on it. A packet saved before F2
+  ///    has no session, and then keeps every session with its contact.
+  /// 3. and 4. A message from the contact made it old ([_markOld]), and
+  ///    nothing was sent on it after that ([markSent] clears the mark).
+  /// 5. It has been old for 48 h + 24 h on our clock: everything the
+  ///    contact sent on it before has been fetched or has left the relay.
+  ///
+  /// OGRANSKAT (0009).
+  int _removeOld(_State next) {
+    final now = _now();
+    var removed = 0;
+    for (final MapEntry(key: peer, value: contact) in next.contacts.entries) {
+      if (contact.sessions.length < 2) continue;
+      final chosen = contact.chosen;
+      final waiting = {
+        for (final o in next.outbox)
+          if (o.peer == peer) o.session,
+      };
+      contact.sessions.removeWhere((s) {
+        final since = s.qualified;
+        final old =
+            !identical(s, chosen) &&
+            !waiting.contains(s.id) &&
+            !waiting.contains(null) &&
+            since != null &&
+            now - since >= _oldAfter;
+        if (old) removed++;
+        return old;
       });
+    }
+    return removed;
+  }
 
   /// 3. Saves the session, the account, the message and the hash in one
   /// write; 4. only then is the message returned to be shown (0004 §6).
@@ -443,6 +540,17 @@ final class ShaOlmService implements OlmService {
     if (state == null) return;
     final next = state.copy()..inbox.removeWhere((m) => m.id == id);
     if (next.inbox.length != state.inbox.length) await _save(next);
+  });
+
+  @override
+  Future<int> removeOldSessions() => _serial(() async {
+    // No pickle key needed: removing a session reads no pickle.
+    final state = await _load();
+    if (state == null) return 0;
+    final next = state.copy();
+    final removed = _removeOld(next);
+    if (removed > 0) await _save(next);
+    return removed;
   });
 
   @override
@@ -520,7 +628,13 @@ final class ShaOlmService implements OlmService {
     final bytes = await _vault.read(stateName);
     if (bytes == null) return null;
     try {
-      return _saved = _State.decode(bytes);
+      final state = _State.decode(bytes);
+      // 0009 (iv), condition 3: a session saved before F2 has no time for
+      // our latest packet on it. That packet reached the relay before now,
+      // so now is no earlier than the real time, and can only make the
+      // session wait longer. OGRANSKAT (0009).
+      state.fillMissingSentTimes(_now());
+      return _saved = state;
     } catch (_) {
       throw const CryptoException(
         'Saved Olm state is damaged',
@@ -561,6 +675,7 @@ final class ShaOlmService implements OlmService {
   Future<void> _save(_State next) async {
     final cutoff = _now() - keepHashes.inMilliseconds;
     next.seen.removeWhere((_, at) => at < cutoff);
+    _removeOld(next);
     final bytes = next.encode();
     try {
       await _vault.write(stateName, bytes);
@@ -741,6 +856,15 @@ final class _State {
 
   int nextNumber() => ++counter;
 
+  /// See [ShaOlmService._load].
+  void fillMissingSentTimes(int now) {
+    for (final c in contacts.values) {
+      for (final s in c.sessions) {
+        s.sent ??= now;
+      }
+    }
+  }
+
   _Contact contact(String peer) => contacts.putIfAbsent(peer, _Contact.new);
 
   Map<String, Object?> toJson() => {
@@ -844,22 +968,41 @@ final class _Profile {
 }
 
 final class _Session {
-  _Session({required this.id, required this.pickle, required this.number});
+  _Session({
+    required this.id,
+    required this.pickle,
+    required this.number,
+    this.sent,
+    this.qualified,
+  });
 
   factory _Session.fromJson(Map<String, Object?> j) => _Session(
     id: j['id']! as String,
     pickle: j['pickle']! as String,
     number: j['number']! as int,
+    // Missing in states saved before F2.
+    sent: j['sent'] as int?,
+    qualified: j['qualified'] as int?,
   );
 
   final String id;
   String pickle;
   int number;
 
+  /// When the relay took our latest packet on this session, or when it was
+  /// made if we never sent on it, in ms on our clock (0009, `sentS`).
+  int? sent;
+
+  /// When a message from the contact first made this session old, in ms on
+  /// our clock, or null (0009, `qualifiedAt`).
+  int? qualified;
+
   Map<String, Object?> toJson() => {
     'id': id,
     'pickle': pickle,
     'number': number,
+    'sent': sent,
+    'qualified': qualified,
   };
 }
 
@@ -869,6 +1012,7 @@ final class _Outgoing {
     required this.peer,
     required this.packet,
     required this.text,
+    required this.session,
   });
 
   factory _Outgoing.fromJson(Map<String, Object?> j) => _Outgoing(
@@ -876,12 +1020,18 @@ final class _Outgoing {
     peer: j['peer']! as String,
     packet: j['packet']! as String,
     text: j['text']! as String,
+    // Missing in states saved before F2.
+    session: j['session'] as String?,
   );
 
   final String id;
   final String peer;
   final String packet;
   final String text;
+
+  /// The id of the session [packet] is encrypted on; null if it was saved
+  /// before F2 (0009, condition 2).
+  final String? session;
 
   OlmOutgoing toPublic() => OlmOutgoing(
     id: id,
@@ -895,6 +1045,7 @@ final class _Outgoing {
     'peer': peer,
     'packet': packet,
     'text': text,
+    'session': session,
   };
 }
 

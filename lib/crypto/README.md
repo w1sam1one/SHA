@@ -150,8 +150,16 @@ utdelningen.
   session (0006).
 - **Visade engångsnycklar** som ingen har använt tas bort efter 30 dagar
   (0004 §8 (a)).
+- **Gamla sessioner** raderas enligt (iv) i 0009, med 24 h marginal för
+  klockor (OGRANSKAT, 0009). En session raderas först när kontakten har
+  skrivit på en annan session mer än 72 h efter vårt senaste paket på den,
+  och 72 h till har gått. Den vi skickar på, och en med ett paket i
+  utkorgen, raderas aldrig. En kontakt som är tyst behåller alla sina
+  sessioner. Appen lämnar kontaktens tid `t` till `receive` (`writtenAt`),
+  och varje runda anropar `removeOldSessions`.
 - **Testat:** `test/crypto/olm_contacts_test.dart` (0006:s tester och
-  mutationer) och `test/features/contact_code_test.dart`.
+  mutationer), `test/crypto/olm_session_removal_test.dart` (0009:s tester
+  och mutationer) och `test/features/contact_code_test.dart`.
 
 ### Paketformat 3 och utfyllnad (P5)
 

@@ -4,8 +4,10 @@
 # Reads the changed paths, one per line, on stdin. Prints flutter=, android=,
 # spike=, relay= and docs_only= as true or false, for $GITHUB_OUTPUT.
 #
-# - Documentation only (*.md anywhere, docs/, LICENSE): none of the four
-#   jobs; the quick check in "changes" is enough.
+# - Documentation only (*.md anywhere, docs/): none of the four jobs; the
+#   quick check in "changes" is enough. LICENSE is not documentation here:
+#   Flutter puts it in the app's license notices (NOTICES), so the Flutter
+#   job builds and tests it.
 # - Anything else runs "flutter": its tests also read files outside lib/ and
 #   test/ (android/app/src/main/kotlin, spike/vodozemac/pubspec.yaml, relay/).
 # - "android" (the emulator): lib/, test/ (integration_test/ imports from
@@ -22,7 +24,7 @@ while IFS= read -r f; do
   [ -n "$f" ] || continue
   seen=true
   case "$f" in
-    *.md | docs/* | LICENSE) continue ;;
+    *.md | docs/*) continue ;;
   esac
   docs_only=false
   flutter=true

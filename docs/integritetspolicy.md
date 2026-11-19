@@ -28,11 +28,11 @@ skickats eller visats än. Allt är krypterat med en nyckel i telefonens
 säkra lagring, och inget säkerhetskopieras. Meddelanden som har visats
 sparas inte.
 
-**Kameran** används bara för att skanna QR-koder. Inga bilder sparas.
+**Kameran** används bara för att skanna QR-koder, och bara medan skannern
+är öppen. Bilden läses i appen och sparas inte. Inget ljud spelas in.
 
 **Ingen analys, inga annonser och inga kraschrapporter** i appens egen kod.
-Skannern använder Googles ML Kit; vad den skickar till Google beskrivs av
-Google.
+QR-koden läses av appen själv och skickas inte vidare.
 
 **Radera allt:** avinstallera appen, så raderas allt den har sparat på
 telefonen. Det som finns på servern raderas efter högst 48 timmar.
@@ -60,11 +60,11 @@ type and the contact's keys), the settings, and messages not yet sent or
 shown. All of it is encrypted with a key in the phone's secure storage, and
 none of it is backed up. Messages that have been shown are not kept.
 
-**The camera** is used only to scan QR codes. No pictures are kept.
+**The camera** is used only to scan QR codes, and only while the scanner is
+open. The picture is read in the app and is not kept. No sound is recorded.
 
-**No analytics, no ads and no crash reports** in the app's own code. The
-scanner uses Google's ML Kit; what it sends to Google is described by
-Google.
+**No analytics, no ads and no crash reports** in the app's own code. The QR
+code is read by the app itself and is not sent anywhere.
 
 **Delete everything:** uninstall the app, and everything it has stored on
 the phone is deleted. What is on the server is deleted after at most 48

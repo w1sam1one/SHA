@@ -70,6 +70,11 @@ class MessagingService {
     );
   }
 
+  /// When the contact wrote [text], an Olm message's text, by the contact's
+  /// own clock (the payload's `t`); null if it is not a payload. The Olm
+  /// service needs it to remove old sessions (0009 (iv), condition 4).
+  DateTime? writtenAt(String text) => MessagePayload.decode(text)?.sentAt;
+
   /// Today's mailbox for messages to [contact].
   Future<Uint8List> outgoingMailbox(Contact contact) async => _crypto.mailboxId(
     await _keysFor(contact),

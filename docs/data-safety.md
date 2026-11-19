@@ -5,7 +5,7 @@ Vad SHA:s egen kod gör med data, med fil som källa. Det ersätter punkt 6 i
 
 **Du måste själv kontrollera varje svar mot Googles definitioner innan du
 skickar in** (F9). Listan säger vad koden gör, inte hur Googles formulär ska
-tolkas, och den täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
+tolkas, och den täcker inte vad Googles bibliotek (CameraX) gör.
 
 ## Vad som lämnar telefonen
 
@@ -19,8 +19,9 @@ Inget annat skickas av appens egen kod: inga konton, ingen analys, inga
 kraschrapporter, inga annonser och ingen push (`pubspec.yaml`,
 `test/security/no_logging_test.dart`).
 
-Om ML Kit eller CameraX (via `mobile_scanner`) skickar något till Google:
-**ej verifierat**. Kontrollera Googles dokumentation för ML Kit.
+ML Kit är borttaget (0012 (C1)). QR-koden läses i appen av `zxing2`, i ren
+Dart (`lib/features/qr/qr_decoder.dart`). Om CameraX (via `camera`) skickar
+något till Google: **ej verifierat**.
 
 ## Vad som sparas på telefonen
 
@@ -45,11 +46,16 @@ avinstallation allt.
 
 ## Behörigheter
 
-- `CAMERA`: bara för att skanna QR-koder. Appens kod ber inte om bilderna
-  och sparar inga (`lib/features/qr/scan_screen.dart`).
+- `CAMERA`: bara för att skanna QR-koder, och bara medan skannern är öppen
+  och appen syns (`lib/features/qr/qr_camera.dart`). Bilderna läses i
+  minnet och sparas eller skickas inte. Inget ljud spelas in
+  (`enableAudio: false`).
 - `INTERNET`: bara för servern (`android/app/src/main/AndroidManifest.xml`).
-- Vad biblioteken lägger till i det färdiga manifestet: **ej verifierat**
-  (`docs/release.md`, punkt 0).
+- Det som biblioteken lägger till (`RECORD_AUDIO`, `WRITE_EXTERNAL_STORAGE`,
+  `READ_EXTERNAL_STORAGE` och `ACCESS_NETWORK_STATE`) tas bort ur
+  manifestet. CI kontrollerar att release-manifestet bara begär `CAMERA`
+  och `INTERNET` (`.github/scripts/check-manifest.py`, `docs/release.md`,
+  punkt 0).
 
 ## Annat
 
@@ -67,7 +73,7 @@ avinstallation allt.
   från telefon till telefon. Google undantar data som är krypterad så att
   bara avsändare och mottagare kan läsa den; **kontrollera** att det gäller
   här (F9).
-- **Delas data med tredje part?** Inte av appens egen kod. ML Kit: se ovan.
+- **Delas data med tredje part?** Inte av appens egen kod. CameraX: se ovan.
 - **Krypteras data under överföring?** Ja: `https`, och innehållet med Olm.
 - **Kan användaren be att data raderas?** Allt på telefonen raderas när
   appen avinstalleras; det finns ingen egen knapp för det i vanlig

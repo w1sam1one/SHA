@@ -26,25 +26,33 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
   - Står det lägre än 36: uppgradera Flutter (`flutter upgrade`) i stället för
     att ändra filen.
 - **Behörigheter.**
-  - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) och
-    `mobile_scanner` begär bara `CAMERA`.
+  - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) begär
+    bara `CAMERA` och `INTERNET`. Kameran tas via `camera` (CameraX), och
+    koden läses av `zxing2` i ren Dart (0012 (C1)). `camera` lägger till
+    `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` (och `READ_EXTERNAL_STORAGE`
+    följer med), och CameraX videodel drar in media3, som lägger till
+    `ACCESS_NETWORK_STATE`. Appens manifest tar bort alla fyra. Skannern
+    använder varken video, lagring eller nätverksstatus.
   - `INTERNET` finns i debug- och profilmanifesten. Flutter behöver den där
     för utvecklingsverktygen.
-  - Vilka behörigheter det **färdiga release-manifestet** får är **ej
-    verifierat**. Biblioteken som slås ihop in i det, bland annat Google ML
-    Kit `barcode-scanning:17.3.0` och CameraX `1.6.1` via `mobile_scanner`
-    samt androidx-biblioteken som Flutter använder, kan lägga till egna
-    poster, t.ex. nätverksbehörigheter. Deras manifest gick inte att hämta.
+  - **Det färdiga release-manifestet** kontrolleras i CI. Emulatorjobbet
+    slår ihop det med `processReleaseMainManifest`, utan att bygga en
+    release-APK. Steget faller om manifestet begär något annat än `CAMERA`,
+    `INTERNET` och appens egen `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
+    eller kräver någon hårdvara (`.github/scripts/check-manifest.py`). Hur
+    ditt eget release-bygge slår ihop manifestet är **ej verifierat**.
   - Kontrollera efter ditt första release-bygge. Sammanslagningsrapporten
-    visar vilket bibliotek som lagt till varje post (sökvägen är ej verifierad):
+    visar vilket bibliotek som lagt till varje post. CI hittar den där
+    (`find build/app/outputs/logs`):
     ```sh
     grep -n "uses-permission" build/app/outputs/logs/manifest-merger-release-report.txt
     ```
     Eller öppna AAB-filen i Android Studio (Build › Analyze APK) och läs
     manifestet.
-  - Allt utöver `CAMERA` påverkar punkt 6. En post som slutar på
-    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` brukar komma från androidx.core
-    och är intern för appen (ej verifierat).
+  - Allt utöver `CAMERA` och `INTERNET` påverkar punkt 6. En post som slutar på
+    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` kommer från androidx.core
+    (`androidx.core:core:1.13.1` i CI:s sammanslagningsrapport) och är
+    intern för appen.
 - **App-ikonen** är fortfarande Flutters standardikon (byte för byte samma
   som Flutters mall). Byt den i `android/app/src/main/res/mipmap-*/` innan
   du släpper.
