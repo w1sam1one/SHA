@@ -16,7 +16,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | --- | --- | --- | --- |
 | R1–R7 från spiken, krascher enligt §6, sessionsnummer, `resetIdentity()` | 26 | `test/crypto/olm_service_cases.dart` | Datorn och emulatorn (R8) |
 | Kontakter, sessionsregeln 0006, engångsnycklar §8 | 15 | `test/crypto/olm_contacts_test.dart` | Datorn |
-| Radering av gamla sessioner, 0009 (iv): varje villkor, motexemplet, utkorgen, omstart, tillstånd från före F2 | 13 | `test/crypto/olm_session_removal_test.dart` | Datorn |
+| Radering av gamla sessioner, 0009 (iv): varje villkor, motexemplet, utkorgen, omstart, tillstånd från före F2 | 16 | `test/crypto/olm_session_removal_test.dart` | Datorn |
 | Storlekstabellen §4 med riktiga Olm-meddelanden, kedjeindex 127/128/16 384 | 6 | `test/crypto/olm_sizes_test.dart` | Datorn |
 | Utfyllnaden (A) | 8 | `test/crypto/olm_padding_test.dart` | Datorn |
 | Paketformat 3 | 6 | `test/crypto/olm_wire_format_test.dart` | Datorn |
@@ -25,6 +25,9 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Valvets felkoder | 6 | `test/crypto/android_keystore_vault_test.dart` | Datorn |
 | Mätningen i 0005 och med 50 sessioner | 2 | `integration_test/olm_service_test.dart` | Emulatorn |
 | QR-koden `shaid:2` | 4 | `test/features/contact_code_test.dart` | Datorn |
+| Skannern (0012 (C1)): koden som "Min QR" ritar, 100 slumpade koder, koderna som `zxing2` bara läser vridna eller kastar fel på, utfyllda rader, en bild i taget | 12 | `test/features/qr_decoder_test.dart` | Datorn |
+| Kameran: start, bakgrund och tillbaka, även mitt i en start, att lämna skärmen, nekad behörighet, ficklampan | 5 | `test/widget/qr_camera_test.dart` | Datorn (en låtsaskamera) |
+| Release-manifestet: bara `CAMERA` och `INTERNET`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
 | JSON-texten v3 | 6 | `test/features/message_payload_test.dart` | Datorn |
 | Relay-klienten mot en server på datorn | 11 | `test/features/relay_client_test.dart` | Datorn |
 | Transporten med två appar och en låtsasserver: 204, 507, 429, dubbletter, krascher, rundor, kontaktens tid till 0009 | 21 | `test/features/transport_test.dart` | Datorn |
@@ -50,8 +53,10 @@ faller (`CLAUDE.md`). De står i respektive PR:
 [#22](https://github.com/w1sam1one/SHA/pull/22),
 [#23](https://github.com/w1sam1one/SHA/pull/23),
 [#24](https://github.com/w1sam1one/SHA/pull/24),
-[#25](https://github.com/w1sam1one/SHA/pull/25) och
-[#26](https://github.com/w1sam1one/SHA/pull/26).
+[#25](https://github.com/w1sam1one/SHA/pull/25),
+[#26](https://github.com/w1sam1one/SHA/pull/26) och
+[#43](https://github.com/w1sam1one/SHA/pull/43), med rättningar i
+[#44](https://github.com/w1sam1one/SHA/pull/44).
 
 ## Mätt
 
@@ -72,3 +77,5 @@ faller (`CLAUDE.md`). De står i respektive PR:
 - TLS mot relayn i kedjetesterna (nginx provades för hand, P5).
 - En fast testvektor för kontrollkoden (0004 §11.3).
 - TalkBack (F6).
+- Skannern med en riktig kamera: att kameran startar, stängs och läser en
+  kod på en telefon, och hur fort (G3). Emulatorn i CI har ingen kamera.

@@ -1,7 +1,8 @@
 # OGRANSKAT-punkterna
 
-Varje punkt är byggd med det rekommenderade alternativet i 0004 och märkt
-`OGRANSKAT (0004 §N)` i koden (`CLAUDE.md`, "Ägarens beslut"). Nedan: vad
+Varje punkt är byggd med det rekommenderade alternativet i 0004, eller med
+ägarens val i ett senare beslut, och märkt `OGRANSKAT (0004 §N)` eller
+`OGRANSKAT (0009)` i koden (`CLAUDE.md`, "Ägarens beslut", och 0009). Nedan: vad
 som är valt, var det finns, och vad granskaren ska ta ställning till.
 
 ## §1 – Kontrollkoden på Olm-nycklarna
@@ -92,15 +93,15 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
 
   Ett paket som skickas på S efter det nollställer villkor 4. Sessioner
   och paket i utkorgen som sparades före F2 saknar tiderna. De räknas
-  försiktigt: en session som skickad när tillståndet först läses, och ett
-  paket utan session håller kvar alla kontaktens sessioner tills det är
-  skickat.
+  försiktigt. För en sådan session räknas vårt senaste paket som skickat
+  när tillståndet läses från disken, tills tillståndet sparas igen. Ett paket utan session håller kvar alla
+  kontaktens sessioner tills det är skickat.
 - **Var:**
-  - `lib/crypto/src/sha_olm_service.dart:54` (48 h och 24 h), `:324`
+  - `lib/crypto/src/sha_olm_service.dart:54` och `:58` (48 h och 24 h), `:324`
     (`markSent`: villkor 3), `:470` (`_markOld`: villkor 4), `:492`
     (`_removeOld`: alla villkor), `:546` (`removeOldSessions`), `:636`
     (tillstånd från före F2), `:678` (varje skrivning kör regeln)
-  - `lib/crypto/src/olm_service.dart:163`, `:238`
+  - `lib/crypto/src/olm_service.dart:163`, `:239`
   - Appen lämnar K:s tid `t` från JSON-texten
     (`lib/features/chat/messaging_service.dart:76`,
     `lib/features/transport/transport.dart:256`), och varje runda kör regeln
@@ -110,6 +111,19 @@ som är valt, var det finns, och vad granskaren ska ta ställning till.
   - luckorna: en klocka som går mer än 24 h fel, vår egen klocka som
     ställs om, och en relay som håller kvar paket längre än 48 h;
   - att tiden `t` kommer från kontakten själv och bara är skyddad av Olm.
+- **Argumentet bygger också på** två saker i appen, som inte får ändras
+  utan att regeln ses över:
+  - utkorgen skickar i ordning per kontakt: en full brevlåda (507) hoppar
+    över resten för den kontakten, och andra fel stoppar allt
+    (`lib/features/transport/transport.dart:193`);
+  - tiden `t` sätts innan texten krypteras
+    (`lib/features/chat/messaging_service.dart:40`), så den är aldrig
+    senare än krypteringen.
+- **En raderad session** försvinner ur valvposten, men äldre kopior av
+  posten kan finnas kvar på flashminnet. De är krypterade med samma
+  Keystore-nyckel, och pickle-nyckeln finns kvar, så den som kan använda
+  nycklarna kan läsa en sådan kopia fram till `resetIdentity()`. Skyddet i
+  0004 §7, att nyckeln är borta, gäller alltså inte här.
 
 ## Byggs inte i prototypen, men står i listan sist i 0004
 

@@ -139,12 +139,14 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 - [ ] **F5 – Ärliga texter för en fungerande app:**
   - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
     tas bort när transporten fungerar, liksom de andra texterna som då
-    inte stämmer: "Finns inte än" i `lib/ui/technical_info_sheet.dart` och
-    §7 i `docs/release.md`;
+    inte stämmer: "Finns inte än" i `lib/ui/technical_info_sheet.dart`
+    (§7 i `docs/release.md` är klar i F10);
   - en enkel förklaring i appen av vad servern ser, och rekommendationen om
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
-    Apache-paketen.
+    Apache-paketen;
+  - QR-skannern utan ML Kit (0012 (C1)): `zxing2` med `camera`. Klar i en
+    egen PR, se loggen.
 - [x] **F6 – Testprotokoll för två riktiga telefoner** (`docs/testprotokoll.md`):
   steg, förväntat resultat och en ruta för ägarens resultat. Med en mätning
   av farten i StrongBox och ett test med TalkBack.
@@ -209,7 +211,7 @@ någon annan än ägaren (0003, 0004 §13):
     alternativ C, §7 (historiken) och ett yttre lager.
 - Raderingsregeln för gamla sessioner (0004 §2, F2) är granskad av
   kryptoexperten (G6). Den är byggd enligt (iv) i 0009 och märkt
-  `OGRANSKAT (0009)`; utan den låg gamla sessioners nycklar kvar i
+  `OGRANSKAT (0009)`. Utan den skulle gamla sessioners nycklar ligga kvar i
   telefonen.
 - Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
@@ -239,7 +241,7 @@ Version 1.0 är publicerad i produktion på Google Play.
   - Data safety och integritetspolicyn.
 
   Höj Flutter-versionen i en egen PR om det behövs.
-- [ ] **F10 – Integritetspolicy och Data safety.** Ett utkast till
+- [x] **F10 – Integritetspolicy och Data safety.** Ett utkast till
   integritetspolicy på svenska och engelska, och svaren till Data safety.
   Bara det koden faktiskt gör, med fil som källa.
 - [ ] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
@@ -271,7 +273,12 @@ Nyast först. En rad per paket eller körning som ändrar något.
 - 2026-11-19 – Ägarens beslut: Claude mergar också PR:er som förbereder
   utdelningen (`CLAUDE.md`, "Ägarens beslut", punkt 3). Själva utdelningen,
   `LICENSE`, avsnitten Målet, Ägarens beslut och Aldrig, `permissions:` och
-  signering är fortfarande ägarens. Ägaren mergar den här PR:en.
+  signering är fortfarande ägarens. Ägaren mergar PR:en (#45).
+- 2026-11-19 – Rättningar efter granskningen av F2 (#43): tre delar av
+  regeln saknade tester, så att ett fel där inte märktes. Nu har de det:
+  `markSent` flyttar tiden för vårt senaste paket, villkor 4 räknar med när
+  kontakten skrev, och villkor 5 med när vi läste. Raden om F2 nedan sade
+  "mutationer för varje villkor"; det stämmer först med #44.
 - 2026-11-19 – F2, radering av gamla sessioner enligt (iv) i 0009, med
   24 h marginal (OGRANSKAT (0009)). Varje session har nu tiden för vårt
   senaste paket (`sent`, satt vid `markSent`) och tiden när den blev gammal
@@ -279,7 +286,6 @@ Nyast först. En rad per paket eller körning som ändrar något.
   kontaktens tid `t` till `receive`, och regeln körs vid varje skrivning och
   i varje runda. Tillstånd från före F2 räknas försiktigt. Testerna i 0009,
   med mutationer för varje villkor. Ej provat: riktiga telefoner (G3).
-
 - 2026-11-18 – Inför att ägaren gör repot publikt: en varning överst i
   README (ogranskad prototyp, All rights reserved), `SECURITY.md` om att
   rapportera säkerhetsbuggar privat, och samma sak om licensen i
@@ -294,6 +300,19 @@ Nyast först. En rad per paket eller körning som ändrar något.
   G6. Stegen för att bygga APK:n är ej provade.
 - 2026-11-18 – Ägaren valde (C1) i 0012: `zxing2` 0.2.4 med `camera`
   0.12.2 ersätter `mobile_scanner`.
+- 2026-11-18 – F5, QR-skannern (0012 (C1)): `mobile_scanner` och ML Kit är
+  borta. Kameran tas via `camera` 0.12.2 (CameraX, utan ljud), och koden
+  läses av `zxing2` 0.2.4 i ren Dart, i en bakgrundsisolat, en bild i
+  taget. `zxing2` hittade inte vissa koder som de var ritade (3 av 120
+  med perfekta pixlar), och kastade ibland andra fel än "hittade inget". En
+  bild som inte gav något vrids därför ett kvarts och ett halvt varv (0 av
+  1000 missade i mätningen). Kameran stängs i bakgrunden och startar igen,
+  även efter en nekad behörighet. `RECORD_AUDIO`, `WRITE_EXTERNAL_STORAGE`
+  och kravet på kamera tas bort ur manifestet. Det gör också
+  `READ_EXTERNAL_STORAGE`, som följer med `WRITE_EXTERNAL_STORAGE`, och
+  `ACCESS_NETWORK_STATE` från media3 i CameraX videodel, som skannern inte
+  använder. CI bygger appen och kontrollerar release-manifestet.
+  Ej provat: en riktig kamera (G3).
 - 2026-11-17 – Rättelser efter den oberoende granskningen av PR #39 (0013):
   varje push till `main` har en egen grupp i `concurrency`, så att ingen
   körning där ersätts och lämnar en push oprovad. En flyttad fil räknas med
@@ -307,6 +326,22 @@ Nyast först. En rad per paket eller körning som ändrar något.
   filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
   per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
   (ett nytt beroende). Ägaren mergar.
+- 2026-11-17 – F9, första delen: `docs/play-krav.md`. Målnivån är läst
+  (API 36 från 31 augusti 2026; SHA bygger med 36 enligt källkoden). De fem
+  sidorna på support.google.com gick inte att nå från molnmiljön och är ej
+  lästa, och tre av adresserna är inte kontrollerade. Rättat 2026-11-19
+  efter den oberoende granskningen: sidans datum, antalet sidor och
+  citatet.
+- 2026-11-17 – F10 klar: utkast till integritetspolicy på svenska och
+  engelska (`docs/integritetspolicy.md`) och underlaget till Data safety med
+  fil som källa (`docs/data-safety.md`). Punkt 6 och 7 i `docs/release.md`
+  pekar dit och stämmer med P6. Mot Googles definitioner kontrolleras
+  svaren i F9. Uppdaterat 2026-11-19 efter den nya skannern (#41): QR-koden
+  läses i appen, utan ML Kit. Och efter den oberoende granskningen:
+  policyn säger att användaren väljer servern och att meningarna om
+  servern gäller SHA:s serverprogram, IP-adressen finns i serverns minne i
+  högst 90 sekunder, `release.md` säger inte längre att inget skickas, och
+  det som saknas för GDPR står som öppet till F9 och G10.
 - 2026-11-17 – Rättningar efter den andra oberoende granskningen av fas 2
   (PR #35): villkor 5 i 0009 räknas från det första meddelandet som
   uppfyller villkor 4 (`qualifiedAt`), så att en aktiv chatt inte stoppar

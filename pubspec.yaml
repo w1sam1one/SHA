@@ -36,7 +36,10 @@ dependencies:
   flutter_riverpod: ^3.4.3
   cryptography: ^2.9.0
   qr_flutter: ^4.1.0
-  mobile_scanner: ^7.4.2
+  # The QR scanner (decision 0012, (C1)): the camera through CameraX, and
+  # ZXing in pure Dart to read the code. Exact versions; no ML Kit.
+  camera: 0.12.2
+  zxing2: 0.2.4
 
   # Olm (decision 0003, D3). Exact versions, the same as in spike/vodozemac:
   # flutter_vodozemac and vodozemac are released together, and
@@ -50,6 +53,9 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  # A fake camera for the scanner's tests (test/widget/qr_camera_test.dart).
+  # Already in the lockfile through camera (0012 (C1)); the same exact version.
+  camera_platform_interface: 2.15.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

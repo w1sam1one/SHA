@@ -323,6 +323,60 @@ void main() {
     expect(await read(bob, alice, await write(alice, bob, clock)), isNotNull);
   });
 
+  test('a later send on S moves its time (condition 3)', () async {
+    final clock = Clock();
+    final alice = await Person(null, clock.call).start();
+    final bob = await Person(null, clock.call).start();
+    await scan(alice, bob);
+    expect(await read(bob, alice, await write(alice, bob, clock)), isNotNull);
+    final late = await write(alice, bob, clock, send: false);
+    clock.advance(const Duration(hours: 50));
+    await alice.olm.markSent(late.id); // the relay takes it 50 h later
+    expect(await read(bob, alice, late), isNotNull);
+    // Written 73 h after the first packet, but only 23 h after the last.
+    clock.advance(const Duration(hours: 23));
+    await scan(bob, alice);
+    expect(await read(alice, bob, await write(bob, alice, clock)), isNotNull);
+    clock.advance(const Duration(days: 30));
+    expect(await alice.olm.removeOldSessions(), 0);
+    expect(sessionIds(alice, bob), hasLength(2));
+  });
+
+  test('condition 4 counts with when the contact wrote, not when we read '
+      'it', () async {
+    final clock = Clock();
+    final alice = await Person(null, clock.call).start();
+    final bob = await Person(null, clock.call).start();
+    await scan(alice, bob);
+    expect(await read(bob, alice, await write(alice, bob, clock)), isNotNull);
+    clock.advance(const Duration(hours: 10));
+    await scan(bob, alice);
+    final m = await write(bob, alice, clock); // 10 h after Alice's packet
+    clock.advance(const Duration(hours: 90));
+    expect(await read(alice, bob, m), isNotNull); // read 100 h after it
+    clock.advance(const Duration(days: 30));
+    expect(await alice.olm.removeOldSessions(), 0);
+    expect(sessionIds(alice, bob), hasLength(2));
+  });
+
+  test('condition 5 counts from when we read the message, not from when it '
+      'was written', () async {
+    final clock = Clock();
+    final alice = await Person(null, clock.call).start();
+    final bob = await Person(null, clock.call).start();
+    await scan(alice, bob);
+    expect(await read(bob, alice, await write(alice, bob, clock)), isNotNull);
+    clock.advance(const Duration(hours: 73));
+    final m1 = await write(bob, alice, clock); // on S1
+    await scan(bob, alice);
+    final m2 = await write(bob, alice, clock); // on S2
+    // Alice reads them 100 h later, as if they had been held up on the way.
+    clock.advance(const Duration(hours: 100));
+    expect(await read(alice, bob, m2), isNotNull);
+    expect(sessionIds(alice, bob), hasLength(2));
+    expect(await read(alice, bob, m1), isNotNull);
+  });
+
   test('the times survive a restart', () async {
     final m = await movedOn();
     final s1 = sessionsOf(m.alice, m.bob).first;
@@ -334,8 +388,8 @@ void main() {
     expect(sessionIds(m.alice, m.bob), [m.s2]);
   });
 
-  test('sessions saved before F2 count as sent when the state is first '
-      'read', () async {
+  test('sessions saved before F2 count as sent when the state is read '
+      'from disk', () async {
     final clock = Clock();
     final alice = await Person(null, clock.call).start();
     final bob = await Person(null, clock.call).start();

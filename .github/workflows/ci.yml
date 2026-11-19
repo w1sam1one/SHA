@@ -378,6 +378,35 @@ jobs:
           ps -eo rss=,args= | grep -E "GradleDaemon|KotlinCompileDaemon" | grep -v grep || echo "none"
           exit "$status"
 
+      # 0012 (C1) and README: the release app asks only for CAMERA and
+      # INTERNET, and requires no hardware feature. The camera plugin adds
+      # more; the app's manifest removes it, and this fails if anything gets
+      # through. The release manifest is checked, not the debug APK: debug
+      # builds also carry the test libraries (integration_test, androidx.test),
+      # which add permissions of their own. Only the manifest is merged here;
+      # no release APK is built.
+      - name: Permissions and features in the release manifest
+        run: |
+          (cd android && ./gradlew --no-daemon -q :app:processReleaseMainManifest)
+          manifests="$(find build/app/intermediates -path '*merged_manifest*' \
+            -path '*release*' -name AndroidManifest.xml || true)"
+          # Exactly one: a second one (a new Gradle plugin's layout) must
+          # not be left unchecked.
+          if [ "$(printf '%s' "$manifests" | grep -c .)" -ne 1 ]; then
+            echo "::error::expected one merged release manifest, found: $manifests"
+            exit 1
+          fi
+          manifest="$manifests"
+          echo "$manifest"
+          # Which library added each permission and feature (Gradle's merger
+          # report), so that a failure below says where it comes from.
+          report="$(find build/app/outputs/logs -name 'manifest-merger-release-report.txt' | head -n 1)"
+          if [ -n "$report" ]; then
+            grep -A 3 -E '^(uses-permission|uses-permission-sdk-23|uses-feature)#' \
+              "$report" || true
+          fi
+          python3 -I .github/scripts/check-manifest.py "$manifest" se.sha.sha
+
       # Saved right after the build, before the emulator needs the memory.
       - name: Save the pub cache
         if: github.event_name == 'push' && steps.pub-cache.outputs.cache-hit != 'true'
