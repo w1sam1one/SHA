@@ -5,9 +5,10 @@ miljö där inget Android-paket kunde byggas: Android SDK och Google Maven var
 blockerade. Allt som inte gick att kontrollera då är märkt **ej verifierat**
 med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
 
-> **Viktigt först:** detta är en förhandsversion. Meddelanden skickas inte
-> till någon än, och kontakter och meddelanden försvinner när appen stängs
-> (se punkt 6 och 7). Butikstexten får inte lova något annat.
+> **Viktigt först:** detta är en förhandsversion. Kryptot är inte granskat
+> av en kryptoexpert (G6), och appen får inte delas ut förrän det är gjort.
+> Historik, app-lås och hämtning i bakgrunden finns inte än (punkt 7).
+> Butikstexten får inte lova något annat.
 
 ## 0. Innan du börjar
 
@@ -176,7 +177,9 @@ krypterade paket till servern och begär `INTERNET`.
 ## 7. Lova inget som saknas
 
 Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
-historik, har app-lås eller hämtar i bakgrunden (F3, F4, 0002). Det som
+historik, har app-lås, hämtar i bakgrunden eller har forward secrecy (F3,
+F4, 0002; brevlåde-ID:n har ingen forward secrecy enligt 0004 §3 (A), och
+kryptot är ogranskat till G6). Det som
 saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)
 och i `docs/granskning/`. Orden i 0002, "Formuleringar i appen", gäller
 också butikssidan.
