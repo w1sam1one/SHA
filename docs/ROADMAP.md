@@ -316,10 +316,12 @@ Nyast först. En rad per paket eller körning som ändrar något.
   filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
   per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
   (ett nytt beroende). Ägaren mergar.
-- 2026-11-17 – F9, första delen: `docs/play-krav.md`.
-  Målnivån är läst (API 36 från 31 augusti 2026; SHA bygger med 36). De
-  fyra sidorna på support.google.com gick inte att nå från molnmiljön och
-  är ej lästa.
+- 2026-11-17 – F9, första delen: `docs/play-krav.md`. Målnivån är läst
+  (API 36 från 31 augusti 2026; SHA bygger med 36 enligt källkoden). De fem
+  sidorna på support.google.com gick inte att nå från molnmiljön och är ej
+  lästa, och tre av adresserna är inte kontrollerade. Rättat 2026-11-19
+  efter den oberoende granskningen: sidans datum, antalet sidor och
+  citatet.
 - 2026-11-17 – F10 klar: utkast till integritetspolicy på svenska och
   engelska (`docs/integritetspolicy.md`) och underlaget till Data safety med
   fil som källa (`docs/data-safety.md`). Punkt 6 och 7 i `docs/release.md`
