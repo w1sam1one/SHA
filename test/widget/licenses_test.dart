@@ -32,6 +32,10 @@ void main() {
     final android = textOf('Android-bibliotek');
     expect(android, contains('Gradles lista'));
     expect(android, contains('Apache License'));
+    expect(android, contains('androidx.camera:camera-core '));
+    // camera-core has libyuv in it, under BSD-3-Clause: its copyright line
+    // goes with the app.
+    expect(android, contains('The LibYuv Project Authors'));
     final zxing = textOf('ZXing (QR-avkodningen)');
     expect(zxing, contains('https://github.com/zxing/zxing'));
     expect(zxing, contains('Apache License'));

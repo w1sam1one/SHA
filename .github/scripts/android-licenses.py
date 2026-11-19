@@ -21,6 +21,13 @@ Flutter plugins, whose licenses Flutter collects from their Dart packages.
 what Gradle resolved, and fails if they differ, or if a license is missing
 or is not one known to combine with AGPL-3.0. On a difference it prints the
 list as it should be. --print only prints it.
+
+After the line "----" ASSET has the license texts: the Apache-2.0 text, and
+for each library under another license (BSD or MIT, whose copyright line
+must go with the app) a paragraph that starts with the library's
+group:artifact and a space, followed by its text. --check fails if one is
+missing. Only a person can add one: the POM names the license, but does not
+hold its text.
 """
 import pathlib
 import re
@@ -38,7 +45,10 @@ LISTED = re.compile(r"^[\w.\-]+:[\w.\-]+ \S+: ")
 
 # Licenses known to combine with AGPL-3.0, by words in their names. Anything
 # else stops the check for a human decision.
-ALLOWED = (("apache", "2"), ("mit",), ("bsd",))
+APACHE = ("apache", "2")
+ALLOWED = (APACHE, ("mit",), ("bsd",))
+# A line of the Apache-2.0 text, which must be after the line "----".
+APACHE_TEXT = "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION"
 
 # Groups whose POMs name no license, with where the license is stated.
 KNOWN = {
@@ -99,18 +109,25 @@ def licenses(cache, group, artifact, version, depth=0):
     )
 
 
-def allowed(name):
+def matches(name, rule):
     words = name.lower()
-    return any(all(w in words for w in rule) for rule in ALLOWED)
+    return all(w in words for w in rule)
+
+
+def allowed(name):
+    return any(matches(name, rule) for rule in ALLOWED)
 
 
 def listing(dependencies, cache):
-    """The lines for the license page, and the problems found."""
-    lines, problems = [], []
+    """The lines for the license page, the problems found, and the libraries
+    whose license text the page must have: {group:artifact: license}, with
+    "Apache-2.0" for all those under Apache-2.0."""
+    lines, problems, texts = [], [], {}
     for key, version in sorted(modules(dependencies).items()):
         group, artifact = key.split(":", 1)
         names = licenses(cache, group, artifact, version)
-        if not names and group in KNOWN:
+        known = not names and group in KNOWN
+        if known:
             names = [KNOWN[group]]
         if not names:
             problems.append(f"no license found in the POM: {key} {version}")
@@ -118,25 +135,45 @@ def listing(dependencies, cache):
         for name in names:
             if name != "?" and not allowed(name):
                 problems.append(f"license to check: {key} {version}: {name}")
+            elif known or name == "?":
+                pass  # Flutter's own page has the text, or a problem above
+            elif matches(name, APACHE):
+                texts["Apache-2.0"] = "Apache-2.0"
+            else:
+                texts[key] = name
         lines.append(f"{key} {version}: {', '.join(names)}")
     if not lines:
         problems.append("Gradle's list has no libraries")
-    return lines, problems
+    return lines, problems, texts
 
 
 def main(argv):
     if len(argv) < 4 or argv[3] not in ("--check", "--print"):
         print(__doc__, file=sys.stderr)
         return 2
-    lines, problems = listing(pathlib.Path(argv[1]).read_text(), argv[2])
+    lines, problems, texts = listing(pathlib.Path(argv[1]).read_text(), argv[2])
     if argv[3] == "--print":
         print("\n".join(lines))
         return 0
     if len(argv) < 5:
         print(__doc__, file=sys.stderr)
         return 2
-    head = pathlib.Path(argv[4]).read_text().split(f"\n{SEPARATOR}\n")[0]
+    head, _, tail = pathlib.Path(argv[4]).read_text().partition(
+        f"\n{SEPARATOR}\n"
+    )
     listed = [l for l in head.splitlines() if LISTED.match(l)]
+    for key, name in texts.items():
+        if key == "Apache-2.0":
+            if APACHE_TEXT not in tail:
+                problems.append(
+                    f"{argv[4]} has no Apache-2.0 text after the line {SEPARATOR}"
+                )
+        elif not any(l.startswith(f"{key} ") for l in tail.splitlines()):
+            problems.append(
+                f"{key} is under {name}: its text, with its copyright line, "
+                f"must be after the line {SEPARATOR}, in a paragraph that "
+                f"starts with '{key} '"
+            )
     if listed != lines:
         problems.append(f"{argv[4]} does not match Gradle's list")
         print("The list should be (between the markers):")

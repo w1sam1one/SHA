@@ -194,21 +194,44 @@ if [ "$got" != "$expected" ]; then
   printf '%s\n' "$got"
   failed=1
 fi
-printf 'Rubrik\n\n%s\n\n----\nApache License text\n' "$expected" > "$tmp/android.txt"
+apache='TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION'
+printf 'Rubrik\n\n%s\n\n----\n%s\n' "$expected" "$apache" > "$tmp/android.txt"
 if ! python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
   echo "FAIL android-licenses: a matching list must pass"
   failed=1
 fi
+# Without the Apache-2.0 text after the line ---- it fails.
+printf 'Rubrik\n\n%s\n\n----\nApache License\n' "$expected" > "$tmp/android.txt"
+if python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: a page without the Apache-2.0 text must fail"
+  failed=1
+fi
 # A library missing from the page fails.
-printf 'Rubrik\n\n%s\n\n----\n' "$(printf '%s\n' "$expected" | sed '2d')" > "$tmp/android.txt"
+printf 'Rubrik\n\n%s\n\n----\n%s\n' "$(printf '%s\n' "$expected" | sed '2d')" "$apache" > "$tmp/android.txt"
 if python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
   echo "FAIL android-licenses: a library missing from the page must fail"
+  failed=1
+fi
+# A library under BSD or MIT needs its own text, with its copyright line,
+# after the line ----: the POM names the license but has no text.
+pom org.example bsdlib 1.0 '<project><licenses><license><name>Apache License, Version 2.0</name></license><license><name>BSD-3-Clause</name></license></licenses></project>'
+cp "$tmp/deps.txt" "$tmp/deps3.txt"
+printf '%s\n' '\--- org.example:bsdlib:1.0' >> "$tmp/deps3.txt"
+list3="$(python3 -I "$here/android-licenses.py" "$tmp/deps3.txt" "$cache" --print)"
+printf 'Rubrik\n\n%s\n\n----\n%s\n' "$list3" "$apache" > "$tmp/android.txt"
+if python3 -I "$here/android-licenses.py" "$tmp/deps3.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: a BSD library without its text must fail"
+  failed=1
+fi
+printf 'Rubrik\n\n%s\n\n----\n%s\n\norg.example:bsdlib innehåller kod under BSD-3-Clause:\nCopyright\n' "$list3" "$apache" > "$tmp/android.txt"
+if ! python3 -I "$here/android-licenses.py" "$tmp/deps3.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
+  echo "FAIL android-licenses: a BSD library with its text must pass"
   failed=1
 fi
 # A license that is not known to combine with AGPL-3.0 fails.
 pom org.example lib 1.0 '<project><licenses><license><name>Some Proprietary License</name></license></licenses></project>'
 printf '%s\n' '\--- org.example:lib:1.0' >> "$tmp/deps.txt"
-printf 'Rubrik\n\n%s\n\n----\n' "$(python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --print)" > "$tmp/android.txt"
+printf 'Rubrik\n\n%s\n\n----\n%s\n' "$(python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --print)" "$apache" > "$tmp/android.txt"
 if python3 -I "$here/android-licenses.py" "$tmp/deps.txt" "$cache" --check "$tmp/android.txt" > /dev/null; then
   echo "FAIL android-licenses: an unknown license must fail"
   failed=1

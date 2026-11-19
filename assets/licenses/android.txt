@@ -1,6 +1,80 @@
 Android-bibliotek i appen, med licensen som står i bibliotekets egen
 POM-fil. Listan jämförs i CI med Gradles lista över beroenden i
 release-bygget (.github/scripts/android-licenses.py, beslut 0012).
+Under listan står licenstexterna: Apache 2.0, och libyuv, som finns i
+androidx.camera:camera-core. Texterna för io.flutter, Flutters egen motor,
+står under "flutter" på licenssidan.
+
+androidx.activity:activity 1.8.1: The Apache Software License, Version 2.0
+androidx.annotation:annotation 1.10.0: The Apache Software License, Version 2.0
+androidx.annotation:annotation-experimental 1.4.1: The Apache Software License, Version 2.0
+androidx.annotation:annotation-jvm 1.10.0: The Apache Software License, Version 2.0
+androidx.arch.core:core-common 2.2.0: The Apache Software License, Version 2.0
+androidx.arch.core:core-runtime 2.2.0: The Apache Software License, Version 2.0
+androidx.camera.featurecombinationquery:featurecombinationquery 1.6.2: The Apache Software License, Version 2.0
+androidx.camera:camera-camera2 1.6.2: The Apache Software License, Version 2.0
+androidx.camera:camera-camera2-pipe 1.6.2: The Apache Software License, Version 2.0
+androidx.camera:camera-core 1.6.2: The Apache Software License, Version 2.0, BSD-3-Clause
+androidx.camera:camera-lifecycle 1.6.2: The Apache Software License, Version 2.0
+androidx.camera:camera-video 1.6.2: The Apache Software License, Version 2.0
+androidx.collection:collection 1.1.0: The Apache Software License, Version 2.0
+androidx.concurrent:concurrent-futures 1.1.0: The Apache Software License, Version 2.0
+androidx.concurrent:concurrent-futures-ktx 1.1.0: The Apache Software License, Version 2.0
+androidx.core:core 1.13.1: The Apache Software License, Version 2.0
+androidx.core:core-backported-fixes 1.0.0: The Apache Software License, Version 2.0
+androidx.core:core-ktx 1.13.1: The Apache Software License, Version 2.0
+androidx.customview:customview 1.0.0: The Apache Software License, Version 2.0
+androidx.exifinterface:exifinterface 1.4.2: The Apache Software License, Version 2.0
+androidx.fragment:fragment 1.7.1: The Apache Software License, Version 2.0
+androidx.interpolator:interpolator 1.0.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-common 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-common-java8 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-livedata 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-livedata-core 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-livedata-core-ktx 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-process 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-runtime 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-viewmodel 2.7.0: The Apache Software License, Version 2.0
+androidx.lifecycle:lifecycle-viewmodel-savedstate 2.7.0: The Apache Software License, Version 2.0
+androidx.loader:loader 1.0.0: The Apache Software License, Version 2.0
+androidx.media3:media3-common 1.9.0: The Apache Software License, Version 2.0
+androidx.media3:media3-container 1.9.0: The Apache Software License, Version 2.0
+androidx.media3:media3-muxer 1.9.0: The Apache Software License, Version 2.0
+androidx.profileinstaller:profileinstaller 1.3.1: The Apache Software License, Version 2.0
+androidx.savedstate:savedstate 1.2.1: The Apache Software License, Version 2.0
+androidx.startup:startup-runtime 1.1.1: The Apache Software License, Version 2.0
+androidx.tracing:tracing 1.3.0: The Apache Software License, Version 2.0
+androidx.tracing:tracing-android 1.3.0: The Apache Software License, Version 2.0
+androidx.tracing:tracing-ktx 1.3.0: The Apache Software License, Version 2.0
+androidx.versionedparcelable:versionedparcelable 1.1.1: The Apache Software License, Version 2.0
+androidx.viewpager:viewpager 1.0.0: The Apache Software License, Version 2.0
+androidx.window.extensions.core:core 1.0.0: The Apache Software License, Version 2.0
+androidx.window:window 1.2.0: The Apache Software License, Version 2.0
+androidx.window:window-java 1.2.0: The Apache Software License, Version 2.0
+com.getkeepsafe.relinker:relinker 1.4.5: The Apache Software License, Version 2.0
+com.google.auto.value:auto-value-annotations 1.6.3: Apache 2.0
+com.google.dagger:dagger 2.59: Apache 2.0
+com.google.errorprone:error_prone_annotations 2.41.0: Apache 2.0
+com.google.guava:failureaccess 1.0.3: Apache License, Version 2.0
+com.google.guava:guava 33.5.0-android: Apache License, Version 2.0
+com.google.guava:listenablefuture 9999.0-empty-to-avoid-conflict-with-guava: The Apache Software License, Version 2.0
+com.google.j2objc:j2objc-annotations 3.1: Apache License, Version 2.0
+io.flutter:arm64_v8a_release 1.0.0-deb287481e3ce9468f3434937ced4240a70539ca: BSD-3-Clause (Flutter)
+io.flutter:armeabi_v7a_release 1.0.0-deb287481e3ce9468f3434937ced4240a70539ca: BSD-3-Clause (Flutter)
+io.flutter:flutter_embedding_release 1.0.0-deb287481e3ce9468f3434937ced4240a70539ca: BSD-3-Clause (Flutter)
+io.flutter:x86_64_release 1.0.0-deb287481e3ce9468f3434937ced4240a70539ca: BSD-3-Clause (Flutter)
+jakarta.inject:jakarta.inject-api 2.0.1: The Apache Software License, Version 2.0
+javax.inject:javax.inject 1: The Apache Software License, Version 2.0
+org.jetbrains.kotlin:kotlin-bom 1.8.0: The Apache Software License, Version 2.0
+org.jetbrains.kotlin:kotlin-stdlib 2.4.0: Apache-2.0
+org.jetbrains.kotlinx:atomicfu 0.28.0: Apache-2.0
+org.jetbrains.kotlinx:atomicfu-jvm 0.28.0: Apache-2.0
+org.jetbrains.kotlinx:kotlinx-coroutines-android 1.9.0: The Apache Software License, Version 2.0
+org.jetbrains.kotlinx:kotlinx-coroutines-bom 1.9.0: The Apache Software License, Version 2.0
+org.jetbrains.kotlinx:kotlinx-coroutines-core 1.9.0: The Apache Software License, Version 2.0
+org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm 1.9.0: The Apache Software License, Version 2.0
+org.jetbrains:annotations 23.0.0: The Apache Software License, Version 2.0
+org.jspecify:jspecify 1.0.0: The Apache License, Version 2.0
 
 ----
 
@@ -180,3 +254,38 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
    of your accepting any such warranty or additional liability.
 
 END OF TERMS AND CONDITIONS
+
+----
+
+androidx.camera:camera-core innehåller kod från libyuv, under
+BSD-3-Clause:
+
+Copyright 2011 The LibYuv Project Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
