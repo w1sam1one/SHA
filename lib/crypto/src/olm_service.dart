@@ -225,7 +225,8 @@ abstract interface class OlmService {
   /// [writtenAt] reads, from a message's text, when the contact wrote it by
   /// the contact's own clock (the payload's `t`), or gives null. It is what
   /// lets an old session be removed (0009 (iv), condition 4): without it no
-  /// session is ever made old.
+  /// session is ever made old. It gets the text before it is saved, so it
+  /// must only parse it: never show, keep or log it (0004 §6).
   Future<OlmReceiveResult> receive(
     List<int> peer,
     Uint8List packet, {

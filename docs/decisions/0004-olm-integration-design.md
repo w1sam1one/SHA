@@ -218,6 +218,7 @@ första meddelande inte kunde läsas.
   ingen ny session.
 - **Radering:** inga sessioner raderas i prototypen (0006 (iii)). En
   raderingsregel tas fram före första utdelningen (`docs/ROADMAP.md`).
+  *Senare:* regeln är (iv) i 0009, byggd i F2 och märkt `OGRANSKAT (0009)`.
 - **Den öppna frågan är stängd** (0006): en död session överges så fort
   kontakten skriver på en annan, och en ny skanning väljs direkt.
 - **Ingen kryptografi:** regeln jämför bara nummer.
@@ -961,7 +962,7 @@ Det här lägger 0004 till:
     har ägaren, efter granskningen av bygget, godtagit att det inte är det
     (punkt 12).
 11. En raderingsregel för gamla sessioner (punkt 2, 0006). I prototypen
-    raderas inga.
+    raderas inga. *Senare:* (iv) i 0009 är byggd i F2 och ska granskas.
 
 ## Kräver granskning av kryptoexpert
 

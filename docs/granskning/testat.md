@@ -16,7 +16,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | --- | --- | --- | --- |
 | R1–R7 från spiken, krascher enligt §6, sessionsnummer, `resetIdentity()` | 26 | `test/crypto/olm_service_cases.dart` | Datorn och emulatorn (R8) |
 | Kontakter, sessionsregeln 0006, engångsnycklar §8 | 15 | `test/crypto/olm_contacts_test.dart` | Datorn |
-| Radering av gamla sessioner, 0009 (iv): varje villkor, motexemplet, utkorgen, omstart, tillstånd från före F2 | 13 | `test/crypto/olm_session_removal_test.dart` | Datorn |
+| Radering av gamla sessioner, 0009 (iv): varje villkor, motexemplet, utkorgen, omstart, tillstånd från före F2 | 16 | `test/crypto/olm_session_removal_test.dart` | Datorn |
 | Storlekstabellen §4 med riktiga Olm-meddelanden, kedjeindex 127/128/16 384 | 6 | `test/crypto/olm_sizes_test.dart` | Datorn |
 | Utfyllnaden (A) | 8 | `test/crypto/olm_padding_test.dart` | Datorn |
 | Paketformat 3 | 6 | `test/crypto/olm_wire_format_test.dart` | Datorn |
@@ -53,8 +53,10 @@ faller (`CLAUDE.md`). De står i respektive PR:
 [#22](https://github.com/w1sam1one/SHA/pull/22),
 [#23](https://github.com/w1sam1one/SHA/pull/23),
 [#24](https://github.com/w1sam1one/SHA/pull/24),
-[#25](https://github.com/w1sam1one/SHA/pull/25) och
-[#26](https://github.com/w1sam1one/SHA/pull/26).
+[#25](https://github.com/w1sam1one/SHA/pull/25),
+[#26](https://github.com/w1sam1one/SHA/pull/26) och
+[#43](https://github.com/w1sam1one/SHA/pull/43), med rättningar i
+[#44](https://github.com/w1sam1one/SHA/pull/44).
 
 ## Mätt
 

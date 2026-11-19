@@ -210,7 +210,7 @@ någon annan än ägaren (0003, 0004 §13):
     alternativ C, §7 (historiken) och ett yttre lager.
 - Raderingsregeln för gamla sessioner (0004 §2, F2) är granskad av
   kryptoexperten (G6). Den är byggd enligt (iv) i 0009 och märkt
-  `OGRANSKAT (0009)`; utan den låg gamla sessioners nycklar kvar i
+  `OGRANSKAT (0009)`. Utan den skulle gamla sessioners nycklar ligga kvar i
   telefonen.
 - Flutter/Dart-lagret och bygget är granskade (F1, G6).
 - Planen för säkerhetsuppdateringar (0004 §12) är godkänd, och Dependabot
@@ -269,6 +269,11 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-19 – Rättningar efter granskningen av F2 (#43): tre delar av
+  regeln saknade tester, så att ett fel där inte märktes. Nu har de det:
+  `markSent` flyttar tiden för vårt senaste paket, villkor 4 räknar med när
+  kontakten skrev, och villkor 5 med när vi läste. Raden om F2 nedan sade
+  "mutationer för varje villkor"; det stämmer först med #44.
 - 2026-11-19 – F2, radering av gamla sessioner enligt (iv) i 0009, med
   24 h marginal (OGRANSKAT (0009)). Varje session har nu tiden för vårt
   senaste paket (`sent`, satt vid `markSent`) och tiden när den blev gammal
