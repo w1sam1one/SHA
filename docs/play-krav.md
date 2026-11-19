@@ -33,7 +33,7 @@ nedan med adress, så att de kan läsas när värden är tillåten eller av
 - https://support.google.com/googleplay/android-developer/answer/10787469
 - Om data som är krypterad från telefon till telefon räknas som insamlad,
   och reglerna för tillfällig behandling: **ej läst**. Svaren i
-  `docs/data-safety.md` (i #36) ska kontrolleras mot den här sidan.
+  [`docs/data-safety.md`](data-safety.md) ska kontrolleras mot den här sidan.
 
 ## 4. Radering av data utan konton – ej läst
 
@@ -46,8 +46,9 @@ nedan med adress, så att de kan läsas när värden är tillåten eller av
 
 - https://support.google.com/googleplay/android-developer/answer/9859455
 - Om en webbadress krävs och hur sidan ska se ut (offentlig, inte PDF):
-  **ej läst**. Utkastet finns i `docs/integritetspolicy.md` (i #36); att
-  publicera det är G10.
+  **ej läst**. Utkastet finns i
+  [`docs/integritetspolicy.md`](integritetspolicy.md); att publicera det är
+  G10.
 
 ## Så läses resten
 

@@ -5,9 +5,10 @@ miljö där inget Android-paket kunde byggas: Android SDK och Google Maven var
 blockerade. Allt som inte gick att kontrollera då är märkt **ej verifierat**
 med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
 
-> **Viktigt först:** detta är en förhandsversion. Meddelanden skickas inte
-> till någon än, och kontakter och meddelanden försvinner när appen stängs
-> (se punkt 6 och 7). Butikstexten får inte lova något annat.
+> **Viktigt först:** detta är en förhandsversion. Kryptot är inte granskat
+> av en kryptoexpert (G6), och appen får inte delas ut förrän det är gjort.
+> Historik, app-lås och hämtning i bakgrunden finns inte än (punkt 7).
+> Butikstexten får inte lova något annat.
 
 ## 0. Innan du börjar
 
@@ -26,25 +27,33 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
   - Står det lägre än 36: uppgradera Flutter (`flutter upgrade`) i stället för
     att ändra filen.
 - **Behörigheter.**
-  - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) och
-    `mobile_scanner` begär bara `CAMERA`.
+  - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) begär
+    bara `CAMERA` och `INTERNET`. Kameran tas via `camera` (CameraX), och
+    koden läses av `zxing2` i ren Dart (0012 (C1)). `camera` lägger till
+    `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` (och `READ_EXTERNAL_STORAGE`
+    följer med), och CameraX videodel drar in media3, som lägger till
+    `ACCESS_NETWORK_STATE`. Appens manifest tar bort alla fyra. Skannern
+    använder varken video, lagring eller nätverksstatus.
   - `INTERNET` finns i debug- och profilmanifesten. Flutter behöver den där
     för utvecklingsverktygen.
-  - Vilka behörigheter det **färdiga release-manifestet** får är **ej
-    verifierat**. Biblioteken som slås ihop in i det, bland annat Google ML
-    Kit `barcode-scanning:17.3.0` och CameraX `1.6.1` via `mobile_scanner`
-    samt androidx-biblioteken som Flutter använder, kan lägga till egna
-    poster, t.ex. nätverksbehörigheter. Deras manifest gick inte att hämta.
+  - **Det färdiga release-manifestet** kontrolleras i CI. Emulatorjobbet
+    slår ihop det med `processReleaseMainManifest`, utan att bygga en
+    release-APK. Steget faller om manifestet begär något annat än `CAMERA`,
+    `INTERNET` och appens egen `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
+    eller kräver någon hårdvara (`.github/scripts/check-manifest.py`). Hur
+    ditt eget release-bygge slår ihop manifestet är **ej verifierat**.
   - Kontrollera efter ditt första release-bygge. Sammanslagningsrapporten
-    visar vilket bibliotek som lagt till varje post (sökvägen är ej verifierad):
+    visar vilket bibliotek som lagt till varje post. CI hittar den där
+    (`find build/app/outputs/logs`):
     ```sh
     grep -n "uses-permission" build/app/outputs/logs/manifest-merger-release-report.txt
     ```
     Eller öppna AAB-filen i Android Studio (Build › Analyze APK) och läs
     manifestet.
-  - Allt utöver `CAMERA` påverkar punkt 6. En post som slutar på
-    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` brukar komma från androidx.core
-    och är intern för appen (ej verifierat).
+  - Allt utöver `CAMERA` och `INTERNET` påverkar punkt 6. En post som slutar på
+    `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` kommer från androidx.core
+    (`androidx.core:core:1.13.1` i CI:s sammanslagningsrapport) och är
+    intern för appen.
 - **App-ikonen** är fortfarande Flutters standardikon (byte för byte samma
   som Flutters mall). Byt den i `android/app/src/main/res/mipmap-*/` innan
   du släpper.
@@ -158,57 +167,19 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
 - **Ikon:** byt app-ikonen (punkt 0). Butikssidan har dessutom en egen ikon
   som laddas upp i Play Console; storlekskraven står där.
 
-## 6. Underlag till Data safety – vad koden visar i dag
+## 6. Underlag till Data safety
 
-**Du måste själv kontrollera varje svar innan du skickar in.** Listan visar
-bara vad SHA:s egen kod gör. Den säger inte hur Googles definitioner ska
-tolkas och täcker inte vad Googles bibliotek (ML Kit, CameraX) gör.
+Underlaget står i [`docs/data-safety.md`](data-safety.md) (F10), med fil
+som källa för varje svar, och utkastet till integritetspolicyn i
+[`docs/integritetspolicy.md`](integritetspolicy.md). Sedan P6 skickar appen
+krypterade paket till servern och begär `INTERNET`.
 
-- **Nätverk:**
-  - Appens egen kod gör inga nätverksanrop. Varken `lib/` eller
-    `pubspec.yaml` innehåller `dart:io`, `http` eller något nätverkspaket.
-  - Appens eget manifest begär inte `INTERNET`
-    (`android/app/src/main/AndroidManifest.xml`), och
-    `android/app/src/main/res/xml/network_security_config.xml` stänger av
-    okrypterad trafik.
-  - Om det färdiga release-manifestet ändå får nätverksbehörighet, och om
-    ML Kit eller CameraX skickar något: **ej verifierat** (punkt 0).
-- **Kamera:**
-  - Används bara för att skanna QR-koder (`lib/features/qr/scan_screen.dart`,
-    via `mobile_scanner`).
-  - Appens kod ber inte om bilderna (`returnImage` är `false` som standard i
-    `MobileScannerController`) och sparar inga bilder.
-  - Hur ML Kit behandlar kamerabilden: **ej verifierat**.
-- **På telefonen sparas** bara identitetens nyckelpar.
-  - Det krypteras med en Android Keystore-nyckel och ligger i appens privata
-    `noBackupFilesDir`
-    (`android/app/src/main/kotlin/se/sha/sha/keystore/KeystoreVault.kt`).
-  - Backup och enhetsöverföring är avstängda (`allowBackup="false"` och
-    `res/xml/data_extraction_rules.xml`).
-- **Kontakter** (namnet du skriver och kontaktens offentliga nyckel) och
-  **meddelanden** finns bara i minnet och försvinner när appen stängs
-  (`lib/features/contacts/contacts_store.dart`,
-  `lib/features/chat/message_store.dart`).
-- **Meddelanden skickas inte** (`lib/features/chat/chat_controller.dart`,
-  `transportAvailableProvider` är `false` i `lib/core/providers.dart`).
-- **Inga konton**, inget telefonnummer och ingen e-post. Identiteten skapas
-  lokalt (`lib/features/onboarding/identity_controller.dart`,
-  `lib/crypto/src/sha_crypto_service.dart`).
-- **Dart-paket:** inga för analys, kraschrapporter eller annonser
-  (`pubspec.yaml`: `flutter_riverpod`, `cryptography`, `qr_flutter`,
-  `mobile_scanner`). Om ML Kit skickar användnings- eller
-  diagnostikdata till Google: **ej verifierat**, kontrollera Googles
-  dokumentation för ML Kit.
-- **Ingen loggning** i appkoden (`test/security/no_logging_test.dart`).
-- **Urklipp:** appens egna kopieringsknappar finns bara i debugbyggen
-  (`kDebugMode` i `lib/features/onboarding/identity_screen.dart` och
-  `lib/features/qr/my_qr_screen.dart`). Vanliga textfält har systemets
-  kopiera och klistra in.
+## 7. Lova inget som saknas
 
-## 7. Förhandsversion – lova inget som saknas
-
-Chatten visar själv att meddelanden inte skickas än
-(`lib/features/chat/chat_screen.dart`). Butikstext, skärmbilder och
-beskrivning får inte påstå att appen skickar meddelanden, sparar historik,
-har app-lås eller forward secrecy. Det som saknas står i
-`docs/SECURITY_REVIEW.md` och i appens "Teknisk information".
+Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
+historik, har app-lås, hämtar i bakgrunden eller har forward secrecy (F3,
+F4, 0002; brevlåde-ID:n har ingen forward secrecy enligt 0004 §3 (A), och
+kryptot är ogranskat till G6). Det som
+saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)
+och i `docs/granskning/`. Orden i 0002, "Formuleringar i appen", gäller
+också butikssidan.

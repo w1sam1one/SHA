@@ -1,6 +1,7 @@
 # 0007 – Debug-APK till ägaren som CI-artefakt
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-16.
+Status: **Beslutat av ägaren 2026-11-18: (b).** Ägaren bygger debug-APK:n
+själv. CI laddar inte upp någon APK. Skrivet 2026-11-16.
 
 Underlag för grinden G-P8 i [`docs/ROADMAP.md`](../ROADMAP.md). Ingen kod
 är ändrad här.
@@ -50,6 +51,14 @@ Underlag för grinden G-P8 i [`docs/ROADMAP.md`](../ROADMAP.md). Ingen kod
     prova med en emulator, men det är inte "verifierad i person".
 - **Ägaren delar inte APK:n vidare** (`CLAUDE.md`, "Aldrig": ingen APK till
   någon annan än ägaren).
+
+## Publikt repo (2026-11-18)
+
+Ägaren gör repot publikt för insyn. I ett publikt repo kan alla inloggade
+ladda ner CI:s artefakter. En APK som artefakt (a) eller som Release (c)
+vore då en APK till andra än ägaren, vilket `CLAUDE.md` ("Aldrig") och
+"Ägarens beslut" 1 förbjuder. **CI-artefakter används därför inte**:
+arbetsflödena laddar inte upp någon APK, och ägaren bygger själv (b).
 
 ## Alternativ
 
@@ -106,4 +115,6 @@ Steg för steg:
 2. Välj nedan och skriv in valet i den här filen (eller säg det till Claude).
 
 - [ ] Jag har kontrollerat Settings › Collaborators: bara jag har åtkomst.
-- [ ] (a), (b) eller (c).
+  (Behövs inte med (b): ingen APK finns på GitHub.)
+- [x] **(b)**, beslutat 2026-11-18. "Klart när" punkt 4 i färdplanen säger
+  nu att ägaren bygger APK:n själv enligt `docs/prototyp.md`.

@@ -88,60 +88,7 @@ class _MyQrScreenState extends ConsumerState<MyQrScreen> {
                 const SizedBox(height: 18),
                 Semantics(
                   label: 'QR-kod med din identitet',
-                  child: Container(
-                    width: 262,
-                    height: 262,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: ShaColors.qrBackground,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        if (code == null)
-                          error == null
-                              ? const CircularProgressIndicator()
-                              : Text(
-                                  error,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: ShaColors.background,
-                                  ),
-                                )
-                        else
-                          QrImageView(
-                            data: code,
-                            padding: EdgeInsets.zero,
-                            // High error correction leaves room for the logo.
-                            errorCorrectionLevel: QrErrorCorrectLevel.H,
-                            backgroundColor: ShaColors.qrBackground,
-                            eyeStyle: const QrEyeStyle(
-                              eyeShape: QrEyeShape.square,
-                              color: ShaColors.background,
-                            ),
-                            dataModuleStyle: const QrDataModuleStyle(
-                              dataModuleShape: QrDataModuleShape.square,
-                              color: ShaColors.background,
-                            ),
-                          ),
-                        if (code != null)
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: ShaColors.background,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.verified_user_outlined,
-                              color: ShaColors.primary,
-                              size: 24,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                  child: ContactQrCode(code: code, error: error),
                 ),
                 const SizedBox(height: 18),
                 const Text(
@@ -197,6 +144,75 @@ class _MyQrScreenState extends ConsumerState<MyQrScreen> {
             icon: const Icon(Icons.qr_code_scanner_rounded),
             label: const Text('Skanna en kontakts kod'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The QR card on "Min QR": the code, or the progress or error while there is
+/// none, with the logo in the middle. Its own widget, so that a test draws
+/// exactly this and reads it with the scanner (0012 (C1),
+/// test/features/qr_decoder_test.dart).
+class ContactQrCode extends StatelessWidget {
+  const ContactQrCode({super.key, required this.code, this.error});
+
+  final String? code;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final code = this.code;
+    final error = this.error;
+    return Container(
+      width: 262,
+      height: 262,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: ShaColors.qrBackground,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (code == null)
+            error == null
+                ? const CircularProgressIndicator()
+                : Text(
+                    error,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: ShaColors.background),
+                  )
+          else
+            QrImageView(
+              data: code,
+              padding: EdgeInsets.zero,
+              // High error correction leaves room for the logo.
+              errorCorrectionLevel: QrErrorCorrectLevel.H,
+              backgroundColor: ShaColors.qrBackground,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: ShaColors.background,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: ShaColors.background,
+              ),
+            ),
+          if (code != null)
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: ShaColors.background,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.verified_user_outlined,
+                color: ShaColors.primary,
+                size: 24,
+              ),
+            ),
         ],
       ),
     );

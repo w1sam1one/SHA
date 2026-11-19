@@ -230,7 +230,8 @@ void main() {
       expect(chosenSessionId(alice, bob), after);
     });
 
-    test('no session is deleted (0006 (iii))', () async {
+    test('no session is deleted while the contact is silent (0006 (iii), '
+        '0009 (iv))', () async {
       final (alice, bob) = await established();
       for (var i = 0; i < 6; i++) {
         await scan(alice, bob);
