@@ -7,7 +7,8 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
 
 > **Viktigt först:** detta är en förhandsversion. Kryptot är inte granskat
 > av en kryptoexpert (G6), och appen får inte delas ut förrän det är gjort.
-> App-lås och hämtning i bakgrunden finns inte än (punkt 7).
+> Hämtning i bakgrunden finns inte än (punkt 7). App-låset döljer bara
+> skärmen.
 > Butikstexten får inte lova något annat.
 
 ## 0. Innan du börjar
@@ -28,7 +29,8 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
     att ändra filen.
 - **Behörigheter.**
   - Appens eget manifest (`android/app/src/main/AndroidManifest.xml`) begär
-    bara `CAMERA` och `INTERNET`. Kameran tas via `camera` (CameraX), och
+    bara `CAMERA`, `INTERNET` och `USE_BIOMETRIC` (app-låset, 0011 (B)).
+    Kameran tas via `camera` (CameraX), och
     koden läses av `zxing2` i ren Dart (0012 (C1)). `camera` lägger till
     `RECORD_AUDIO` och `WRITE_EXTERNAL_STORAGE` (och `READ_EXTERNAL_STORAGE`
     följer med), och CameraX videodel drar in media3, som lägger till
@@ -39,7 +41,8 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
   - **Det färdiga release-manifestet** kontrolleras i CI. Emulatorjobbet
     slår ihop det med `processReleaseMainManifest`, utan att bygga en
     release-APK. Steget faller om manifestet begär något annat än `CAMERA`,
-    `INTERNET` och appens egen `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
+    `INTERNET`, `USE_BIOMETRIC` och appens egen
+    `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`,
     eller kräver någon hårdvara (`.github/scripts/check-manifest.py`). Hur
     ditt eget release-bygge slår ihop manifestet är **ej verifierat**.
   - Kontrollera efter ditt första release-bygge. Sammanslagningsrapporten
@@ -50,7 +53,7 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
     ```
     Eller öppna AAB-filen i Android Studio (Build › Analyze APK) och läs
     manifestet.
-  - Allt utöver `CAMERA` och `INTERNET` påverkar punkt 6. En post som slutar på
+  - Allt utöver `CAMERA`, `INTERNET` och `USE_BIOMETRIC` påverkar punkt 6. En post som slutar på
     `.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` kommer från androidx.core
     (`androidx.core:core:1.13.1` i CI:s sammanslagningsrapport) och är
     intern för appen.
@@ -177,7 +180,8 @@ krypterade paket till servern och begär `INTERNET`.
 ## 7. Lova inget som saknas
 
 Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
-att raderad historik inte går att läsa, att den har app-lås, att den hämtar
+att raderad historik inte går att läsa, att app-låset skyddar nyckeln eller
+meddelandena på lagringen, att den hämtar
 i bakgrunden eller att den har forward secrecy (0010 (B),
 F4, 0002; brevlåde-ID:n har ingen forward secrecy enligt 0004 §3 (A), och
 kryptot är ogranskat till G6). Det som

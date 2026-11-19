@@ -1,8 +1,8 @@
 # 0011 – App-lås med PIN eller biometri (F4)
 
 Status: **Beslutat av ägaren 2026-11-18: (B).** Steg 1 i version 1, med 5
-minuter i bakgrunden. Steg 2 först efter telefontester och kryptoexpertens
-granskning (G6). Skrivet 2026-11-17.
+minuter i bakgrunden; byggt i F4 2026-11-19. Steg 2 först efter
+telefontester och kryptoexpertens granskning (G6). Skrivet 2026-11-17.
 
 Underlag för F4 i [`docs/ROADMAP.md`](../ROADMAP.md) (README, "Nästa
 steg").
@@ -26,6 +26,10 @@ visas. Ett lås ändrar vad användaren får göra och vad appen lovar.
   `KeyguardManager.createConfirmDeviceCredentialIntent` (telefonens PIN) och
   `FingerprintManager` (bara fingeravtryck, föråldrad). På Android 9 (API 28)
   finns `BiometricPrompt`, men utan telefonens PIN som alternativ.
+  *Senare (granskningen av F4):* på Android 10 (API 29) kan `BiometricPrompt`
+  avbrytas direkt eller inte visa PIN-skärmen på telefoner utan biometri
+  (androidx.biometric går runt det). F4 använder därför `KeyguardManager` till
+  och med Android 10, och `BiometricPrompt` först från Android 11.
 - `androidx.biometric` vore ett nytt beroende.
 - Inställningarna för en Keystore-nyckel bestäms när nyckeln skapas. Att
   kräva upplåsning för valvets nyckel betyder en ny nyckel och att varje post

@@ -135,8 +135,10 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 - [x] **F3 – Historik i version 1** enligt (B) i
   [0010](decisions/0010-historik-i-version-1.md): egna valvposter, 30 dagar
   som standard. Texten i appen godkänns av ägaren.
-- [ ] **F4 – App-lås med PIN eller biometri** (README, "Nästa steg"). Först
-  ett beslutsunderlag och en grind, sedan bygget.
+- [x] **F4 – App-lås med PIN eller biometri**, steg 1 enligt (B) i
+  [0011](decisions/0011-app-las.md): telefonens eget lås när appen öppnas
+  och efter 5 minuter i bakgrunden. Steg 2, att valvets nyckel kräver
+  upplåsning, kommer efter G6 med ett eget beslutsunderlag.
 - [ ] **F5 – Ärliga texter för en fungerande app:**
   - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
     tas bort när transporten fungerar, liksom de andra texterna som då
@@ -273,6 +275,22 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den
+  öppnas och efter 5 minuter i bakgrunden, och låses upp med telefonens eget
+  lås. Från Android 11 med plattformens `BiometricPrompt` (fingeravtryck,
+  ansikte, PIN, mönster eller lösenord), på Android 7–10 med
+  `KeyguardManager` (PIN, mönster eller lösenord). Inget nytt beroende, bara
+  behörigheten `USE_BIOMETRIC`, som CI:s manifestkontroll nu kräver. Låset
+  ligger runt hela navigationen, så att inget som är öppet syns och det
+  stängs när appen låses. Tiden i bakgrunden mäts med telefonens tid sedan
+  start (`elapsedRealtime`), som inte går att ställa om. Ett fel från
+  telefonen håller appen låst. Rättat efter den oberoende granskningen: en
+  öppen chatt syntes ovanpå låset, Android 10 kunde låsas för gott, ett fel i
+  telefonens fråga låste appen tills den startades om, och klockan kunde
+  ställas tillbaka. Efter den andra granskningen: en notis kunde synas på
+  låsskärmen; skärmen täcks nu direkt när appen går till bakgrunden, tills
+  tiden är kontrollerad. #46 (F3) mergades med texterna i PR:en. Ej provat:
+  riktiga telefoner (G3), och Android-delen bara byggd i CI.
 - 2026-11-19 – F3, historiken enligt (B) i 0010. Ett meddelande sparas i
   historiken innan det tas bort ur inkorgen eller utkorgen, i egna
   valvposter med slumpade namn (`h.` och 16 hex), högst 100 meddelanden per

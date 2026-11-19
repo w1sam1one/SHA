@@ -9,6 +9,7 @@ Underlag för villkor 2 i 0003 ("Beslut") och 0004 §13 punkt 2 och 10.
 | Kryptomodulen | `lib/crypto/` | Appen når den bara via `CryptoService` (`lib/crypto/crypto.dart`). Modulen importerar inget UI eller appkod (`test/security/no_logging_test.dart`). |
 | Valvet, inbyggt | `android/app/src/main/kotlin/se/sha/sha/keystore/` | AES-256-GCM med en Keystore-nyckel, StrongBox om den finns, bara upplåst telefon från Android 9 (`KeystoreVault.kt:215-225`). Fasta felkoder, inga loggar. |
 | Transporten | `lib/features/transport/` | Bara `dart:io`; `https` (och `http` till telefonen själv utanför release); ingen komprimering, inga omdirigeringar, en anslutning per anrop. |
+| App-låset | `lib/features/lock/`, `android/app/src/main/kotlin/se/sha/sha/lock/` | Telefonens eget lås via plattformens `BiometricPrompt` (Android 11+) eller `KeyguardManager` (7–10). Inget bibliotek, ingen nyckel: svaret är bara ja eller nej. Tiden i bakgrunden med `elapsedRealtime`. Ett fel håller appen låst. |
 | UI | `lib/features/`, `lib/ui/` | Inga kryptoord utanför `technical_info_sheet.dart`; "servern", aldrig "relayn"; inga felobjekt i texter. |
 
 ## Beroenden
@@ -46,7 +47,8 @@ låsta.
 
 ## Android
 
-- **Behörigheter** i appens eget manifest: `CAMERA` och `INTERNET`. De
+- **Behörigheter** i appens eget manifest: `CAMERA`, `INTERNET` och
+  `USE_BIOMETRIC` (app-låset). De
   fyra som biblioteken lägger till tas bort med `tools:node="remove"`.
   Kravet `camera.any` är valfritt (`tools:replace`), och androidx.core:s
   interna `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` får finnas. CI

@@ -122,19 +122,31 @@ void main() {
     );
   });
 
-  testWidgets('"Teknisk information" lists what does not exist yet', (
-    tester,
-  ) async {
+  testWidgets('"Teknisk information" says what the app lock does and does '
+      'not do, and lists what does not exist yet', (tester) async {
     await _pumpChat(tester);
     await tester.tap(find.text('Teknisk information'));
     await tester.pumpAndSettle();
-    expect(find.text('Finns inte än'), findsOneWidget);
+    const lockLimit =
+        'Låset döljer skärmen. Nyckeln i Android Keystore kräver ännu inte '
+        'att du har låst upp appen.';
     await tester.scrollUntilVisible(
-      find.text('Inget app-lås med biometri eller PIN.'),
+      find.text(lockLimit),
       100,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('Inget app-lås med biometri eller PIN.'), findsOneWidget);
+    expect(find.text('App-låset'), findsOneWidget);
+    expect(find.text(lockLimit), findsOneWidget);
+    const backup =
+        'Ingen säkerhetskopia. Tappar du telefonen måste ni träffas och '
+        'skanna varandras QR-koder på nytt.';
+    await tester.scrollUntilVisible(
+      find.text(backup),
+      100,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('Finns inte än'), findsOneWidget);
+    expect(find.text('Inget app-lås med biometri eller PIN.'), findsNothing);
   });
 }
 

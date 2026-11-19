@@ -32,7 +32,7 @@ användas (0002, "Formuleringar i appen").
 | **Nätet mellan telefon och server** | Se att telefonen pratar med servern, och storlek och tid | Läsa eller ändra något: TLS med systemets CA:er |
 | **Den som känner en brevlådes ID** (0002, fråga c och i) | Lämna skräp eller kopior där; hämta de krypterade paketen; fylla brevlådan, så att riktiga paket får 507 i upp till 48 timmar | Läsa paketen; få skräpet visat som ett meddelande. Raderna "kunde inte läsas", "saknas" och "kom fram för sent" kan dock visas (0008 (i)) |
 | **En kontakt** | Läsa det du skickar till den; skicka meddelanden med påhittade ID eller tider | Läsa dina andra konversationer |
-| **Den som har telefonen i handen, upplåst** | Läsa det som visas | – |
+| **Den som har telefonen i handen, upplåst** | Läsa det som visas | App-låset (F4): appen låses när den öppnas och efter 5 minuter i bakgrunden, med telefonens eget lås. Det döljer bara skärmen; valvets nyckel kräver inte upplåsning (steg 2 i 0011) |
 | **Den som har telefonen, låst** | – | Läsa valvet (Keystore-nyckeln kräver upplåst telefon på Android 9+) |
 | **En annan app på telefonen** | – | Läsa appens filer (privat katalog, ingen backup, `FLAG_SECURE`) |
 | **Leverantörskedjan** | Ett ändrat paket på pub.dev, crates.io eller i en action | – (se `flutter-och-bygget.md`) |

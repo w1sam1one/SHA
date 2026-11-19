@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/errors.dart';
 import '../crypto/crypto.dart';
 import '../features/home/home_shell.dart';
+import '../features/lock/app_lock.dart';
 import '../features/onboarding/identity_controller.dart';
 import '../features/onboarding/identity_recovery_screen.dart';
 import '../features/onboarding/identity_screen.dart';
@@ -18,6 +19,9 @@ class ShaApp extends StatelessWidget {
       title: 'SHA',
       debugShowCheckedModeBanner: false,
       theme: buildShaTheme(),
+      // The lock is around the whole navigator, so that a chat or a dialog
+      // opened on top is behind it too (review of #47).
+      builder: (context, child) => _Locked(child: child!),
       home: const _Root(),
     );
   }
@@ -66,4 +70,20 @@ class _Root extends ConsumerWidget {
       error is CryptoException &&
       (error.kind == CryptoErrorKind.keyInvalidated ||
           error.kind == CryptoErrorKind.corrupt);
+}
+
+/// The app lock (F4, 0011 (B)) once there is an identity: the first screen
+/// has nothing to hide yet. Once on, it stays on, also while the identity is
+/// read again.
+class _Locked extends ConsumerWidget {
+  const _Locked({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final identity = ref.watch(identityProvider).value;
+    if (identity == null || identity.firstLaunch) return child;
+    return AppLockGate(child: child);
+  }
 }

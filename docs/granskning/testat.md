@@ -28,7 +28,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | QR-koden `shaid:2` | 4 | `test/features/contact_code_test.dart` | Datorn |
 | Skannern (0012 (C1)): koden som "Min QR" ritar, 100 slumpade koder, koderna som `zxing2` bara läser vridna eller kastar fel på, utfyllda rader, en bild i taget | 12 | `test/features/qr_decoder_test.dart` | Datorn |
 | Kameran: start, bakgrund och tillbaka, även mitt i en start, att lämna skärmen, nekad behörighet, ficklampan | 5 | `test/widget/qr_camera_test.dart` | Datorn (en låtsaskamera) |
-| Release-manifestet: bara `CAMERA` och `INTERNET`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
+| Release-manifestet: bara `CAMERA`, `INTERNET` och `USE_BIOMETRIC`, ingen krävd hårdvara | – | `.github/scripts/check-manifest.py` | CI (emulatorjobbet) |
 | JSON-texten v3 | 6 | `test/features/message_payload_test.dart` | Datorn |
 | Relay-klienten mot en server på datorn | 11 | `test/features/relay_client_test.dart` | Datorn |
 | Transporten med två appar och en låtsasserver: 204, 507, 429, dubbletter, krascher, rundor, kontaktens tid till 0009, historiken efter en omstart, "Spara inte", kallstart, kortare tid och en oläsbar post | 26 | `test/features/transport_test.dart` | Datorn |
@@ -38,6 +38,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Inga loggar, inga felobjekt i texter, inget som liknar nycklar | 5 | `test/security/no_logging_test.dart` | Datorn |
 | Inga kryptoord i texter, låsta Olm-versioner | 2 | `test/security/` | Datorn |
 | Skärmar: chatten, QR-fliken, livscykeln, återställning, licenssidan (F5), valet av historik (F3), kontrast | 21 | `test/widget/`, `test/ui/` | Datorn |
+| App-låset (F4): låst vid start, avbrutet, 5 minuter i bakgrunden mätt med telefonens tid sedan start, telefonens egen fråga, en långsam PIN-skärm, inget skärmlås, fel håller det låst, en öppen sida bakom låset, hemskärmen bakom låset, en notis, skärmen täckt vid återkomst, åter i bakgrunden under kontrollen, kanalen till Android | 20 | `test/widget/app_lock_test.dart` | Datorn (en låtsastelefon) |
 | Relayn: gränser, loggar utan IP, spamgräns | – | `relay/*_test.go` | Datorn |
 | Slumptal för långlivade nycklar (`entropy.dart`) | 3 | `test/crypto/entropy_test.dart` | Datorn |
 | X25519, HKDF och brevlåde-ID (används för §3 (A)), och det gamla formatet 2 | 19 | `test/crypto/crypto_service_test.dart` | Datorn |

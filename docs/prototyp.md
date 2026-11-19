@@ -138,7 +138,7 @@ appen avinstalleras först, och då måste ni skanna varandra igen.
 ## Det här är inte klart
 
 - Kryptot är inte granskat (fas 2, G6).
-- Ingen säkerhetskopia och inget app-lås.
+- Ingen säkerhetskopia. App-låset döljer bara skärmen (steg 1 i 0011).
 - Appen hämtar inte i bakgrunden och skickar inga notiser (0002).
 - Körningen på en riktig arm64-telefon är inte gjord (G3).
 
