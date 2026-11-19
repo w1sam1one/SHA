@@ -16,8 +16,9 @@ GRADLE_CACHE is ~/.gradle/caches/modules-2/files-2.1, where Gradle keeps the
 POM files it resolved. Each library's license is read from its POM, or from
 the POM of a parent. Modules of the build itself (`project :...`) are the
 Flutter plugins, whose licenses Flutter collects from their Dart packages.
-A BOM (a POM with packaging "pom" and no .jar or .aar) has no code in the
-APK and is left out.
+A module that is only a POM (packaging "pom", and no .jar or .aar in the
+cache) has no code in the APK and is left out: a BOM, or the root of a
+Kotlin Multiplatform library, whose code is in its -jvm module.
 
 Every line of Gradle's tree must give a library with an exact version: a
 line that does not (a version range without a resolved version, FAILED, a
@@ -147,7 +148,9 @@ def pom(cache, group, artifact, version):
 
 
 def bom(cache, group, artifact, version):
-    """Whether the module is only a POM: packaging "pom", and no code."""
+    """Whether the module is only a POM: packaging "pom", and no code.
+    In CI the debug build has downloaded every .jar and .aar before this
+    runs."""
     root = pom(cache, group, artifact, version)
     if root is None or (root.findtext("packaging") or "").strip() != "pom":
         return False

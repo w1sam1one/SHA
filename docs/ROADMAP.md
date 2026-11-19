@@ -289,7 +289,7 @@ Nyast först. En rad per paket eller körning som ändrar något.
   stora paketen är, men inte meddelandena. Där står också att SHA:s
   serverprogram inte sparar IP-adressen på disk eller i loggar, och
   VPN-meningen från 0008. Ett test stoppar orden som 0002 förbjuder, som
-  "anonym" och "inga loggar". Licenssidan har nu alla 68 Android-bibliotek
+  "anonym" och "inga loggar". Licenssidan har nu alla 66 Android-bibliotek
   i release-bygget och ZXing. Listan jämförs i CI med Gradles egen lista,
   med licensen ur varje biblioteks POM-fil. Alla har Apache 2.0, utom
   Flutters motor (BSD-3, texten finns under "flutter"), och `camera-core`
@@ -304,7 +304,8 @@ Nyast först. En rad per paket eller körning som ändrar något.
   om spamgränsen sade "högst 90 sekunder", men servern har adressen så länge
   appen hämtar; nu står det "senast 90 sekunder efter appens senaste kontakt
   med servern", också i relayns README, integritetspolicyn och underlaget
-  till Data safety. Två BOM-filer utan kod är borta ur listan.
+  till Data safety. Fyra moduler utan egen kod är borta ur listan: två
+  BOM-filer och två Kotlin-rotmoduler, vars kod finns i `-jvm`-modulerna.
   Förhandsvarningen och "Finns inte än" rättades redan i P6. Ej provat:
   riktiga telefoner (G3).
 - 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den
