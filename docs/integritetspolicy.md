@@ -35,8 +35,9 @@ En server med ett annat program kan spara mer.
 när det kom, när du hämtar och din IP-adress. Brevlådor som hämtas från
 samma IP-adress vid ungefär samma tid kan kopplas ihop. SHA:s serverprogram
 sparar inte din IP-adress på disk eller i loggar; för spamgränsen finns den
-i serverns minne i högst 90 sekunder. Den som driver servern och
-leverantören av den kan ändå se trafiken.
+i serverns minne medan appen hämtar och skickar, och tas bort senast 90
+sekunder efter appens senaste kontakt med servern. Den som driver servern
+och leverantören av den kan ändå se och spara trafiken.
 
 **På din telefon** sparas din identitet, dina kontakter (namnet du skriver,
 när ni träffades och kontaktens nycklar), inställningarna, meddelanden som
@@ -75,8 +76,10 @@ hours. A server running another program may keep more.
 size, when it arrived, when you fetch, and your IP address. Mailboxes
 fetched from the same IP address at about the same time can be linked.
 SHA's server program does not store your IP address on disk or in logs; for
-the spam limit it is kept in the server's memory for at most 90 seconds.
-Whoever runs the server, and its provider, can still see the traffic.
+the spam limit it is kept in the server's memory while the app fetches and
+sends, and removed at most 90 seconds after the app last contacted the
+server. Whoever runs the server, and its provider, can still see and save
+the traffic.
 
 **On your phone** the app keeps your identity, your contacts (the name you
 type, when you met and the contact's keys), the settings, messages not yet

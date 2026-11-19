@@ -226,8 +226,13 @@ någon annan än ägaren (0003, 0004 §13):
   `flutter_vodozemac`, och licenssidan visar dem alla (0012). Sedan F5
   jämför CI listan över Android-bibliotek med Gradles lista, och ett
   bibliotek under BSD eller MIT måste ha sin text på sidan. Ej kontrollerat:
-  om något Apache-bibliotek har en NOTICE-fil som också ska med (Apache 2.0
-  §4 d).
+  - om något Apache-bibliotek, eller ZXing, har en NOTICE-fil som också ska
+    med (Apache 2.0 §4 d);
+  - libyuvs text mot den som `camera-core` faktiskt har med: texten är
+    hämtad ur en kopia i paketet `yuv-sys`, eftersom Googles sidor är
+    spärrade i molnmiljön;
+  - `.so`-filerna i APK:n och beroenden som filer (`files()`), som Gradles
+    lista inte visar. Inget plugin har sådana i dag.
 - Spiken och appen är körda på en riktig arm64-telefon (G3, F6).
 - Rust i Android-bygget är låst och cargo körs med `--locked`, eller så har
   ägaren, efter granskningen av bygget, godtagit att det inte är det (0004
@@ -284,15 +289,24 @@ Nyast först. En rad per paket eller körning som ändrar något.
   stora paketen är, men inte meddelandena. Där står också att SHA:s
   serverprogram inte sparar IP-adressen på disk eller i loggar, och
   VPN-meningen från 0008. Ett test stoppar orden som 0002 förbjuder, som
-  "anonym" och "inga loggar". Licenssidan har nu alla 70 Android-bibliotek
+  "anonym" och "inga loggar". Licenssidan har nu alla 68 Android-bibliotek
   i release-bygget och ZXing. Listan jämförs i CI med Gradles egen lista,
   med licensen ur varje biblioteks POM-fil. Alla har Apache 2.0, utom
   Flutters motor (BSD-3, texten finns under "flutter"), och `camera-core`
   har dessutom libyuv (BSD-3). Libyuvs text är
   hämtad ur den kopia som paketet `yuv-sys` på crates.io har med, eftersom
   Googles egna sidor är spärrade i molnmiljön. Ett bibliotek under BSD eller
-  MIT måste ha sin text på sidan, annars faller CI. Förhandsvarningen och
-  "Finns inte än" rättades redan i P6. Ej provat: riktiga telefoner (G3).
+  MIT måste ha sin text på sidan, annars faller CI. Rättat efter den
+  oberoende granskningen: en rad i Gradles träd med ett versionsintervall
+  föll bort ur kontrollen utan fel; nu måste varje rad ha en exakt version.
+  Licensnamnen jämfördes ord för ord, så att till exempel "Apache 2.0 with
+  Commons Clause" gick igenom; nu måste namnet stå på en kort lista. Texten
+  om spamgränsen sade "högst 90 sekunder", men servern har adressen så länge
+  appen hämtar; nu står det "senast 90 sekunder efter appens senaste kontakt
+  med servern", också i relayns README, integritetspolicyn och underlaget
+  till Data safety. Två BOM-filer utan kod är borta ur listan.
+  Förhandsvarningen och "Finns inte än" rättades redan i P6. Ej provat:
+  riktiga telefoner (G3).
 - 2026-11-19 – F4 steg 1, app-låset enligt (B) i 0011: appen låses när den
   öppnas och efter 5 minuter i bakgrunden, och låses upp med telefonens eget
   lås. Från Android 11 med plattformens `BiometricPrompt` (fingeravtryck,

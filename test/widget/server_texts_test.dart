@@ -14,6 +14,17 @@ import '../support/in_memory_vault.dart';
 const vpn =
     'Vi rekommenderar VPN om du inte vill att servern ska se din IP-adress.';
 
+/// The rate limit keeps the address while the app is in touch with the
+/// server, and drops it at most 90 seconds after the last request
+/// (`relay/ratelimit.go`; review of #48). And the one who runs or rents out
+/// the server can still see and save the traffic (0008 (b)).
+const kept =
+    'SHA:s serverprogram sparar inte din IP-adress på disk eller i loggar. '
+    'För spamgränsen finns den i serverns minne medan appen hämtar och '
+    'skickar, och tas bort senast 90 sekunder efter appens senaste kontakt '
+    'med servern. Den som driver servern, och den som hyr ut den, kan ändå '
+    'se och spara trafiken.';
+
 final class _Settings extends TransportSettingsStore {
   @override
   Future<TransportSettings> build() async => const TransportSettings();
@@ -40,14 +51,16 @@ void main() {
     expect(
       find.text(
         'Servern kan inte läsa dina meddelanden. Den ser din IP-adress, när '
-        'du hämtar och hur stora paketen är. SHA:s serverprogram sparar inte '
-        'din IP-adress på disk eller i loggar. $vpn',
+        'du skickar och hämtar och hur stora paketen är. SHA:s serverprogram '
+        'sparar inte din IP-adress på disk eller i loggar, men den som driver '
+        'servern kan ändå se och spara trafiken. $vpn',
       ),
       findsOneWidget,
     );
   });
 
-  testWidgets('Teknisk information recommends VPN too', (tester) async {
+  testWidgets('Teknisk information says how long the address is kept, and '
+      'recommends VPN too', (tester) async {
     await pump(
       tester,
       Builder(
@@ -65,5 +78,6 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.text(vpn), findsOneWidget);
+    expect(find.text(kept), findsOneWidget);
   });
 }

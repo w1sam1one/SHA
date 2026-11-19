@@ -101,9 +101,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         // the address: the user can enter any server.
         const Text(
           'Servern kan inte läsa dina meddelanden. Den ser din IP-adress, när '
-          'du hämtar och hur stora paketen är. SHA:s serverprogram sparar inte '
-          'din IP-adress på disk eller i loggar. Vi rekommenderar VPN om du '
-          'inte vill att servern ska se din IP-adress.',
+          'du skickar och hämtar och hur stora paketen är. SHA:s '
+          'serverprogram sparar inte din IP-adress på disk eller i loggar, men '
+          'den som driver servern kan ändå se och spara trafiken. Vi '
+          'rekommenderar VPN om du inte vill att servern ska se din '
+          'IP-adress.',
           style: TextStyle(color: ShaColors.textSecondary),
         ),
         const SizedBox(height: 12),

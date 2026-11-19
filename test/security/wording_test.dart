@@ -5,14 +5,30 @@ import 'package:flutter_test/flutter_test.dart';
 /// The wording rules in 0002, "Formuleringar i appen": what the app says
 /// about the server and anonymity. String literals that follow each other,
 /// as Dart joins them, are read as one text, so a phrase split over two lines
-/// is still found. Comments and lib/crypto (never shown) are skipped.
+/// is still found. Single, double and triple quotes, raw or not, are read.
+/// Comments and lib/crypto (never shown) are skipped.
 const banned = [
   'anonym', // also "anonymt", "helt anonym"
   'spårlös',
   'inga loggar',
-  'servern kan inte se din ip-adress',
+  'inte se din ip', // "Servern kan inte se din IP-adress"
+  'ser inte din ip', // and the same said another way (review of #48)
   'ingen kan se att du använder sha',
 ];
+
+/// One Dart string literal.
+final String _literal = [
+  "r?'''[\\s\\S]*?'''",
+  'r?"""[\\s\\S]*?"""',
+  r"r?'(?:[^'\\\n]|\\.)*'",
+  r'r?"(?:[^"\\\n]|\\.)*"',
+].join('|');
+
+String _inside(String literal) {
+  final s = literal.startsWith('r') ? literal.substring(1) : literal;
+  final quote = s.startsWith("'''") || s.startsWith('"""') ? 3 : 1;
+  return s.substring(quote, s.length - quote);
+}
 
 /// The texts of [source]: adjacent string literals joined, one per string.
 List<String> texts(String source) {
@@ -20,11 +36,11 @@ List<String> texts(String source) {
     for (final line in source.split('\n'))
       if (!line.trimLeft().startsWith('//')) line,
   ].join('\n');
-  final run = RegExp(r"'(?:[^'\\\n]|\\.)*'(?:\s*'(?:[^'\\\n]|\\.)*')*");
-  final piece = RegExp(r"'((?:[^'\\\n]|\\.)*)'");
+  final run = RegExp('(?:$_literal)(?:\\s*(?:$_literal))*');
+  final piece = RegExp(_literal);
   return [
     for (final m in run.allMatches(code))
-      piece.allMatches(m.group(0)!).map((p) => p.group(1)!).join(),
+      piece.allMatches(m.group(0)!).map((p) => _inside(p.group(0)!)).join(),
   ];
 }
 
@@ -56,6 +72,20 @@ void main() {
       hasLength(1),
     );
     expect(offenders({'b.dart': "const x = 'Helt anonymt';"}), hasLength(1));
+    // Other quotes, and the same promise said another way (review of #48).
+    expect(offenders({'e.dart': 'const x = "Helt anonymt.";'}), hasLength(1));
+    expect(
+      offenders({'f.dart': "const x = '''\nHelt\nanonymt.\n''';"}),
+      hasLength(1),
+    );
+    expect(
+      offenders({'g.dart': "const x = r'Servern ser inte din IP-adress.';"}),
+      hasLength(1),
+    );
+    expect(
+      offenders({'h.dart': "const x = 'Ett ' \"anonymt\" ' namn';"}),
+      hasLength(1),
+    );
     expect(offenders({'c.dart': "// 'anonym' in a comment"}), isEmpty);
     expect(
       offenders({'d.dart': "const v = 'Vi rekommenderar VPN.';"}),
