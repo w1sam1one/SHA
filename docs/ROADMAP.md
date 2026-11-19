@@ -138,8 +138,8 @@ Allt under "Före första utdelning" nedan ska då också vara gjort.
 - [ ] **F5 – Ärliga texter för en fungerande app:**
   - förhandsvarningen (`lib/features/chat/chat_screen.dart`, "Förhandsversion")
     tas bort när transporten fungerar, liksom de andra texterna som då
-    inte stämmer: "Finns inte än" i `lib/ui/technical_info_sheet.dart` och
-    §7 i `docs/release.md`;
+    inte stämmer: "Finns inte än" i `lib/ui/technical_info_sheet.dart`
+    (§7 i `docs/release.md` är klar i F10);
   - en enkel förklaring i appen av vad servern ser, och rekommendationen om
     VPN (0002, "Formuleringar i appen");
   - en licenssida med alla tredjepartslicenser: typsnitten, AGPL- och
@@ -240,7 +240,7 @@ Version 1.0 är publicerad i produktion på Google Play.
   - Data safety och integritetspolicyn.
 
   Höj Flutter-versionen i en egen PR om det behövs.
-- [ ] **F10 – Integritetspolicy och Data safety.** Ett utkast till
+- [x] **F10 – Integritetspolicy och Data safety.** Ett utkast till
   integritetspolicy på svenska och engelska, och svaren till Data safety.
   Bara det koden faktiskt gör, med fil som källa.
 - [ ] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
@@ -316,6 +316,16 @@ Nyast först. En rad per paket eller körning som ändrar något.
   filerna: en PR med bara dokument kör bara en snabb kontroll. `concurrency`
   per gren, och cacher för pub, Cargo och Gradle med `actions/cache` 6.1.0
   (ett nytt beroende). Ägaren mergar.
+- 2026-11-17 – F10 klar: utkast till integritetspolicy på svenska och
+  engelska (`docs/integritetspolicy.md`) och underlaget till Data safety med
+  fil som källa (`docs/data-safety.md`). Punkt 6 och 7 i `docs/release.md`
+  pekar dit och stämmer med P6. Mot Googles definitioner kontrolleras
+  svaren i F9. Uppdaterat 2026-11-19 efter den nya skannern (#41): QR-koden
+  läses i appen, utan ML Kit. Och efter den oberoende granskningen:
+  policyn säger att användaren väljer servern och att meningarna om
+  servern gäller SHA:s serverprogram, IP-adressen finns i serverns minne i
+  högst 90 sekunder, `release.md` säger inte längre att inget skickas, och
+  det som saknas för GDPR står som öppet till F9 och G10.
 - 2026-11-17 – Rättningar efter den andra oberoende granskningen av fas 2
   (PR #35): villkor 5 i 0009 räknas från det första meddelandet som
   uppfyller villkor 4 (`qualifiedAt`), så att en aktiv chatt inte stoppar

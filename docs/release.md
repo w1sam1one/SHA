@@ -5,9 +5,10 @@ miljö där inget Android-paket kunde byggas: Android SDK och Google Maven var
 blockerade. Allt som inte gick att kontrollera då är märkt **ej verifierat**
 med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
 
-> **Viktigt först:** detta är en förhandsversion. Meddelanden skickas inte
-> till någon än, och kontakter och meddelanden försvinner när appen stängs
-> (se punkt 6 och 7). Butikstexten får inte lova något annat.
+> **Viktigt först:** detta är en förhandsversion. Kryptot är inte granskat
+> av en kryptoexpert (G6), och appen får inte delas ut förrän det är gjort.
+> Historik, app-lås och hämtning i bakgrunden finns inte än (punkt 7).
+> Butikstexten får inte lova något annat.
 
 ## 0. Innan du börjar
 
@@ -166,56 +167,19 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
 - **Ikon:** byt app-ikonen (punkt 0). Butikssidan har dessutom en egen ikon
   som laddas upp i Play Console; storlekskraven står där.
 
-## 6. Underlag till Data safety – vad koden visar i dag
+## 6. Underlag till Data safety
 
-**Du måste själv kontrollera varje svar innan du skickar in.** Listan visar
-bara vad SHA:s egen kod gör. Den säger inte hur Googles definitioner ska
-tolkas och täcker inte vad Googles bibliotek (CameraX) gör.
+Underlaget står i [`docs/data-safety.md`](data-safety.md) (F10), med fil
+som källa för varje svar, och utkastet till integritetspolicyn i
+[`docs/integritetspolicy.md`](integritetspolicy.md). Sedan P6 skickar appen
+krypterade paket till servern och begär `INTERNET`.
 
-- **Nätverk:**
-  - Appens egen kod gör inga nätverksanrop. Varken `lib/` eller
-    `pubspec.yaml` innehåller `dart:io`, `http` eller något nätverkspaket.
-  - Appens eget manifest begär inte `INTERNET`
-    (`android/app/src/main/AndroidManifest.xml`), och
-    `android/app/src/main/res/xml/network_security_config.xml` stänger av
-    okrypterad trafik.
-  - Om CameraX skickar något: **ej verifierat** (punkt 0).
-- **Kamera:**
-  - Används bara för att skanna QR-koder (`lib/features/qr/qr_camera.dart`,
-    via `camera` och CameraX), och bara medan skannern är öppen och appen
-    syns.
-  - Bilderna läses i appen av `zxing2` (`lib/features/qr/qr_decoder.dart`),
-    i minnet. Inga bilder sparas eller skickas, och inget ljud spelas in
-    (`enableAudio: false`, och `RECORD_AUDIO` är borttagen ur manifestet).
-  - Hur CameraX behandlar kamerabilden: **ej verifierat**.
-- **På telefonen sparas** bara identitetens nyckelpar.
-  - Det krypteras med en Android Keystore-nyckel och ligger i appens privata
-    `noBackupFilesDir`
-    (`android/app/src/main/kotlin/se/sha/sha/keystore/KeystoreVault.kt`).
-  - Backup och enhetsöverföring är avstängda (`allowBackup="false"` och
-    `res/xml/data_extraction_rules.xml`).
-- **Kontakter** (namnet du skriver och kontaktens offentliga nyckel) och
-  **meddelanden** finns bara i minnet och försvinner när appen stängs
-  (`lib/features/contacts/contacts_store.dart`,
-  `lib/features/chat/message_store.dart`).
-- **Meddelanden skickas inte** (`lib/features/chat/chat_controller.dart`,
-  `transportAvailableProvider` är `false` i `lib/core/providers.dart`).
-- **Inga konton**, inget telefonnummer och ingen e-post. Identiteten skapas
-  lokalt (`lib/features/onboarding/identity_controller.dart`,
-  `lib/crypto/src/sha_crypto_service.dart`).
-- **Dart-paket:** inga för analys, kraschrapporter eller annonser
-  (`pubspec.yaml`: `flutter_riverpod`, `cryptography`, `qr_flutter`,
-  `camera`, `zxing2`). ML Kit är borttaget (0012 (C1)).
-- **Ingen loggning** i appkoden (`test/security/no_logging_test.dart`).
-- **Urklipp:** appens egna kopieringsknappar finns bara i debugbyggen
-  (`kDebugMode` i `lib/features/onboarding/identity_screen.dart` och
-  `lib/features/qr/my_qr_screen.dart`). Vanliga textfält har systemets
-  kopiera och klistra in.
+## 7. Lova inget som saknas
 
-## 7. Förhandsversion – lova inget som saknas
-
-Chatten visar själv att meddelanden inte skickas än
-(`lib/features/chat/chat_screen.dart`). Butikstext, skärmbilder och
-beskrivning får inte påstå att appen skickar meddelanden, sparar historik,
-har app-lås eller forward secrecy. Det som saknas står i
-`docs/SECURITY_REVIEW.md` och i appens "Teknisk information".
+Butikstext, skärmbilder och beskrivning får inte påstå att appen sparar
+historik, har app-lås, hämtar i bakgrunden eller har forward secrecy (F3,
+F4, 0002; brevlåde-ID:n har ingen forward secrecy enligt 0004 §3 (A), och
+kryptot är ogranskat till G6). Det som
+saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)
+och i `docs/granskning/`. Orden i 0002, "Formuleringar i appen", gäller
+också butikssidan.
