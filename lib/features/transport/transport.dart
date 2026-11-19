@@ -250,7 +250,11 @@ class Transport {
         );
         continue;
       }
-      final result = await _crypto.olm.receive(olm.identityKey, inner);
+      final result = await _crypto.olm.receive(
+        olm.identityKey,
+        inner,
+        writtenAt: _messaging.writtenAt,
+      );
       final message = result.message;
       if (message != null) {
         await _addIncoming(contact.id, message);
@@ -278,6 +282,8 @@ class Transport {
     try {
       // Saved messages are shown even before a server is set.
       await restoreSaved();
+      // Old sessions go even when nothing else is saved (0009 (iv)).
+      _quietly(_crypto.olm.removeOldSessions());
       if (server == null) {
         _status(ServerStatus.notConfigured);
         return;
