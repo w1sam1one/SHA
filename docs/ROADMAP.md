@@ -269,6 +269,13 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 ### Grindar (bara ägaren)
 
+- **G12 – Hur appen delas ut** ([0014](decisions/0014-utdelning-av-appen.md),
+  "Proposed – owner decides"). Ägaren vill dela ut APK:n från en hemsida i
+  stället för Google Play. 0014 jämför egen hemsida och GitHub Releases,
+  Obtainium, F-Droid och Google Play, med Googles utvecklarverifiering 2027
+  och signeringsnyckeln. Tills ägaren har beslutat byggs inget för
+  utdelningen, och F9, F11, G9, G10, G11, `docs/release.md` och "Klart
+  när" ovan står kvar som de är. 0014 visar hur de ändras.
 - **G9 – Utvecklarkonto och nyckel.** Skapa utvecklarkontot,
   uppladdningsnyckeln och `key.properties`.
 - **G10 – Integritetspolicyn på webben.** Publicera integritetspolicyn på en
@@ -287,6 +294,14 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-23 – Beslutsunderlaget 0014 om hur appen delas ut, på ägarens
+  begäran: egen hemsida och GitHub Releases, Obtainium, F-Droid och Google
+  Play. Det tar upp Googles utvecklarverifiering (2027 globalt; hemsidor
+  och andra butiker omfattas inte än), hur uppdateringar når användarna,
+  hur certifikatets fingeravtryck och APK:ns SHA-256 publiceras, hur
+  signeringsnyckeln skyddas, och vilka paket som ändras. Rekommendationen
+  är hemsida och GitHub Releases med Obtainium, F-Droid senare efter G8.
+  Ny grind G12. Inget är byggt.
 - 2026-11-19 – F11. Butikstexterna på svenska och engelska står som utkast i
   `docs/butikstexter.md`, för ägaren att godkänna: namn, kort och
   fullständig beskrivning, med det appen gör och det servern ser, och utan
