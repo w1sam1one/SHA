@@ -219,8 +219,9 @@ jobs:
   # integration_test/olm_service_test.dart (Olm behind CryptoService, R8,
   # and the 300 ms measurement in 0005). F11 adds
   # integration_test/screenshots_test.dart (the store screenshots, through
-  # Flutter's own rendering with FLAG_SECURE on). It runs before the vault
-  # tests, on the new emulator, because it needs an app without an identity.
+  # Flutter's own rendering with FLAG_SECURE on). Each file is installed,
+  # run and uninstalled (flutter test's default --uninstall), so every file
+  # starts without an identity and the order does not matter.
   # The same steps as .github/workflows/spike-android.yml.
   app-android:
     name: App on Android emulator (Olm in the build)
