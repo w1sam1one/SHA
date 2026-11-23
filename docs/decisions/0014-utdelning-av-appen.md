@@ -1,429 +1,485 @@
-# 0014 – Utdelning: egen hemsida, F-Droid, Obtainium eller Google Play
+# 0014 – Utdelning utan Google Play: hemsida, GitHub Releases, fingeravtryck och uppdateringskontroll
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-23. **Inget byggs
-förrän ägaren har beslutat.** Det här är inte juridisk rådgivning.
+Status: **Proposed – owner decides.** Skrivet 2026-11-23, omskrivet samma
+dag efter ägarens önskemål nedan. **Inget byggs förrän ägaren har
+beslutat.** Det här är inte juridisk rådgivning.
 
 Källorna lästes 2026-11-23 och står sist med adress. Det som inte gick att
 läsa eller pröva är märkt **ej läst** eller **ej provat**.
 
-## Varför ett beslut behövs
+## Ägarens önskemål (2026-11-23)
 
-- Ägaren vill dela ut appen som APK från en hemsida i stället för via
-  Google Play.
-- Fas 3 i färdplanen är byggd kring Google Play:
-  - F9 gäller Plays krav;
-  - F10 gäller Data safety;
-  - F11 gäller butikstexter med Plays längder;
-  - G9 är ett utvecklarkonto hos Google;
-  - G11 är internt och stängt test i Play Console.
-- Några val går inte att ändra efteråt utan att användarna förlorar sina
-  data. Det gäller vem som signerar appen, med vilken nyckel, och appens
-  `applicationId`. Se "Det som gäller oavsett kanal".
-- Googles utvecklarverifiering påverkar alla kanaler från 2027, också
-  hemsidor och F-Droid.
+1. **Utdelning:** samma signerade APK på hemsidan och i GitHub Releases.
+   F-Droid när koden är AGPL. Google Play skjuts upp.
+2. **Fingeravtryck:**
+   - Signeringscertifikatets SHA-256-fingeravtryck och APK:ns SHA-256
+     publiceras i README, i SECURITY.md, i varje GitHub Release och på
+     hemsidan.
+   - Appen visar sitt eget fingeravtryck under "Teknisk information".
+   - Den privata nyckeln finns aldrig i repot eller i CI.
+3. **Uppdateringskontroll:**
+   - Den är frivillig och avstängd från början.
+   - Den hämtar bara en versionsfil, med samma anrop för alla och utan id.
+   - Den körs bara när appen är öppen, och högst en gång om dagen.
+   - Den visar bara "ny version finns" och laddar inte ner något. Länken
+     är fast i appen.
+   - Texten om att GitHub ser IP-adressen, och om VPN, skrivs enligt 0002.
 
-## Det som gäller oavsett kanal
+Nedan jämförs alternativen för varje punkt. Sedan kommer Googles
+utvecklarverifiering, signeringsnyckeln och paketen i färdplanen.
+
+## Det som gäller oavsett val
 
 - **Grindarna står kvar.**
   - Ingen utdelning till någon annan än ägaren före G6 (kryptoexperten).
   - `LICENSE` byts till AGPL-3.0 före första utdelningen (G8, 0012).
-- **Bara ägaren delar ut.** Claude bygger inte release, laddar inte upp,
+- **Bara ägaren delar ut.** Claude bygger ingen release, laddar inte upp,
   skapar inga konton och rör inga nycklar (`CLAUDE.md`, "Aldrig").
 - **Samma nyckel för alla uppdateringar.** Android installerar en
-  uppdatering bara om den är signerad med samma nyckel som appen som redan
-  finns på telefonen. Det är Androids vanliga regel; **ej provat här**.
-  Den första installationen avgör alltså vilken nyckel telefonen litar på.
-- **Nyckelbyte betyder att data försvinner.** Byter appen nyckel eller
-  kanal måste användaren avinstallera den. SHA har ingen säkerhetskopia
-  (`allowBackup="false"` i manifestet), så identiteten, kontakterna och historiken
-  försvinner. Användarna måste då träffas och skanna varandras QR-koder
-  igen.
-- **`applicationId` är `se.sha.sha`** (`android/app/build.gradle.kts`).
+  uppdatering bara om den är signerad med samma nyckel som appen på
+  telefonen. Det är Androids vanliga regel; **ej provat här**. Den första
+  installationen avgör alltså vilken nyckel telefonen litar på.
+- **Ett byte av nyckel eller kanal raderar data.** Användaren måste då
+  avinstallera appen. SHA har ingen säkerhetskopia (`allowBackup="false"`
+  i manifestet), så identiteten, kontakterna och historiken försvinner, och
+  alla måste träffas och skanna på nytt.
+- **`applicationId` är `se.sha.sha`.**
   - F-Droid råder till ett id från en domän som utvecklaren äger.
-  - Google kan vägra registrera ett paketnamn som redan används av någon
-    annan (FAQ, se nedan).
+  - Google kan kräva en extra granskning av ett paketnamn som redan
+    används.
   - Vem som äger domänen `sha.se` är **ej kontrollerat**.
   - Ett annat id blir en annan app för telefonen, så det måste bestämmas
     före första utdelningen.
+- **Appen pratar i dag bara med servern.** `docs/data-safety.md` säger att
+  `INTERNET` i appens egen kod används "bara för servern". En
+  uppdateringskontroll (punkt 3) ändrar det, och då ändras också Data
+  safety-underlaget, integritetspolicyn och "Teknisk information".
 
-## Googles utvecklarverifiering
+## 1. Utdelning
 
-Det här står på Googles egna sidor för utvecklare
-(developer.android.com/developer-verification och dess FAQ, med datum per
-svar).
+### Alternativ
 
-### Tidsplan
-
-- **Augusti 2026:** konton för begränsad utdelning ("limited distribution
-  accounts") och det avancerade flödet för användare ("advanced flow")
-  lanseras.
-- **30 september 2026:** "Protections begin for users installing apps from
-  participating stores in select regions on certified Android devices".
-  Det gäller Brasilien, Indonesien, Singapore och Thailand.
-- **2027:** "Verification capability will be expanded globally for all
-  apps on certified Android devices in 2027." Tidningar skriver januari
-  2027, men Googles egen sida säger bara 2027.
-- **Hemsidor och andra butiker gäller inte än** (FAQ, 15 juli 2026): "If
-  you distribute your app through other stores, or if users sideload your
-  app directly, these new verification requirements won't apply to your
-  app yet." Google rekommenderar ändå att man registrerar sig före den
-  globala starten 2027.
-- **Vilka telefoner:** "all certified Android devices running Android 8
-  (API level 26) or higher", levererat via Google Play-tjänster (FAQ, 10
-  november 2026).
-
-### Vad utvecklaren registrerar
-
-- **Fullt konto ("Full Distribution"):** 25 dollar (FAQ, 25 mars 2026).
-  Det kräver id-kontroll med legitimation, och för en organisation ett
-  D-U-N-S-nummer.
-- **Konto för begränsad utdelning:** gratis och utan legitimation. FAQ:n
-  (18 juni 2026) säger att appen kan delas "with up to 20 specific devices
-  for testing and personal use". Sidan om kontotypen säger "up to 50
-  devices". **Sidorna säger emot varandra.** Kontot kräver ett
-  Google-konto, tvåstegsverifiering och en betalprofil hos Google.
-- **Paketnamn och nyckel:**
-  - Varje paketnamn registreras med SHA-256-fingeravtrycket för
-    signeringsnyckelns certifikat.
-  - Flera nycklar per paket går att lägga till (FAQ, 23 mars 2026).
-  - "If you lose your signing key you won't be able to register your
-    packages." (FAQ, 23 mars 2026)
-  - Ett paketnamn som någon annan redan använder kräver en extra granskning
-    (FAQ, 19 mars 2026).
-- **Appar i Play App Signing** registreras automatiskt (FAQ, 3 september
-  2025).
-- **Om integriteten:** "Developers who want to remain unverified can use a
-  limited distribution account, which requires no ID verification. Or you
-  can distribute your unregistered app to users who have activated
-  advanced flow." (FAQ, 18 juni 2026)
-
-### Det avancerade flödet och ADB
-
-- **Det avancerade flödet** är en engångsinställning på telefonen (FAQ, 23
-  mars 2026). Användaren
-  1. slår på utvecklarläget;
-  2. går igenom en kontroll att ingen styr hen;
-  3. startar om telefonen och loggar in igen;
-  4. väntar ett dygn ("a one-time, one-day wait");
-  5. bekräftar med fingeravtryck eller PIN.
-
-  Därefter kan appar från overifierade utvecklare installeras, med en
-  varning, i 7 dagar eller tills vidare.
-- **Uppdateringar:** "Unregistered apps can only be installed or updated
-  when the advanced flow is enabled or by using ADB." (FAQ)
-- **ADB:** "there are no changes to how ADB works". Väntetiden gäller inte
-  ADB (FAQ, 23 mars 2026). Ägarens egen installation med `adb install` i
-  `docs/prototyp.md` påverkas alltså inte.
-
-### F-Droids hållning
-
-F-Droids öppna brev från 24 februari 2026:
-
-- Registreringen gäller enligt F-Droid all utdelning, "even by offering
-  your app as a direct download from a web page".
-- Enligt F-Droid kontaktar telefonen Google vid installationen för att
-  kontrollera utvecklaren och appen. **Det är F-Droids påstående**; Googles
-  sidor beskriver inte hur kontrollen görs.
-- F-Droid skriver: "We unequivocally advise against signing up for this
-  program, now or ever."
-
-### Ej läst eller oklart
-
-- Googles blogginlägg om det avancerade flödet (goo.gle/advance-flow) är
-  **ej läst**.
-- Hur telefoner utan Googles certifiering, till exempel GrapheneOS,
-  behandlas står inte på sidorna som lästes.
-
-### Vad det betyder för SHA
-
-- **Hemsida och F-Droid:** från 2027 behöver användare med vanliga
-  Android-telefoner något av tre saker. Antingen har ägaren registrerat
-  SHA (fullt konto, eller begränsat konto för högst 20 eller 50
-  telefoner), eller så slår användaren på det avancerade flödet med ett
-  dygns väntan, eller så installerar hen med ADB.
-- **Google Play:** registreringen sker automatiskt.
-
-## Alternativen
-
-### (A) Egen hemsida och GitHub Releases
-
-- **Så går det till:**
-  - Ägaren bygger och signerar release-APK:n på sin egen dator (0007 (b)
-    säger redan att ägaren bygger själv).
+- **(1a) Hemsidan och GitHub Releases, samma APK.** Ägarens önskemål.
+  - Ägaren bygger och signerar APK:n på sin egen dator (0007 (b)).
   - Ägaren laddar upp den till en GitHub Release med versionen som tagg,
-    tillsammans med en fil med SHA-256 för APK:n.
-  - Hemsidan länkar till releasen och visar fingeravtrycken. Den kan ligga
-    på GitHub Pages, som inte kräver någon egen server, eller på en egen
-    server som ägaren står för.
-  - Integritetspolicyn (G10) kan ligga på samma sida.
-- **Uppdateringar:**
-  - Appen letar inte själv efter uppdateringar. Relayn är den enda server
-    appen pratar med (0002). En egen uppdateringskontroll skulle avslöja
-    för GitHub eller hemsidan vem som har appen och när den används, och
-    den kräver ett eget beslut.
-  - Användaren tittar själv på hemsidan, eller följer releaserna med
-    Obtainium (B).
-- **Vem ser nedladdningen:**
-  - Med GitHub ser GitHub (Microsoft) IP-adressen hos den som laddar ner,
-    och kan spara den.
-  - Med en egen server ser den som driver servern samma sak.
-- **Signering:** ägarens egen nyckel. Den lämnar aldrig ägarens dator, och
-  ingen annan kan signera en uppdatering.
-- **Fördelar:**
-  - Ägaren har full kontroll över nyckeln.
-  - Inget konto hos Google krävs för själva utdelningen.
-  - Inga krav på Data safety eller stängt test.
-  - Passar med AGPL-3.0 och öppen källkod.
-- **Nackdelar:**
-  - Användaren måste tillåta "installera okända appar".
-  - Det finns inga automatiska uppdateringar.
-  - Från 2027 tillkommer utvecklarverifieringen (se ovan).
-  - Den som har fel APK, till exempel från en falsk sida, märker det bara om
-    hen kontrollerar fingeravtrycket.
+    tillsammans med fingeravtrycken.
+  - Hemsidan visar samma fil, eller länkar till releasen, och visar samma
+    fingeravtryck. Integritetspolicyn (G10) ligger på hemsidan.
+- **(1b) Bara GitHub Releases.** Hemsidan är då README eller GitHub Pages.
+  Det är mindre att hålla i ordning, men GitHub blir den enda platsen.
+- **(1c) Bara en egen hemsida.** Ingen GitHub-släpp, så GitHub ser inte
+  nedladdningarna. Det kräver en egen server, som ägaren står för (ingen
+  för Claude, `CLAUDE.md`). Obtainium kan läsa en vanlig sida med APK-länkar,
+  men det är skörare.
+- **(1d) F-Droid nu.** Det går inte förrän koden är fri programvara (G8).
+- **(1e) Google Play nu.** Ägaren skjuter upp det.
 
-### (B) Obtainium, ihop med (A)
+### F-Droid senare
 
-- **Vad det är:**
-  - Obtainium är ingen egen kanal. Det är en app på användarens telefon som
-    följer releaser och installerar uppdateringar.
-  - README: "Obtainium allows you to install and update apps directly from
-    their releases pages, and receive notifications when new releases are
-    made available."
-  - Den kan följa GitHub, GitLab, Codeberg, F-Droid och IzzyOnDroid, och
-    även en vanlig webbsida med APK-länkar.
-- **Kontrollen av nyckeln:**
-  - Obtainium själv kontrollerar inte signaturen, enligt diskussioner hos
-    GrapheneOS. Det är **ej kontrollerat i koden**.
-  - Androids regel om samma nyckel gäller ändå för varje uppdatering.
-  - För den första installationen rekommenderar README verktyget "Verified
-    Apps" (github.com/privacyguides/verified-apps-android). Verktyget är
-    **ej läst** här.
-- **Vem ser vad:** Obtainium frågar GitHub om nya releaser, så GitHub ser
-  telefonens IP-adress och när den frågar.
-- **Nackdel:** användaren måste först installera Obtainium. Det är ett
-  extra steg för den som inte är van.
-
-### (C) F-Droid
-
-- **Krav för att komma med** (F-Droids "Inclusion Policy"):
-  - Koden måste vara fri programvara, till exempel GPL. Det är möjligt
-    först efter G8, för i dag är koden "All rights reserved".
-  - F-Droid bygger appen själv från källkoden, med fria verktyg.
-  - Flutters och Androids SDK får användas som färdiga binärer, liksom
-    Rust/Rustup och bibliotek från Google Maven.
+- **Krav** (F-Droids "Inclusion Policy"):
+  - Koden måste vara fri programvara, till exempel GPL.
+  - F-Droid bygger själv från källkoden, med fria verktyg. Flutters och
+    Androids SDK, Rust/Rustup och Google Maven godtas som färdiga binärer.
   - Spårning och reklam är förbjudet. SHA har ingen sådan kod sedan 0012
     (C1).
   - Appen ska ha utvecklats aktivt i minst 3 månader.
-- **Signering:**
-  - F-Droid signerar som standard med en egen nyckel. Då kan användaren
-    inte byta mellan F-Droids och hemsidans APK utan att avinstallera och
-    förlora sina data.
-  - Med reproducerbara byggen kan F-Droid i stället publicera APK:er med
-    utvecklarens egen signatur (`Binaries` och `AllowedAPKSigningKeys`).
-    Det kräver att F-Droids bygge blir byte för byte samma som ägarens.
-  - Om SHA:s bygge går att reproducera, med Flutter och Rust via cargokit,
-    är **ej provat**.
-- **Uppdateringar:** via F-Droid-appen. Hur lång tid F-Droids bygge tar är
-  **ej kontrollerat**.
-- **Uppdateringskontroll:** F-Droid förbjuder appar som laddar ner kod
-  eller uppdateringar utan att användaren tydligt har gått med på det.
-  Det stämmer med att SHA inte har någon uppdateringskontroll.
-- **Utvecklarverifieringen:**
-  - F-Droid avråder från registrering.
-  - Googles guide för öppen källkod säger att man kan registrera
-    fingeravtrycket för butikens nyckel.
-  - Hur F-Droid fungerar för användarna efter 2027 är oklart.
+  - Appar får inte ladda ner kod eller uppdateringar utan tydligt samtycke.
+- **Signering**, två vägar:
+  - F-Droid signerar med en egen nyckel. Då kan användaren inte byta
+    mellan F-Droids APK och hemsidans utan att avinstallera och förlora
+    sina data.
+  - Med reproducerbara byggen kan F-Droid publicera APK:er med ägarens
+    egen signatur (`Binaries` och `AllowedAPKSigningKeys`). Då är det samma
+    app och samma nyckel i alla kanaler. Det kräver att F-Droids bygge blir
+    byte för byte samma som ägarens. Om det går med Flutter och Rust via
+    cargokit är **ej provat**.
 
-### (D) Google Play
+### Google Play senare
 
-Det är dagens plan.
+- Play App Signing krävs för nya appar. "Google manages and protects your
+  app's signing key for you and uses it to sign your APKs for
+  distribution."
+- Ägaren kan lämna sin egen nyckel till Google, så att samma nyckel gäller
+  överallt. Det måste väljas när Play App Signing sätts upp. Google har
+  därefter en kopia och kan signera uppdateringar.
 
-- **Signering:**
-  - Play App Signing krävs för nya appar. "Google manages and protects your
-    app's signing key for you and uses it to sign your APKs for
-    distribution."
-  - Ägaren kan välja att lämna sin egen nyckel till Google, så att samma
-    nyckel gäller i andra kanaler. Det måste väljas när Play App Signing
-    sätts upp, och nyckeln går inte att få tillbaka från Google.
-- **Uppdateringar** sker automatiskt genom Play Butik, och installationen
-  är enklast för användaren.
-- **Utvecklarverifieringen** sköts automatiskt.
-- **Krav:**
-  - ett utvecklarkonto med legitimation och avgift (G9);
-  - stängt test med 12 testare i 14 dagar för nya personliga konton, vilket
-    är **ej verifierat** (`docs/play-krav.md`);
-  - Data safety (F10), målnivå (F9) och Googles regler i övrigt.
-- **Förtroende:**
-  - Google har en nyckel som kan signera uppdateringar till SHA. För en
-    säkerhetsapp betyder det att användarna också litar på Google.
-  - Googles "code transparency" kan visa att koden är ägarens. Den är **ej
-    läst** här.
+### Uppdateringar utan appens hjälp
 
-## Jämförelse
+- **Obtainium**, en app på användarens telefon, kan följa GitHub Releases
+  och installera nya versioner. README: "Obtainium allows you to install
+  and update apps directly from their releases pages".
+- Obtainium kontrollerar inte själv signaturen enligt diskussioner hos
+  GrapheneOS. Det är **ej kontrollerat i koden**. Androids regel om samma
+  nyckel gäller ändå för varje uppdatering.
+- Det kräver ingen ändring i SHA, och kan rekommenderas på hemsidan
+  oavsett punkt 3.
 
-| | (A) Hemsida + GitHub | (B) Obtainium (med A) | (C) F-Droid | (D) Google Play |
-| --- | --- | --- | --- | --- |
-| Vem signerar | Ägaren | Ägaren | F-Droid, eller ägaren med reproducerbart bygge | Google, eller ägarens egen nyckel hos Google |
-| Uppdateringar | Användaren hämtar själv | Obtainium meddelar och installerar | F-Droid-appen | Automatiskt |
-| Vem ser nedladdningen | GitHub eller hemsidans server | GitHub (eller sidan) | F-Droid | Google |
-| Krav före start | G6, G8, nyckel | Som (A) | G6, G8, att F-Droid tar med appen | G6, G8, konto, stängt test, Data safety |
-| Utvecklarverifiering 2027 | Ägaren registrerar, eller användaren använder det avancerade flödet | Som (A) | Oklart; F-Droid avråder | Automatiskt |
-| Svårt för användaren | Okända appar tillåts, fingeravtryck kontrolleras | Som (A), plus Obtainium | F-Droid-appen | Lätt |
-| Arbete för ägaren | Bygga, signera, ladda upp | Som (A) | Byggrecept, vänta på F-Droid | Mest: konto, test, formulär |
-| Går att ändra senare | Ja, om nyckeln är densamma | Ja | Bara med reproducerbart bygge | Bara med egen nyckel hos Google |
+### Jämförelse
 
-## Fingeravtryck och SHA-256
+| | (1a) Hemsida + GitHub | (1b) Bara GitHub | (1c) Bara egen hemsida |
+| --- | --- | --- | --- |
+| Vem ser nedladdningen | GitHub och hemsidans värd | GitHub | Hemsidans värd |
+| Arbete för ägaren | Två ställen att uppdatera | Ett ställe | Ett ställe, plus en server |
+| Obtainium | Fungerar med GitHub | Fungerar | Skörare (läser webbsidan) |
+| Om GitHub stänger kontot | Hemsidan finns kvar | Allt borta | Påverkas inte |
 
-Det finns två olika värden.
+**Rekommendation: (1a)**, som ägaren vill. F-Droid efter G8, helst med
+reproducerbart bygge och ägarens nyckel. Om F-Droid bara kan signera med
+sin egen nyckel, bör F-Droid-versionen tydligt sägas vara en egen app som
+inte kan uppdateras från hemsidan, eller vänta.
 
-1. **SHA-256 för APK-filen:** till exempel `sha256sum SHA-1.0.0.apk`. Det
-   ändras vid varje release och visar att filen inte har ändrats på
-   vägen.
-2. **SHA-256 för signeringscertifikatet:** `apksigner verify --print-certs
-   SHA-1.0.0.apk`, eller `keytool -list -v` på nyckelfilen. Det är
-   detsamma för alla releaser, och det är det värde som telefonen litar på.
-   Exakt vad `apksigner` skriver ut är **ej provat här**.
+## 2. Fingeravtryck
 
-Förslag:
+### Två olika värden
 
-- **Certifikatets fingeravtryck publiceras på flera oberoende ställen:**
-  README i repot, hemsidan, varje GitHub Release och `docs/release.md`.
-  Den som vill fejka det måste då ändra alla ställen.
-- **Fingeravtrycket kan jämföras när man träffas.** SHA:s idé är förtroende
-  som skapas när man ses. Appen kan visa sitt eget fingeravtryck under
-  "Teknisk information", så att två användare kan jämföra det när de
-  skannar varandras QR-koder. Det kräver inget nytt beroende, eftersom
-  Android ger appen sin egen signatur. Det blir i så fall ett eget paket
-  efter beslutet.
-- **Fillistan med SHA-256 kan signeras,** till exempel med
-  `ssh-keygen -Y sign`, som finns i OpenSSH på de flesta datorer. Den
-  offentliga nyckeln står då i repot. Det skyddar mot en ändrad fillista
-  på GitHub, men det viktiga är certifikatets fingeravtryck. Ägaren
-  avgör.
-- **Användaren kontrollerar den första installationen:** med `apksigner`
-  på en dator, eller med en app på telefonen som "Verified Apps"
-  (**ej läst** här). Instruktionen står på hemsidan.
+1. **APK:ns SHA-256:** till exempel `sha256sum SHA-1.0.0.apk`. Det ändras
+   vid varje release och visar att filen inte har ändrats på vägen.
+2. **Certifikatets SHA-256-fingeravtryck:** `apksigner verify --print-certs
+   SHA-1.0.0.apk`, eller `keytool -list -v` på nyckelfilen. Det är samma för
+   alla releaser, och det är det värde telefonen litar på. Exakt vad
+   `apksigner` skriver ut är **ej provat här**.
 
-## Signeringsnyckeln
+### Var de publiceras
+
+| Ställe | Certifikatets fingeravtryck | APK:ns SHA-256 |
+| --- | --- | --- |
+| README | Ja | (2a) Ja, för senaste versionen; (2b) länk till releasen |
+| SECURITY.md | Ja | (2a) Ja, för senaste versionen; (2b) länk till releasen |
+| Varje GitHub Release | Ja | Ja, plus en fil `SHA256SUMS` |
+| Hemsidan | Ja | Ja |
+
+- **(2a) Ägarens önskemål:** båda värdena på alla fyra ställen. Den
+  nackdelen är att README och SECURITY.md måste uppdateras i en commit
+  efter varje release, eftersom APK:n byggs från den taggade koden. Är
+  commiten glömd, visar de ett gammalt värde.
+- **(2b) Alternativ:** certifikatets fingeravtryck på alla fyra ställen.
+  APK:ns SHA-256 bara i releasen och på hemsidan, och README och
+  SECURITY.md länkar dit. Färre kopior som kan bli fel.
+- **I båda fallen** bör ett fingeravtryck som skiljer sig mellan ställena
+  ses som ett larm. Ett test i CI kan kontrollera att certifikatets
+  fingeravtryck är detsamma i README och SECURITY.md (ett eget paket).
+- **Signera fillistan (valfritt):** `SHA256SUMS` kan signeras med
+  `ssh-keygen -Y sign`, som finns i OpenSSH. Den offentliga nyckeln står i
+  repot. Det skyddar mot en ändrad fil på GitHub, men certifikatets
+  fingeravtryck är det viktiga.
+- **Kontroll av första installationen:** med `apksigner` på en dator, eller
+  med en app på telefonen som "Verified Apps" (**ej läst** här).
+  Instruktionen står på hemsidan.
+
+### Appens eget fingeravtryck i "Teknisk information"
+
+- **Så går det till:** appen frågar Android (`PackageManager`) vilket
+  certifikat den är signerad med, och visar dess SHA-256. Det kräver lite
+  Kotlin i `android/`, men inget nytt beroende. Från Android 9 finns
+  `signingInfo`, och före det det äldre `signatures` (SHA stöder Android 7
+  och senare). Det är **ej provat**.
+- **Debug-byggen** är signerade med en debugnyckel och visar därför ett
+  annat fingeravtryck. Appen bör skriva tydligt att det är ett debug-bygge.
+- **Vad det inte bevisar:** en ändrad, falsk app kan skriva vilket
+  fingeravtryck som helst på skärmen. Värdet i appen är bra för att
+  upptäcka misstag och för att jämföra när man träffas, men det är ingen
+  kontroll. Den riktiga kontrollen görs utanför appen, med `apksigner`
+  eller ett verifieringsverktyg, före installationen.
+- **Alternativ:**
+  - (2c) visa fingeravtrycket, med texten ovan om vad det betyder;
+  - (2d) visa det inte, och bara hänvisa till hemsidan.
+
+### Den privata nyckeln finns aldrig i repot eller CI
+
+- Redan i dag ignoreras `*.jks`, `*.keystore` och `key.properties`
+  (`docs/release.md`, punkt 1–2).
+- Ett test kan dessutom stoppa en commit som innehåller en nyckelfil eller
+  `key.properties` (ett eget paket).
+- Release-bygget sker på ägarens dator, och inget CI-jobb får nyckeln.
+  Ett CI-jobb som bygger en release får bara ägaren merga (`CLAUDE.md`).
+
+**Rekommendation:**
+- **Fingeravtryck:** (2a), som ägaren vill, med ett test som jämför
+  certifikatets fingeravtryck i README och SECURITY.md. Om ägaren hellre vill
+  ha färre kopior som kan bli fel: (2b).
+- **Appens fingeravtryck:** (2c), med texten om vad det inte bevisar.
+
+## 3. Uppdateringskontroll
+
+### Alternativ
+
+- **(3a) Ingen kontroll**, som i dag. Användaren tittar på hemsidan eller
+  använder Obtainium. Appen pratar bara med servern.
+- **(3b) Ägarens förslag:** frivillig, avstängd från början, hämtar bara en
+  versionsfil och visar bara "ny version finns" med en fast länk.
+- **(3c) Bara Obtainium**, utanför appen. Det fungerar redan med (1a).
+- **(3d) Appen laddar ner och installerar själv.** **Rekommenderas inte.**
+  - Det kräver behörigheten `REQUEST_INSTALL_PACKAGES`, som CI:s kontroll
+    av manifestet stoppar i dag.
+  - F-Droid kräver ett tydligt samtycke för sådant.
+  - Den som tar över versionsfilen eller nedladdningen kan få appen att
+    hämta något annat.
+
+### Hur (3b) skulle fungera
+
+- **Avstängd från början**, med ett eget val under Inställningar. Ingenting
+  hämtas förrän användaren slår på det.
+- **Bara en versionsfil**, med en fast adress i appen. Filen innehåller
+  bara versionsnumret, till exempel `{"versionCode": 2}`. Appen jämför det
+  med sitt eget versionCode, som den kan få från Android (`PackageManager`),
+  utan nytt beroende.
+- **Samma anrop för alla:**
+  - en vanlig `GET` utan parametrar, utan cookies och utan `User-Agent`,
+    precis som relay-klienten redan gör (`lib/features/transport/relay_client.dart`:
+    "No `User-Agent` header, and no cookies or other state");
+  - inget id, ingen version och inget om telefonen i anropet.
+- **Bara när appen är öppen och högst en gång om dagen.** Tiden för den
+  senaste kontrollen sparas på telefonen. Ett misslyckat anrop försöks
+  inte igen samma dag.
+- **Visar bara "Ny version finns"**, med en fast länk i appen till
+  hemsidan. Länken kommer aldrig från versionsfilen.
+- **Laddar aldrig ner** APK:er eller något annat än versionsfilen.
+
+**Vad en falsk eller ändrad versionsfil kan göra:**
+
+- visa "ny version finns" när det inte finns någon;
+- dölja en ny version.
+
+Den kan inte styra användaren till en annan sida eller få appen att hämta
+något. Det är skälet till att länken är fast.
+
+**Vem som ser vad:**
+
+- Värden för versionsfilen ser telefonens IP-adress och när den frågar,
+  högst en gång om dagen.
+- Den kan se ungefär hur många som har kontrollen påslagen.
+- Ligger filen på GitHub ser GitHub (Microsoft) detta.
+- Samma IP-adress syns också för servern vid hämtningar. Om två
+  operatörer jämför sina listor kan de koppla ihop dem. Med VPN ser ingen av
+  dem den riktiga IP-adressen.
+
+### Var versionsfilen ligger
+
+| Alternativ | Vem ser IP-adressen | Kommentar |
+| --- | --- | --- |
+| En fil i repot eller på GitHub Pages | GitHub | Enklast. Samma värd som releaserna |
+| GitHub:s API för releaser | GitHub | Svaret är stort och kan ändras. Gränsen är 60 anrop i timmen per IP-adress (**ej kontrollerat** här) |
+| Egen hemsida | Hemsidans värd | Ägaren står för servern |
+| Servern (relayn) | Servern, som redan ser IP-adressen | Ingen ny part, men relayn är "bara lämna och hämta" (0002). Den som driver en annan server kan ljuga om versionen |
+
+### Texten i appen (förslag, ägaren godkänner, 0002)
+
+Under Inställningar, vid valet "Sök efter ny version":
+
+> När det här är på frågar appen GitHub högst en gång om dagen, medan
+> appen är öppen, om det finns en ny version. Frågan är likadan för alla
+> och innehåller inga uppgifter om dig eller dina kontakter. GitHub ser din
+> IP-adress och när du frågar. Vi rekommenderar VPN om du inte vill att
+> GitHub ska se din IP-adress.
+
+När det finns en ny version:
+
+> Det finns en ny version av SHA. Hämta den från [hemsidans adress] och
+> kontrollera fingeravtrycket innan du installerar den.
+
+Den sista meningen i inställningstexten följer formen i den godkända
+VPN-meningen (0008), med "GitHub" i stället för "servern". Ord som 0002
+förbjuder, som "anonym" och "inga loggar", används inte.
+`test/security/wording_test.dart` kontrollerar det när texten finns.
+
+**Det här skulle också ändras:**
+
+- `docs/data-safety.md` och `docs/integritetspolicy.md`: att GitHub, eller
+  den värd som väljs, får IP-adressen när kontrollen är på;
+- "Teknisk information": ett eget avsnitt om kontrollen.
+
+**Rekommendation: (3b) med versionsfilen på GitHub Pages** (samma värd som
+hemsidan om den ligger där), plus Obtainium på hemsidan för den som vill
+ha automatiska uppdateringar. Om ägaren hellre vill att appen bara pratar
+med servern: (3a).
+
+## Googles utvecklarverifiering 2027
+
+Från Googles sidor för utvecklare (developer.android.com/developer-verification
+och dess FAQ, med datum per svar):
+
+### Tidsplan
+
+- **Augusti 2026:** konton för begränsad utdelning ("limited
+  distribution") och det avancerade flödet för användare ("advanced flow").
+- **30 september 2026:** bara utvalda butiker i Brasilien, Indonesien,
+  Singapore och Thailand.
+- **2027:** "Verification capability will be expanded globally for all
+  apps on certified Android devices in 2027."
+- **Hemsidor och andra butiker omfattas inte än** (FAQ, 15 juli 2026): "If
+  you distribute your app through other stores, or if users sideload your
+  app directly, these new verification requirements won't apply to your
+  app yet."
+- **Telefoner:** "all certified Android devices running Android 8 (API
+  level 26) or higher" (FAQ, 10 november 2026).
+
+### Registrering
+
+- **Fullt konto:** 25 dollar och id-kontroll med legitimation (FAQ, 25
+  mars 2026).
+- **Konto för begränsad utdelning:** gratis och utan legitimation. Enligt
+  FAQ:n (18 juni 2026) gäller det "up to 20 specific devices", men sidan om
+  kontot säger "up to 50 devices". **Sidorna säger emot varandra.**
+- **Paketnamn:** varje paketnamn registreras med certifikatets SHA-256.
+  Flera nycklar per paket går att lägga till. "If you lose your signing key
+  you won't be able to register your packages." (FAQ, 23 mars 2026)
+
+### Det avancerade flödet och ADB
+
+- Användaren gör en engångsinställning (FAQ, 23 mars 2026):
+  1. slår på utvecklarläget;
+  2. går igenom en kontroll att ingen styr hen;
+  3. startar om telefonen och loggar in igen;
+  4. väntar ett dygn;
+  5. bekräftar med fingeravtryck eller PIN.
+- "Unregistered apps can only be installed or updated when the advanced
+  flow is enabled or by using ADB." Det gäller också uppdateringar.
+- **ADB** påverkas inte (FAQ, 23 mars 2026).
+
+### F-Droid
+
+F-Droid (öppet brev, 24 februari 2026) avråder: "We unequivocally advise
+against signing up for this program, now or ever."
+
+### Ej läst eller oklart
+
+- Hur telefoner utan Googles certifiering, som GrapheneOS, behandlas.
+- Googles blogginlägg om det avancerade flödet.
+
+### Vad det betyder för (1a)
+
+- **Fram till 2027:** inget ändras för den som installerar från hemsidan.
+- **Från 2027** finns tre vägar:
+  - **(V1)** Ägaren registrerar SHA med ett fullt konto: legitimation och
+    25 dollar. Google får ägarens identitet och appens paketnamn och
+    fingeravtryck.
+  - **(V2)** Ägaren registrerar med ett gratis begränsat konto, för högst
+    20 eller 50 telefoner. Det räcker för testfasen.
+  - **(V3)** Ingen registrering. Användarna slår på det avancerade flödet
+    med ett dygns väntan, eller installerar med ADB. Det gäller också varje
+    uppdatering.
+- **Rekommendation:** (V2) eller ADB för testfasen. Ett beslut om (V1)
+  eller (V3) före en öppen utdelning 2027, när Googles sidor har lästs igen.
+
+## Signeringsnyckeln: skydd och säkerhetskopia
+
+### Skydd
 
 - **Bara ägaren** skapar, förvarar och använder nyckeln (`CLAUDE.md`,
   "Aldrig"). Nyckelfilen och lösenorden förs aldrig in i repot, CI,
   GitHub-hemligheter, en chatt eller en molnmapp som synkas.
-- **Med (A), (B) eller (C) med reproducerbart bygge** är ägarens nyckel
-  appens egen signeringsnyckel, inte bara en uppladdningsnyckel som i
-  Play. Den är då ännu viktigare än det `docs/release.md`, punkt 1,
-  beskriver.
-- **Signering** sker på ägarens dator. Ett release-bygge i CI är något
-  bara ägaren får merga (`CLAUDE.md`), och det rekommenderas inte här.
-- **Säkerhetskopia:**
-  - två krypterade kopior av nyckelfilen offline, på olika platser, till
-    exempel två USB-minnen;
-  - lösenordet förvarat för sig, till exempel på papper eller i en
-    lösenordshanterare;
-  - en provad återställning en gång.
-- **Om nyckeln försvinner:**
-  - Inga fler uppdateringar under samma nyckel.
-  - Google: "you won't be able to register your packages".
-  - Alla användare måste avinstallera, och då försvinner identiteten och
+- Med (1a) är ägarens nyckel **appens egen signeringsnyckel**, inte bara en
+  uppladdningsnyckel som i Play. Den är viktigare än det
+  `docs/release.md`, punkt 1, beskriver i dag.
+- Nyckelfilen är krypterad (PKCS12) med ett långt lösenord, och ligger
+  på ägarens dator eller, bättre, på ett krypterat USB-minne som bara sitter
+  i när en release signeras.
+- **Signering** sker på ägarens dator, och fingeravtrycket kontrolleras
+  före varje uppladdning.
+
+### Säkerhetskopia
+
+- **Två krypterade kopior offline**, på olika platser, till exempel två
+  USB-minnen, ett hemma och ett annat ställe.
+- **Lösenordet förvaras för sig**, på papper eller i en
+  lösenordshanterare, inte med kopiorna.
+- **Prova en återställning en gång:** signera ett test-APK med kopian och
+  jämför fingeravtrycket.
+- **Skriv ner fingeravtrycket på papper** med kopiorna, så att det går att
+  se att det är rätt nyckel.
+
+### Om nyckeln försvinner eller läcker
+
+- **Försvinner den:**
+  - inga fler uppdateringar under samma nyckel;
+  - Google: "you won't be able to register your packages";
+  - alla användare måste avinstallera och förlorar då identiteten och
     kontakterna.
-- **Om nyckeln läcker** kan vem som helst signera "uppdateringar" som
-  telefonerna godtar.
-  - Android kan byta nyckel med APK Signature Scheme v3 och ett bevis för
-    bytet, men bara från Android 9 (API 28), enligt Androids
-    dokumentation. Den är **ej läst här**.
-  - SHA stöder Android 7 och senare (`minSdk` är minst 24 i
-    `android/app/build.gradle.kts`), och äldre telefoner godtar då inte den
-    nya nyckeln.
+- **Läcker den** kan vem som helst signera "uppdateringar" som telefonerna
+  godtar.
+  - Android kan byta nyckel med APK Signature Scheme v3, men bara från
+    Android 9 (API 28), enligt Androids dokumentation. Den är **ej läst
+    här**.
+  - SHA stöder Android 7 och senare (`minSdk` är minst 24), och äldre
+    telefoner godtar då inte den nya nyckeln.
   - Att höja `minSdk` till 28 före första utdelningen är en fråga för
     ägaren.
 - **En hårdvarunyckel**, till exempel PKCS#11, är kanske möjlig med
   `apksigner`. Det är **ej kontrollerat**, och kan bli ett senare val.
-- **Om (D) väljs senare:** ladda upp den egna nyckeln till Play App Signing
-  i stället för att låta Google skapa en ny. Då gäller samma nyckel
-  överallt.
 
 ## Vilka paket i färdplanen som ändras
 
-Om ägaren väljer (A)+(B), som rekommenderas nedan. Inget av detta görs
-förrän ägaren har beslutat.
+Om ägaren väljer det som rekommenderas ovan. Inget av detta görs förrän
+ägaren har beslutat.
 
-| Paket | I dag | Med (A)+(B) |
+| Paket | I dag | Efter beslutet |
 | --- | --- | --- |
-| Fas 3, "Klart när" | Publicerad i produktion på Google Play | Version 1.0 publicerad som signerad APK på hemsidan och i GitHub Releases, med fingeravtryck |
-| F9 | Plays krav: målnivå, stängt test, Data safety, integritetspolicy | Krav för utdelning utanför Play: utvecklarverifieringen (läs Googles sidor igen före släppet), Androids installationsflöde och, om (C) väljs, F-Droids krav. Målnivån behålls |
-| F10 | Integritetspolicy och Data safety (klart) | Data safety behövs inte. Integritetspolicyn behålls och ligger på hemsidan |
-| F11 | Butikstexter med Plays längder, skärmbilder | Texterna blir hemsidans och releasens texter, och Plays längder gäller inte. Skärmbilderna behålls. Vid (C): F-Droids metadata |
+| Fas 3, "Klart när" | Publicerad i produktion på Google Play | Version 1.0 publicerad som signerad APK på hemsidan och i GitHub Releases, med fingeravtrycken på alla fyra ställen |
+| F9 | Plays krav: målnivå, stängt test, Data safety, integritetspolicy | Krav för utdelning utanför Play: utvecklarverifieringen (läs Googles sidor igen före släppet), Androids installationsflöde och, senare, F-Droids krav. Målnivån behålls |
+| F10 | Integritetspolicy och Data safety (klart) | Data safety behövs inte för Play. Underlaget behålls som en beskrivning av datan. Integritetspolicyn får ett stycke om uppdateringskontrollen om (3b) väljs |
+| F11 | Butikstexter med Plays längder, skärmbilder | Texterna blir hemsidans och releasens texter, och Plays längder gäller inte. Skärmbilderna behålls. Senare: F-Droids metadata |
 | F12 | Version och ändringslogg | Behålls. Ändringsloggen blir releasens text, och versionCode ska fortfarande öka |
-| G9 | Utvecklarkonto och uppladdningsnyckel | Signeringsnyckeln skapas och förvaras enligt ovan. Ägaren beslutar om kontot för utvecklarverifiering: fullt, begränsat eller inget |
+| G9 | Utvecklarkonto i Play och uppladdningsnyckel | Signeringsnyckeln skapas, förvaras och säkerhetskopieras enligt ovan. Ägaren beslutar om utvecklarverifieringen (V1, V2 eller V3) |
 | G10 | Integritetspolicyn på webben | Samma, på hemsidan |
-| G11 | Internt test, stängt test och produktion i Play | Ägaren bygger, signerar och kontrollerar fingeravtrycket, installerar först på egna telefoner, delar ut till testare efter G6 och publicerar sedan releasen |
-| `docs/release.md` | Checklista för Play | Skrivs om för den valda kanalen, i ett eget paket |
+| G11 | Internt test, stängt test och produktion i Play | Ägaren bygger och signerar, kontrollerar fingeravtrycket, installerar först på egna telefoner, delar ut till testare efter G6 och publicerar sedan releasen med fingeravtrycken |
+| `docs/release.md` | Checklista för Play | Skrivs om för hemsidan och GitHub Releases |
 | `CLAUDE.md`, "Ägarens beslut" punkt 3 | Nämner Play-kraven | Ägarens avsnitt; Claude föreslår bara en ändring |
 
-Ett nytt paket kan läggas till: **appens eget fingeravtryck i "Teknisk
-information"** (se ovan), om ägaren vill.
+### Nya paket
 
-## Rekommendation
+- **F13 – Utdelning utan Play.** Nytt `docs/release.md` med stegen för
+  att bygga, signera, kontrollera och publicera. Fingeravtrycken i README
+  och SECURITY.md, och ett test som jämför dem. Ett test som stoppar
+  nyckelfiler i repot. Texter till hemsidan och releasen.
+- **F14 – Appens fingeravtryck i "Teknisk information"** (2c).
+- **F15 – Frivillig uppdateringskontroll** (3b): valet, texterna,
+  versionsfilen, tester för att den aldrig körs när den är av, högst en
+  gång om dagen och utan något i anropet, och ändringar i Data
+  safety-underlaget och integritetspolicyn.
 
-**(A)+(B)**, med F-Droid (C) som ett senare val efter G8.
-
-- **(A):** APK:n i GitHub Releases, med en hemsida som visar
-  fingeravtrycken. Ägarens egen nyckel. Ingen uppdateringskontroll i appen.
-- **(B):** Obtainium rekommenderas som sättet att få uppdateringar.
-- **(C) senare:** helst med reproducerbart bygge och ägarens egen
-  signatur, så att nyckeln blir densamma.
-- **(D) inte nu.** Vägen dit hålls öppen genom att den egna nyckeln
-  sparas, så att den kan lämnas till Play App Signing.
-
-Varför:
-
-- Ägaren vill det.
-- Ingen annan än ägaren kan signera SHA.
-- Färre beroenden av Google: inget stängt test, ingen Data safety och
-  inget konto för själva utdelningen.
-- Det passar med öppen källkod efter G8.
-
-Nackdelarna är tydliga:
-
-- installationen och uppdateringarna blir krångligare;
-- GitHub ser vem som laddar ner;
-- från 2027 krävs registrering, det avancerade flödet eller ADB.
-
-För testfasen, med ägaren och några testare efter G6, räcker troligen ADB
-eller ett gratis konto för begränsad utdelning. Det skulle i så fall vara
-ägarens val. Före en öppen utdelning 2027 behöver ägaren välja mellan ett
-fullt konto (legitimation, 25 dollar) och att be användarna slå på det
-avancerade flödet.
+Ordningen blir F12, F13, F14, F15, och sedan G9–G11.
 
 ## Ägaren beslutar
 
-- [ ] **Kanal:** (A), (A)+(B), (C), (D) eller en kombination.
-- [ ] **Utvecklarverifiering:** registrera med fullt konto, registrera
-  med begränsat konto, eller inte registrera. Utan registrering
-  installerar användarna med det avancerade flödet eller med ADB.
-- [ ] **`applicationId`:** behåll `se.sha.sha`, eller byt före första
-  utdelningen till ett id från en domän som ägaren äger.
-- [ ] **Hemsidan:** GitHub Pages, eller en egen server som ägaren står
-  för.
-- [ ] **Fillistan med SHA-256:** signera den med `ssh-keygen -Y sign`, eller
-  inte.
-- [ ] **Appens eget fingeravtryck i "Teknisk information":** ett nytt
-  paket, ja eller nej.
-- [ ] **`minSdk`:** behåll 24 (Android 7), eller höj till 28 (Android 9)
-  så att ett nyckelbyte fungerar på alla telefoner.
+1. **Utdelning:**
+   - [ ] (1a) hemsidan och GitHub Releases;
+   - [ ] (1b) bara GitHub;
+   - [ ] (1c) bara en egen hemsida.
+
+   F-Droid efter G8, med ägarens nyckel om det går. Google Play skjuts
+   upp.
+2. **Fingeravtryck:**
+   - [ ] (2a) båda värdena på alla fyra ställen, eller (2b) APK:ns SHA-256
+     bara i releasen och på hemsidan;
+   - [ ] (2c) appen visar sitt eget fingeravtryck, med texten om vad det
+     inte bevisar, eller (2d) inte;
+   - [ ] signera `SHA256SUMS` med `ssh-keygen -Y sign`, eller inte.
+3. **Uppdateringskontroll:**
+   - [ ] (3a) ingen, (3b) frivillig enligt ovan, eller (3c) bara Obtainium;
+   - [ ] om (3b): var versionsfilen ligger (GitHub Pages, egen hemsida eller
+     servern);
+   - [ ] om (3b): texterna i appen enligt förslaget ovan.
+4. **Utvecklarverifiering:**
+   - [ ] (V1) fullt konto, (V2) begränsat konto eller (V3) ingen
+     registrering.
+5. **Övrigt:**
+   - [ ] `applicationId`: behåll `se.sha.sha`, eller byt före första
+     utdelningen;
+   - [ ] `minSdk`: behåll 24, eller höj till 28 så att ett nyckelbyte
+     fungerar på alla telefoner.
 
 ## Ej läst eller ej provat
 
 - Googles blogginlägg om det avancerade flödet, och Googles hjälpsidor på
   support.google.com, som är spärrade i molnmiljön.
 - Hur telefoner utan Googles certifiering, som GrapheneOS, påverkas.
-- Om SHA:s bygge går att reproducera (Flutter och Rust via cargokit), och
-  hur lång tid F-Droids bygge tar.
+- Om SHA:s bygge går att reproducera (Flutter och Rust via cargokit).
 - Androids dokumentation om nyckelbyte (APK Signature Scheme v3).
-- Play "code transparency".
 - Vem som äger domänen `sha.se`.
 - Verktyget "Verified Apps".
 - Utskriften från `apksigner verify --print-certs`.
+- Att läsa appens eget certifikat med `PackageManager` på Android 7–14.
+- GitHub:s gräns för anrop mot API:t.
 
 ## Källor (lästa 2026-11-23)
 
