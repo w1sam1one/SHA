@@ -32,6 +32,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sha/app/app.dart';
 import 'package:sha/app/licenses.dart';
+import 'package:sha/features/chat/chats_screen.dart';
+import 'package:sha/features/contacts/contacts_screen.dart';
+import 'package:sha/features/qr/my_qr_screen.dart';
+import 'package:sha/features/settings/settings_screen.dart';
 
 /// How many different colours a picture has, from a sample of its pixels.
 Future<int> colours(WidgetTester tester, List<int> png) async {
@@ -95,14 +99,16 @@ void main() {
         matching: find.text(label),
       ),
     );
-    Finder title(String text) =>
-        find.descendant(of: find.byType(AppBar), matching: find.text(text));
-    await shoot('2-chattar', title('Chattar'));
-    await tab('Min QR');
-    await shoot('3-min-qr', title('Min QR'));
-    await tab('Kontakter');
-    await shoot('4-kontakter', title('Kontakter'));
-    await tab('Inställningar');
-    await shoot('5-installningar', title('Inställningar'));
+    // Each tab by its screen: only the shown one is on stage in the
+    // IndexedStack. The app opens on Kontakter, so every tab is tapped.
+    for (final (name, label, screen) in [
+      ('2-chattar', 'Chattar', ChatsScreen),
+      ('3-min-qr', 'Min QR', MyQrScreen),
+      ('4-kontakter', 'Kontakter', ContactsScreen),
+      ('5-installningar', 'Inställningar', SettingsScreen),
+    ]) {
+      await tab(label);
+      await shoot(name, find.byType(screen));
+    }
   });
 }

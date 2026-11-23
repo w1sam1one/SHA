@@ -295,7 +295,9 @@ Nyast först. En rad per paket eller körning som ändrar något.
   emulator, aldrig på en telefon där SHA används. Övrigt: testet för
   `FLAG_SECURE` fångar nu också en tidig `return`, ett andra `setFlags`,
   `.attributes` och andra aktiviteter i kod och manifest; varje skärmbild
-  kontrollerar att den visar rätt skärm och inte låset; butikstexterna säger
+  kontrollerar att den visar rätt skärm och inte låset (det visade att
+  bilden "2-chattar" i #49 var fliken Kontakter, som appen öppnar på; nu
+  trycks varje flik fram); butikstexterna säger
   att låset kräver ett skärmlås, att rundorna kan ta längre tid, och det om
   brevlåde-id som integritetspolicyn säger; raden om AGPL-3.0 står utanför
   texterna tills G8, och ett test stoppar den; fler förbjudna fraser.
