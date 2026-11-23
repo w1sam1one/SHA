@@ -54,10 +54,10 @@ SHA är en app för krypterade meddelanden mellan personer som har träffats. Ni
 Så fungerar det
 • Ni träffas och skannar varandras QR-koder. Då står kontakten som verifierad i person.
 • Meddelandena krypteras på din telefon och kan bara läsas på era två telefoner. De går via en server vars adress du anger, och som bara tar emot och lämnar ut krypterade paket.
-• Appen hämtar nya meddelanden bara när den är öppen, så ofta du väljer: varje minut, var 5:e eller 15:e minut, eller varje timme. Har du många kontakter kan det ta längre tid. Det finns inga notiser.
+• Appen hämtar nya meddelanden bara när den är öppen, så ofta du väljer: varje minut, var 5:e eller 15:e minut, eller varje timme. Har du många kontakter kan det gå längre tid mellan hämtningarna. Det finns inga notiser.
 
 Vad servern ser
-Servern kan inte läsa dina meddelanden. Den ser din IP-adress, ett brevlåde-id som byts varje dygn, när du skickar och hämtar, och hur stora paketen är. Brevlådor som hämtas från samma IP-adress vid ungefär samma tid kan kopplas ihop. SHA:s serverprogram sparar inte din IP-adress på disk eller i loggar, men den som driver servern kan ändå se och spara trafiken. Vi rekommenderar VPN om du inte vill att servern ska se din IP-adress.
+Servern kan inte läsa dina meddelanden. Den ser din IP-adress, brevlåde-id (ett för varje kontakt, som byts varje dygn), när du skickar och hämtar, och hur stora paketen är. Brevlådor som hämtas från samma IP-adress vid ungefär samma tid kan kopplas ihop. SHA:s serverprogram sparar inte din IP-adress på disk eller i loggar, men den som driver servern kan ändå se och spara trafiken. Vi rekommenderar VPN om du inte vill att servern ska se din IP-adress.
 
 Bra att veta
 • Historiken sparas i 30 dagar om du inte väljer något annat: Spara inte, 7 dagar, 30 dagar eller 1 år.
@@ -89,10 +89,10 @@ SHA is an app for encrypted messages between people who have met. You become con
 How it works
 • You meet and scan each other's QR codes. The contact is then shown as verified in person.
 • Messages are encrypted on your phone and can only be read on your two phones. They go through a server whose address you enter, which only receives and hands out encrypted packets.
-• The app fetches new messages only while it is open, as often as you choose: every minute, every 5 or 15 minutes, or every hour. With many contacts it can take longer. There are no notifications.
+• The app fetches new messages only while it is open, as often as you choose: every minute, every 5 or 15 minutes, or every hour. With many contacts, the time between fetches can be longer. There are no notifications.
 
 What the server sees
-The server cannot read your messages. It sees your IP address, a mailbox ID that changes every day, when you send and fetch, and how large the packets are. Mailboxes fetched from the same IP address at about the same time can be linked. SHA's server program does not store your IP address on disk or in logs, but whoever runs the server can still see and save the traffic. We recommend a VPN if you do not want the server to see your IP address.
+The server cannot read your messages. It sees your IP address, mailbox IDs (one per contact, changed every day), when you send and fetch, and how large the packets are. Mailboxes fetched from the same IP address at about the same time can be linked. SHA's server program does not store your IP address on disk or in logs, but whoever runs the server can still see and save the traffic. We recommend a VPN if you do not want the server to see your IP address.
 
 Good to know
 • The history is kept for 30 days unless you choose otherwise: not at all, 7 days, 30 days or 1 year.

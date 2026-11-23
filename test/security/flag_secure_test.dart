@@ -23,15 +23,20 @@ const onCreate = [
   ')',
 ];
 
-/// Words that would change the window's flags some other way.
+/// Words that would change the window's flags some other way. If one of
+/// them is needed for something that is not the window (an intent's flags,
+/// a buffer size), narrow its pattern here; never remove it.
 const banned = [
   'clearFlags',
   'addFlags',
-  '.attributes',
   'setRecentsScreenshotEnabled',
   '0x2000', // FLAG_SECURE's value
   '8192',
 ];
+
+/// `window.attributes`, `getAttributes()` and `setAttributes(...)` (second
+/// review of #49).
+final attributes = RegExp('attributes', caseSensitive: false);
 
 final activityClass = RegExp(
   r'\bclass\s+(\w+)[^{]*?:\s*[\w.]*Activity\s*\(|'
@@ -72,6 +77,7 @@ List<String> problems(Map<String, String> files) {
     for (final word in banned) {
       if (source.contains(word)) found.add('$path: $word');
     }
+    if (attributes.hasMatch(source)) found.add('$path: the window attributes');
     final uses = 'FLAG_SECURE'.allMatches(source).length;
     if (uses != (path == mainActivity ? 2 : 0)) {
       found.add('$path: FLAG_SECURE $uses times');
@@ -159,6 +165,14 @@ void main() {
     );
     expect(
       withFile(debug, 'fun allow(w: Window) { w.attributes = Params() }'),
+      isNotEmpty,
+    );
+    expect(
+      withFile(
+        debug,
+        'fun allow(w: Window) { val p = w.getAttributes(); p.flags = 0; '
+        'w.setAttributes(p) }',
+      ),
       isNotEmpty,
     );
     // Another activity, in code or in a manifest.

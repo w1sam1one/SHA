@@ -44,6 +44,9 @@ List<String> texts(String markdown) => [
 /// Words that promise open source, which is true only once `LICENSE` is
 /// AGPL-3.0 (G8; review of #49).
 const openSource = [
+  'open-source',
+  'källkod',
+  'source code',
   'agpl',
   'öppen källkod',
   'källkoden är öppen',
