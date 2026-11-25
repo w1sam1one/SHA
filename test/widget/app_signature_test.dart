@@ -2,6 +2,7 @@
 // fingerprint of the certificate the app is signed with, says what it does
 // not prove, and says so plainly for a debug build or when it cannot be read.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sha/features/app_info/app_signature.dart';
@@ -53,6 +54,7 @@ void main() {
         () async => const AppSignature(sha256: [release], debuggable: false),
       ),
     );
+    expect(find.text(AppSignatureSection.intro), findsOneWidget);
     expect(find.text(release), findsOneWidget);
     expect(find.text(AppSignatureSection.notProof), findsOneWidget);
     expect(find.text(AppSignatureSection.debug), findsNothing);
@@ -73,8 +75,14 @@ void main() {
 
   testWidgets('a fingerprint that cannot be read is said so, and no value '
       'is shown', (tester) async {
-    await openSheet(tester, FakePhone(() async => throw StateError('x')));
+    // What the Kotlin side sends: a fixed code. Shown at once, not after
+    // Riverpod's retries (review of #56).
+    await openSheet(
+      tester,
+      FakePhone(() async => throw PlatformException(code: 'unavailable')),
+    );
     expect(find.text(AppSignatureSection.unreadable), findsOneWidget);
+    expect(find.text(AppSignatureSection.reading), findsNothing);
     expect(find.textContaining(':AB:'), findsNothing);
   });
 

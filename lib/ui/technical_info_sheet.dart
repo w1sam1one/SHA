@@ -191,13 +191,16 @@ class AppSignatureSection extends ConsumerWidget {
   const AppSignatureSection({super.key});
 
   static const String title = 'Appens signatur';
+
+  /// What is shown, not what it proves: a re-signed copy runs the same
+  /// code and would say the same (review of #56).
   static const String intro =
-      'Appen är signerad med en nyckel som bara SHA:s utvecklare har. '
-      'Fingeravtrycket för nyckelns certifikat (SHA-256) är:';
+      'Fingeravtrycket för certifikatet som appen är signerad med (SHA-256):';
   static const String notProof =
       'Jämför det med fingeravtrycket på hemsidan och i README. En falsk app '
       'kan visa vilket värde som helst här, så det ersätter inte kontrollen '
-      'innan du installerar appen.';
+      'med apksigner eller ett verifieringsverktyg innan du installerar appen '
+      'eller en ny version. Hur du gör står på hemsidan.';
   static const String debug =
       'Det här är ett debug-bygge. Det är signerat med en nyckel för '
       'utveckling, så fingeravtrycket är inte det som står på hemsidan.';

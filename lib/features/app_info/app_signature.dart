@@ -55,6 +55,9 @@ final appSignaturePlatformProvider = Provider<AppSignaturePlatform>(
   (ref) => const MethodChannelAppSignature(),
 );
 
+/// No retries: an answer that cannot be read is shown as such at once,
+/// and Android is asked once (review of #56).
 final appSignatureProvider = FutureProvider<AppSignature>(
   (ref) => ref.read(appSignaturePlatformProvider).read(),
+  retry: (count, error) => null,
 );
