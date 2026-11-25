@@ -278,7 +278,7 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
   `docs/release.md` uppdaterade. Ändringsloggen blir releasens text, och
   versionCode ska öka för varje version (0014). Resten av `docs/release.md`
   skrivs om i F13.
-- [ ] **F13 – Utdelning utan Play** (0014 (1a), (2b)):
+- [x] **F13 – Utdelning utan Play** (0014 (1a), (2b)):
   - `docs/release.md` skrivs om: bygga, signera, kontrollera och publicera
     på hemsidan och i GitHub Releases;
   - plats för certifikatets fingeravtryck i README, SECURITY.md och på
@@ -328,6 +328,20 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-25 – F13, utdelning utan Play (0014). `docs/release.md` är
+  omskriven för hemsidan och GitHub Releases: signeringsnyckeln med
+  säkerhetskopia och fingeravtryck, bygget av en release-APK, kontrollen
+  med `apksigner`, provet med ADB, publiceringen och
+  utvecklarverifieringen; Play står sist, om det blir aktuellt. README,
+  SECURITY.md och den nya `docs/hemsida.md` har raden för certifikatets
+  fingeravtryck ("inte skapat än (G9)") och en länk till releaserna, och
+  ett test kräver samma värde i alla tre. Ett annat test stoppar
+  nyckelfiler och `key.properties` i repot. `applicationId` är nu
+  `io.github.w1sam1one.sha` (Kotlin-paketet och `namespace` är kvar), och
+  `minSdk` är 28; CI:s manifestkontroll, valvtestet, Data safety-underlaget
+  och texterna om Android 7 följer med. En APK efter bytet är en ny app
+  bredvid den gamla (`docs/prototyp.md`). Ej provat: ett release-bygge och
+  `apksigner`, eftersom nyckeln skapas i G9.
 - 2026-11-25 – F12. `CHANGELOG.md` med version 1.0.0+1, "inte släppt": vad
   som finns med och vad som inte gör det, med samma ord som appen och
   butikstexterna. `test/release/changelog_test.dart` kontrollerar att den

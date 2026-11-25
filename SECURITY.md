@@ -6,6 +6,17 @@ README). Punkterna som väntar på granskning är märkta `OGRANSKAT` i koden
 och listas i [`docs/ROADMAP.md`](docs/ROADMAP.md) under "Före första
 utdelning".
 
+## Kontrollera appen
+
+När appen delas ut (0014) är varje APK signerad med ägarens nyckel. Jämför
+signeringscertifikatets fingeravtryck med det här innan du installerar,
+till exempel med `apksigner verify --print-certs SHA-x.y.z.apk`.
+
+Signeringscertifikatets SHA-256: inte skapat än (G9)
+
+APK-filens egen SHA-256 står i varje release:
+https://github.com/w1sam1one/SHA/releases
+
 ## Rapportera en säkerhetsbugg
 
 Rapportera **privat** via GitHub:

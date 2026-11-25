@@ -33,7 +33,7 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler(lock)
     }
 
-    // The PIN screen on Android 7-10 answers through this.
+    // The PIN screen on Android 9-10 answers through this.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (appLock?.onActivityResult(requestCode, resultCode) == true) return
         super.onActivityResult(requestCode, resultCode, data)

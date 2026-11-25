@@ -20,9 +20,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sha/crypto/crypto.dart';
 
-/// Context.getNoBackupFilesDir() for the app (applicationId se.sha.sha),
-/// plus the vault's own directory (KeystoreVault.DIRECTORY).
-const String vaultDirectory = '/data/data/se.sha.sha/no_backup/sha_keys';
+/// Context.getNoBackupFilesDir() for the app (applicationId
+/// io.github.w1sam1one.sha, 0014), plus the vault's own directory
+/// (KeystoreVault.DIRECTORY).
+const String vaultDirectory =
+    '/data/data/io.github.w1sam1one.sha/no_backup/sha_keys';
 
 Uint8List bytes(int length, int seed) =>
     Uint8List.fromList(List.generate(length, (i) => (i * 31 + seed) & 0xff));

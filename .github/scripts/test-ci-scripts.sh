@@ -112,11 +112,11 @@ fi
 # check-manifest.py: only CAMERA, INTERNET and USE_BIOMETRIC, and no required
 # feature.
 manifest() {
-  printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="se.sha.sha">' \
+  printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.w1sam1one.sha">' \
     '<uses-permission android:name="android.permission.CAMERA"/>' \
     '<uses-permission android:name="android.permission.INTERNET"/>' \
     '<uses-permission android:name="android.permission.USE_BIOMETRIC"/>' \
-    '<uses-permission android:name="se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
+    '<uses-permission android:name="io.github.w1sam1one.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
     '<uses-feature android:name="android.hardware.camera" android:required="false"/>' \
     "$@" '</manifest>'
 }
@@ -140,13 +140,13 @@ check_manifest bad '<uses-permission-sdk-23 android:name="android.permission.REA
 check_manifest bad '<uses-feature android:name="android.hardware.camera.any"/>'
 check_manifest bad '<uses-feature android:name="android.hardware.camera.any" android:required="true"/>'
 check_manifest ok '<uses-feature android:name="android.hardware.camera.any" android:required="false"/>'
-printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="se.sha.sha">' \
+printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.w1sam1one.sha">' \
   '<uses-permission android:name="android.permission.INTERNET"/>' '</manifest>' > "$tmp/manifest.xml"
 if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
   echo "FAIL check-manifest: a missing CAMERA must fail"
   failed=1
 fi
-printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="se.sha.sha">' \
+printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.w1sam1one.sha">' \
   '<uses-permission android:name="android.permission.CAMERA"/>' \
   '<uses-permission android:name="android.permission.INTERNET"/>' '</manifest>' > "$tmp/manifest.xml"
 if python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" > /dev/null; then
@@ -158,9 +158,9 @@ printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/andro
   '<uses-permission android:name="android.permission.CAMERA"/>' \
   '<uses-permission android:name="android.permission.INTERNET"/>' \
   '<uses-permission android:name="android.permission.USE_BIOMETRIC"/>' \
-  '<uses-permission android:name="se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
+  '<uses-permission android:name="io.github.w1sam1one.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>' \
   '</manifest>' > "$tmp/manifest.xml"
-if ! python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" se.sha.sha > /dev/null; then
+if ! python3 -I "$here/check-manifest.py" "$tmp/manifest.xml" io.github.w1sam1one.sha > /dev/null; then
   echo "FAIL check-manifest: the application id argument must be used"
   failed=1
 fi

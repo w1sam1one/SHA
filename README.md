@@ -17,13 +17,24 @@ Flutter, Android, Riverpod, Olm via `flutter_vodozemac`, och en liten server
 granskat av en kryptoexpert än. Designen följer skisserna i SHA-canvasen
 (Identitet · Min QR · Skanna · Kontakter · Chatt).
 
+## Kontrollera appen
+
+När appen delas ut (0014) är varje APK signerad med ägarens nyckel. Jämför
+signeringscertifikatets fingeravtryck med det här innan du installerar,
+till exempel med `apksigner verify --print-certs SHA-x.y.z.apk`.
+
+Signeringscertifikatets SHA-256: inte skapat än (G9)
+
+APK-filens egen SHA-256 står i varje release:
+https://github.com/w1sam1one/SHA/releases
+
 ## Kom igång
 
 ```bash
 flutter pub get
 flutter test          # krypto-, protokoll- och widgettester
 flutter analyze
-flutter run           # Android-enhet eller emulator (API 24+)
+flutter run           # Android-enhet eller emulator (API 28+, Android 9)
 ```
 
 Att bygga appen för Android kräver också Rust via `rustup`: Olm-pluginet

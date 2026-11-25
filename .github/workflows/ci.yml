@@ -409,7 +409,7 @@ jobs:
             grep -A 3 -E '^(uses-permission|uses-permission-sdk-23|uses-feature)#' \
               "$report" || true
           fi
-          python3 -I .github/scripts/check-manifest.py "$manifest" se.sha.sha
+          python3 -I .github/scripts/check-manifest.py "$manifest" io.github.w1sam1one.sha
 
       # 0012 (C1), "Testa": every Android library in the release app is on
       # the license page, with a license name on the script's short list of

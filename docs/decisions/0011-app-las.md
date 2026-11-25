@@ -21,7 +21,9 @@ visas. Ett lås ändrar vad användaren får göra och vad appen lovar.
   lösenord som alternativ finns från API 29 (`setDeviceCredentialAllowed`)
   och från API 30 med `setAllowedAuthenticators`. Det kräver inget nytt
   beroende, men behörigheten `USE_BIOMETRIC` i manifestet.
-- **Appens minSdk är 24** (`android/app/build.gradle.kts`). På Android 7–8.1
+- **Appens minSdk är 24** (`android/app/build.gradle.kts`). *Ändrat
+  2026-11-25: minSdk är 28 (0014), så stegen för Android 7–8.1 nedan gäller
+  inte längre.* På Android 7–8.1
   (API 24–27) finns inte `BiometricPrompt`. Där finns
   `KeyguardManager.createConfirmDeviceCredentialIntent` (telefonens PIN) och
   `FingerprintManager` (bara fingeravtryck, föråldrad). På Android 9 (API 28)

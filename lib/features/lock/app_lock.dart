@@ -143,7 +143,7 @@ class AppLock extends Notifier<AppLockState> {
   }
 
   /// The app went to the background. Only counted while it is open: the
-  /// phone's own PIN screen (Android 7–10) also sends the app there.
+  /// phone's own PIN screen (Android 9–10) also sends the app there.
   void hidden() {
     _inFront = false;
     if (state != AppLockState.open) return;
