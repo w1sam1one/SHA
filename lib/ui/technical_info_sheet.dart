@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/theme.dart';
+import '../features/app_info/app_signature.dart';
 
 /// Technical details for people who want them. This is the only screen that
 /// names algorithms. Every statement must match the code or the docs:
@@ -16,6 +18,8 @@ import '../app/theme.dart';
 /// - the server: lib/features/transport/, relay/README.md, 0002
 /// - software-only warning: lib/features/home/home_shell.dart
 /// - "Finns inte än": docs/ROADMAP.md
+/// - the app's signature: lib/features/app_info/app_signature.dart,
+///   AppSignatureChannel.kt, 0014 (2c)
 /// The user sees "servern", never "relayn" (0004 §10).
 Future<void> showTechnicalInfoSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -107,6 +111,7 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                       'du har valt, eller längre om du har många kontakter.',
                 ],
               ),
+              AppSignatureSection(),
               _Section(
                 title: 'App-låset',
                 lines: [
@@ -174,6 +179,80 @@ class _Section extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The app's own signing certificate (F14, 0014 (2c)), from
+/// [appSignatureProvider].
+class AppSignatureSection extends ConsumerWidget {
+  const AppSignatureSection({super.key});
+
+  static const String title = 'Appens signatur';
+  static const String intro =
+      'Appen är signerad med en nyckel som bara SHA:s utvecklare har. '
+      'Fingeravtrycket för nyckelns certifikat (SHA-256) är:';
+  static const String notProof =
+      'Jämför det med fingeravtrycket på hemsidan och i README. En falsk app '
+      'kan visa vilket värde som helst här, så det ersätter inte kontrollen '
+      'innan du installerar appen.';
+  static const String debug =
+      'Det här är ett debug-bygge. Det är signerat med en nyckel för '
+      'utveckling, så fingeravtrycket är inte det som står på hemsidan.';
+  static const String unreadable = 'Fingeravtrycket gick inte att läsa.';
+  static const String reading = 'Läser fingeravtrycket …';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final signature = ref.watch(appSignatureProvider);
+    const style = TextStyle(
+      fontSize: 14.5,
+      height: 1.45,
+      color: ShaColors.textSecondary,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: const Text(
+              title,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...switch (signature) {
+            AsyncData(:final value) => [
+              const Text(intro, style: style),
+              for (final fingerprint in value.sha256)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: SelectableText(
+                    fingerprint,
+                    style: const TextStyle(
+                      fontFamily: ShaFonts.mono,
+                      fontSize: 12.5,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              if (value.debuggable)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(debug, style: style),
+                ),
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(notProof, style: style),
+              ),
+            ],
+            AsyncError() => [const Text(unreadable, style: style)],
+            _ => [const Text(reading, style: style)],
+          },
         ],
       ),
     );

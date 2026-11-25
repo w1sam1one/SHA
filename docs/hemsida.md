@@ -40,8 +40,7 @@ Samma värde som apksigner visar det: inte skapat än (G9)
 Fingeravtrycket står också i README och SECURITY.md i repot. APK-filens
 egen SHA-256 står i releasen och här nedan för varje version.
 
-Appen visar sitt eget fingeravtryck under "Teknisk information" (från
-F14). En falsk app kan visa vilket värde som helst, så det ersätter inte
+Appen visar sitt eget fingeravtryck under "Teknisk information". En falsk app kan visa vilket värde som helst, så det ersätter inte
 kontrollen före installationen.
 
 ## Versioner
