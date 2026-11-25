@@ -340,8 +340,12 @@ Nyast först. En rad per paket eller körning som ändrar något.
   `io.github.w1sam1one.sha` (Kotlin-paketet och `namespace` är kvar), och
   `minSdk` är 28; CI:s manifestkontroll, valvtestet, Data safety-underlaget
   och texterna om Android 7 följer med. En APK efter bytet är en ny app
-  bredvid den gamla (`docs/prototyp.md`). Ej provat: ett release-bygge och
-  `apksigner`, eftersom nyckeln skapas i G9.
+  bredvid den gamla (`docs/prototyp.md`). Rättat efter den oberoende
+  granskningen: fingeravtrycket står i två former, keytools och den som
+  `apksigner` visar (gemener utan kolon), och testet kräver att de stämmer;
+  `release.md` jämför dem i ett kommando. Hemsidans text kontrolleras mot
+  0002. Ej provat: ett release-bygge och `apksigner`, eftersom nyckeln
+  skapas i G9.
 - 2026-11-25 – F12. `CHANGELOG.md` med version 1.0.0+1, "inte släppt": vad
   som finns med och vad som inte gör det, med samma ord som appen och
   butikstexterna. `test/release/changelog_test.dart` kontrollerar att den

@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 final keyFile = RegExp(
-  r'(^|/)(key\.properties|[^/]*\.(jks|keystore|p12|pfx|pepk))$',
+  r'(^|/)(key\.properties|[^/]*\.(jks|keystore|p12|pfx|pepk|pk8|bks))$',
   caseSensitive: false,
 );
 
@@ -19,9 +19,11 @@ List<String> keyFiles(Iterable<String> tracked) => [
 
 void main() {
   test('no signing key or key.properties is in the repository', () {
-    final result = Process.runSync('git', ['ls-files']);
+    // -z: paths as they are, also with å, ä or ö, which git otherwise
+    // quotes (review of #55).
+    final result = Process.runSync('git', ['ls-files', '-z']);
     expect(result.exitCode, 0, reason: '${result.stderr}');
-    final tracked = (result.stdout as String).split('\n');
+    final tracked = (result.stdout as String).split('\x00');
     expect(tracked, contains('pubspec.yaml'));
     expect(keyFiles(tracked), isEmpty);
   });
@@ -32,6 +34,8 @@ void main() {
       'upload-keystore.jks',
       'android/app/release.keystore',
       'keys/sha.P12',
+      'keys/nyckel-ä.jks',
+      'signing/release.pk8',
     ]) {
       expect(keyFiles(['README.md', path]), [path], reason: path);
     }

@@ -79,7 +79,7 @@ Googles Maven-arkiv är blockerade i molnsessionen.
   (`https://developers.google.com/ml-kit/terms`).
 - ML Kit kan kontakta Googles servrar och skicka mätvärden om hur API:erna
   används (`https://developers.google.com/ml-kit/android-data-disclosure`).
-  Det påverkar i så fall Data safety (`docs/release.md` §6).
+  Det påverkar i så fall Data safety (`docs/data-safety.md`).
 - CameraX och AndroidX har Apache-2.0, och vilka beroenden de drar in.
 
 ## Alternativ

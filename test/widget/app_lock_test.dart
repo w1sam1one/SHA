@@ -313,7 +313,7 @@ void main() {
   ) async {
     final lock = FakeLock();
     await pumpGate(tester, lock);
-    // On Android 7–10 the PIN screen is an activity of its own: the app goes
+    // On Android 9–10 the PIN screen is an activity of its own: the app goes
     // to the background and back while it is shown.
     await lifecycle(tester, toBackground);
     lock.now += const Duration(minutes: 6);

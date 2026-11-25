@@ -2,6 +2,10 @@
 // fingerprint stands, the same, in README.md, SECURITY.md and the website's
 // text (docs/hemsida.md), and each links to the releases for the APK's own
 // SHA-256. Until the owner has made the key (G9), all three say so instead.
+//
+// It stands in two forms: keytool's (upper case, with colons) and the one
+// `apksigner verify --print-certs` prints (lower case, no colons), so that
+// a reader can compare with either tool (review of #55).
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +22,13 @@ final line = RegExp(
 );
 final fingerprint = RegExp(r'^`([0-9A-F]{2}:){31}[0-9A-F]{2}`$');
 
+/// The same value as apksigner prints it.
+final apksignerLine = RegExp(
+  r'^Samma värde som apksigner visar det: (.+)$',
+  multiLine: true,
+);
+final apksignerForm = RegExp(r'^`[0-9a-f]{64}`$');
+
 /// The problems in [sources] (path: text).
 List<String> problems(Map<String, String> sources) {
   final found = <String>[];
@@ -33,6 +44,20 @@ List<String> problems(Map<String, String> sources) {
       found.add('$path: not a SHA-256 fingerprint: $value');
     }
     values[path] = value;
+    final other = apksignerLine.allMatches(text).toList();
+    if (other.length != 1) {
+      found.add('$path: ${other.length} apksigner lines, not 1');
+    } else {
+      final lower = other.single.group(1)!.trim();
+      final expected = value == notYet
+          ? notYet
+          : value.replaceAll(':', '').toLowerCase();
+      if (lower != expected) {
+        found.add('$path: the apksigner form $lower is not $expected');
+      } else if (lower != notYet && !apksignerForm.hasMatch(lower)) {
+        found.add('$path: not an apksigner digest: $lower');
+      }
+    }
     if (!text.contains(releases)) found.add('$path: no link to $releases');
   }
   if (values.values.toSet().length > 1) {
@@ -52,10 +77,24 @@ void main() {
     const real =
         '`AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:'
         'AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89`';
-    Map<String, String> filled(String value, {String? onlyIn}) => {
+    String lower(String keytool) => keytool.replaceAll(':', '').toLowerCase();
+    Map<String, String> filled(
+      String value, {
+      String? onlyIn,
+      String? apksigner,
+    }) => {
       for (final MapEntry(key: path, value: text) in sources.entries)
         path: onlyIn == null || onlyIn == path
-            ? text.replaceFirst(notYet, value)
+            ? text
+                  .replaceFirst(
+                    'Signeringscertifikatets SHA-256: $notYet',
+                    'Signeringscertifikatets SHA-256: $value',
+                  )
+                  .replaceFirst(
+                    'Samma värde som apksigner visar det: $notYet',
+                    'Samma värde som apksigner visar det: '
+                        '${apksigner ?? lower(value)}',
+                  )
             : text,
     };
     expect(problems(filled(real)), isEmpty);
@@ -69,6 +108,19 @@ void main() {
       problems({
         ...sources,
         'SECURITY.md': sources['SECURITY.md']!.replaceFirst(line, ''),
+      }),
+      isNotEmpty,
+    );
+    // The apksigner form does not match keytool's.
+    expect(
+      problems(filled(real, apksigner: lower(real).replaceFirst('a', 'b'))),
+      isNotEmpty,
+    );
+    // The apksigner form left out.
+    expect(
+      problems({
+        ...sources,
+        'README.md': sources['README.md']!.replaceFirst(apksignerLine, ''),
       }),
       isNotEmpty,
     );

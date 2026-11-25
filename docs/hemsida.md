@@ -28,17 +28,21 @@ och i appens "Teknisk information".
 ## Kontrollera appen innan du installerar den
 
 Varje APK är signerad med samma nyckel. Jämför signeringscertifikatets
-fingeravtryck med det här, till exempel med `apksigner verify --print-certs
-SHA-x.y.z.apk` på en dator. Stämmer det inte, installera inte appen.
+fingeravtryck med det här innan du installerar. Den första raden är i den
+form som de flesta verktyg visar, den andra som `apksigner verify
+--print-certs SHA-x.y.z.apk` visar den på en dator ("SHA-256 digest",
+gemener utan kolon). Stämmer det inte, installera inte appen.
 
 Signeringscertifikatets SHA-256: inte skapat än (G9)
+
+Samma värde som apksigner visar det: inte skapat än (G9)
 
 Fingeravtrycket står också i README och SECURITY.md i repot. APK-filens
 egen SHA-256 står i releasen och här nedan för varje version.
 
-Appen visar sitt eget fingeravtryck under "Teknisk information". En falsk
-app kan visa vilket värde som helst, så det ersätter inte kontrollen före
-installationen.
+Appen visar sitt eget fingeravtryck under "Teknisk information" (från
+F14). En falsk app kan visa vilket värde som helst, så det ersätter inte
+kontrollen före installationen.
 
 ## Versioner
 

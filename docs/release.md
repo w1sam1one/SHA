@@ -108,16 +108,25 @@ keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
 keytool -list -v -keystore ~/upload-keystore.jks -alias upload | grep "SHA256:"
 ```
 
-Skriv in värdet, med versaler och kolon, i stället för "inte skapat än
-(G9)" på raden `Signeringscertifikatets SHA-256:` i `README.md`,
-`SECURITY.md` och `docs/hemsida.md`, i backticks:
+Skriv in värdet i två former, i stället för "inte skapat än (G9)", i
+`README.md`, `SECURITY.md` och `docs/hemsida.md`, i backticks: som keytool
+visar det (versaler och kolon), och som `apksigner` visar det (gemener utan
+kolon). Den andra formen får du med:
+
+```sh
+keytool -list -v -keystore ~/upload-keystore.jks -alias upload \
+  | sed -n 's/.*SHA256: //p' | tr -d ':' | tr A-F a-f
+```
 
 ```text
 Signeringscertifikatets SHA-256: `AB:CD:…`
+
+Samma värde som apksigner visar det: `abcd…`
 ```
 
 `test/release/fingerprint_test.dart` stoppar ett värde som skiljer sig
-mellan filerna eller inte ser ut som ett fingeravtryck.
+mellan filerna, mellan de två formerna, eller inte ser ut som ett
+fingeravtryck. Kommandona är **ej verifierade** här.
 
 ## 2. Skapa `android/key.properties`
 
@@ -151,22 +160,28 @@ git status --short                           # key.properties får inte synas
    släppt" mot dagens datum när versionen släpps.
    `test/release/changelog_test.dart` stoppar en version som inte stämmer
    med `pubspec.yaml` eller som går bakåt.
-2. Bygg från den commit som ska släppas, med en ren arbetskopia:
+2. Bygg från den commit som ska släppas, med en ren arbetskopia
+   (**ej verifierat**: inget release-bygge har gått att göra här):
    ```sh
    git status --short        # ska vara tomt
    flutter clean && flutter build apk --release
    ```
 3. Utfil: `build/app/outputs/flutter-apk/app-release.apk`, med alla
-   processortyper i samma fil. Byt namn till `SHA-<version>.apk`, till
-   exempel `SHA-1.0.0.apk`.
-4. Kontrollera signaturen. Certifikatets SHA-256 ska vara exakt det som
-   står i README:
+   processortyper i samma fil (**ej verifierat**, också för Olm-pluginets
+   Rust-del). Byt namn till `SHA-<version>.apk`, till exempel
+   `SHA-1.0.0.apk`.
+4. Kontrollera signaturen mot din nyckel. `apksigner` skriver
+   certifikatets SHA-256 med gemener utan kolon, keytool med versaler och
+   kolon; kommandot jämför dem:
    ```sh
-   apksigner verify --print-certs SHA-1.0.0.apk
+   want=$(keytool -list -v -keystore ~/upload-keystore.jks -alias upload \
+     | sed -n 's/.*SHA256: //p' | tr -d ':' | tr A-F a-f)
+   apksigner verify --print-certs SHA-1.0.0.apk | grep -q "SHA-256 digest: $want" \
+     && echo OK || echo FEL
    ```
-   `apksigner` finns i Android SDK:s `build-tools`. Står det `CN=Android
-   Debug`, eller skiljer sig fingeravtrycket: **dela inte ut filen**.
-   Utskriften är **ej verifierad** här.
+   `apksigner` finns i Android SDK:s `build-tools`. Står det `FEL`, eller
+   `CN=Android Debug` i utskriften: **dela inte ut filen**. Kommandot och
+   utskriften är **ej verifierade** här.
 5. Räkna ut filens SHA-256:
    ```sh
    sha256sum SHA-1.0.0.apk > SHA256SUMS
@@ -197,6 +212,9 @@ adb install -r SHA-1.0.0.apk
 
 ## 5. Publicera (G11)
 
+Först när G6, G8 och allt under "Före första utdelning" i
+[`ROADMAP.md`](ROADMAP.md) är klart.
+
 1. **Tagga** den commit du byggde från: `git tag v1.0.0 && git push origin
    v1.0.0`.
 2. **GitHub Release** för taggen, med:
@@ -205,7 +223,9 @@ adb install -r SHA-1.0.0.apk
    - `SHA-1.0.0.apk` och `SHA256SUMS` som filer.
 3. **Hemsidan** (`docs/hemsida.md`, adressen bestäms i G12): lägg till
    versionen, datumet, APK-filens SHA-256 och en länk till releasen under
-   "Versioner".
+   "Versioner". Integritetspolicyn
+   ([`integritetspolicy.md`](integritetspolicy.md)) ska finnas på hemsidan
+   (G10).
 4. **`CHANGELOG.md`:** byt "inte släppt" mot datumet, i en commit efter
    releasen.
 5. **Skärmbilder** till hemsidan tas **bara på en emulator** (testet

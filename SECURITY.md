@@ -9,10 +9,14 @@ utdelning".
 ## Kontrollera appen
 
 När appen delas ut (0014) är varje APK signerad med ägarens nyckel. Jämför
-signeringscertifikatets fingeravtryck med det här innan du installerar,
-till exempel med `apksigner verify --print-certs SHA-x.y.z.apk`.
+signeringscertifikatets fingeravtryck med det här innan du installerar.
+Den första raden är i den form som `keytool` och de flesta verktyg visar,
+den andra som `apksigner verify --print-certs SHA-x.y.z.apk` visar den
+("SHA-256 digest", gemener utan kolon).
 
 Signeringscertifikatets SHA-256: inte skapat än (G9)
+
+Samma värde som apksigner visar det: inte skapat än (G9)
 
 APK-filens egen SHA-256 står i varje release:
 https://github.com/w1sam1one/SHA/releases
