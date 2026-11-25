@@ -6,6 +6,7 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import se.sha.sha.app.AppSignatureChannel
 import se.sha.sha.keystore.KeystoreChannel
 import se.sha.sha.lock.AppLockChannel
 
@@ -31,6 +32,9 @@ class MainActivity : FlutterActivity() {
         appLock = lock
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AppLockChannel.NAME)
             .setMethodCallHandler(lock)
+        // The app's own signing certificate for "Teknisk information" (F14).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AppSignatureChannel.NAME)
+            .setMethodCallHandler(AppSignatureChannel(applicationContext))
     }
 
     // The PIN screen on Android 9-10 answers through this.

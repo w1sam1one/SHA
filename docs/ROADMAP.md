@@ -288,7 +288,7 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
   - hemsidans och releasens texter, från butikstexterna;
   - `applicationId` byts till `io.github.w1sam1one.sha`, och `minSdk` höjs
     till 28.
-- [ ] **F14 – Appens fingeravtryck i "Teknisk information"** (0014 (2c)),
+- [x] **F14 – Appens fingeravtryck i "Teknisk information"** (0014 (2c)),
   med texten om vad det inte bevisar.
 - [ ] **F15 – Frivillig uppdateringskontroll** (0014 (3b)): avstängd från
   början, versionsfilen på GitHub Pages, högst en gång om dagen när appen
@@ -328,6 +328,17 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-25 – F14, appens fingeravtryck (0014 (2c)). "Teknisk information"
+  har avsnittet "Appens signatur": SHA-256-fingeravtrycket för certifikatet
+  som appen är signerad med, i keytools form, med texten att en falsk app
+  kan visa vilket värde som helst och att det inte ersätter kontrollen före
+  installationen. Ett debug-bygge säger att fingeravtrycket inte är det som
+  står på hemsidan, och ett fel säger att det inte gick att läsa. Värdet
+  kommer från Android (`PackageManager.signingInfo`, ny kanal
+  `AppSignatureChannel.kt`), utan nytt beroende, och kontrolleras i Dart
+  innan det visas. Widgettester med en låtsastelefon och ett emulatortest
+  som läser det riktiga certifikatet. Ej provat: en release-APK med
+  ägarens nyckel (G9).
 - 2026-11-25 – F13, utdelning utan Play (0014). `docs/release.md` är
   omskriven för hemsidan och GitHub Releases: signeringsnyckeln med
   säkerhetskopia och fingeravtryck, bygget av en release-APK, kontrollen
