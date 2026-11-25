@@ -7,7 +7,7 @@ med orsak. Inget här har körts mot Play Console eller med en riktig nyckel.
 
 > **Viktigt först:** detta är en förhandsversion. Kryptot är inte granskat
 > av en kryptoexpert (G6), och appen får inte delas ut förrän det är gjort.
-> Hämtning i bakgrunden finns inte än (punkt 7). App-låset döljer bara
+> Appen hämtar aldrig i bakgrunden (0002; se punkt 7). App-låset döljer bara
 > skärmen.
 > Butikstexten får inte lova något annat.
 
@@ -112,7 +112,12 @@ git status --short                           # key.properties får inte synas
 ## 3. Bygg
 
 1. Höj versionen i `pubspec.yaml`: `version: 1.0.0+1` → `1.0.0+2` osv.
-   Siffran efter `+` (versionCode) måste öka för **varje** uppladdning.
+   Siffran efter `+` (versionCode) måste öka för **varje** version som
+   delas ut. Lägg samtidigt till ett avsnitt överst i
+   [`CHANGELOG.md`](../CHANGELOG.md) med samma rubrik, och byt "inte
+   släppt" mot dagens datum när versionen släpps.
+   `test/release/changelog_test.dart` stoppar en version som inte stämmer
+   med `pubspec.yaml` eller som går bakåt.
 2. Bygg:
    ```sh
    flutter clean && flutter build appbundle
