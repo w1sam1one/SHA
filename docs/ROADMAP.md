@@ -274,9 +274,10 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
   [`docs/butikstexter.md`](butikstexter.md) godkänns av ägaren. Efter 0014
   blir de hemsidans och releasens texter, och Plays längder gäller inte
   (F13).
-- [ ] **F12 – Version och ändringslogg.** Versionsnummer, ändringslogg och
+- [x] **F12 – Version och ändringslogg.** Versionsnummer, ändringslogg och
   `docs/release.md` uppdaterade. Ändringsloggen blir releasens text, och
-  versionCode ska öka för varje version (0014).
+  versionCode ska öka för varje version (0014). Resten av `docs/release.md`
+  skrivs om i F13.
 - [ ] **F13 – Utdelning utan Play** (0014 (1a), (2b)):
   - `docs/release.md` skrivs om: bygga, signera, kontrollera och publicera
     på hemsidan och i GitHub Releases;
@@ -327,6 +328,15 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-25 – F12. `CHANGELOG.md` med version 1.0.0+1, "inte släppt": vad
+  som finns med och vad som inte gör det, med samma ord som appen och
+  butikstexterna. `test/release/changelog_test.dart` kontrollerar att den
+  översta rubriken är versionen i `pubspec.yaml`, att versionCode minskar
+  nedåt i filen, att versionsnamnen inte går bakåt, att bara den översta
+  är "inte släppt", och att texten följer 0002. CI kör testet också när
+  bara ändringsloggen ändras. I `docs/release.md` nämner versionssteget
+  ändringsloggen, och varningen överst säger att appen aldrig hämtar i
+  bakgrunden. Resten av `release.md` skrivs om i F13.
 - 2026-11-25 – Ägarens beslut om 0014 inskrivna: (1a) hemsidan och GitHub
   Releases, F-Droid efter G8 med ägarens nyckel om det går, Google Play
   uppskjutet; (2b) certifikatets fingeravtryck på alla fyra ställen och
