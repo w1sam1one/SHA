@@ -24,7 +24,7 @@ List<String> problems(String changelog, String pubspecVersion) {
   ];
   if (headings.isEmpty) return ['no version heading'];
   if (!headings.first.startsWith('## $pubspecVersion – ')) {
-    found.add('the top heading is not ${headings.first}, but $pubspecVersion');
+    found.add('the top heading is ${headings.first}, not $pubspecVersion');
   }
   int? lastCode;
   List<int>? lastName;

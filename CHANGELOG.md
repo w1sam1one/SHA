@@ -27,6 +27,7 @@ en kryptoexpert har granskat kryptot (G6) och koden har licensen AGPL-3.0
 - Har telefonen ett skärmlås, låses appen med det när den öppnas och när
   den har varit i bakgrunden i 5 minuter.
 - QR-koden läses på telefonen, utan Googles ML Kit.
+- Appen kräver Android 9 eller senare.
 - Skärmdumpar är avstängda i appen.
 - "Teknisk information" beskriver vad servern ser, och en licenssida visar
   alla bibliotek i appen och deras licenser.

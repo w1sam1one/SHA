@@ -48,8 +48,7 @@ Future<void> showTechnicalInfoSheet(BuildContext context) {
                       'i Android Keystore – i StrongBox om telefonen har det, '
                       'annars i TEE om den finns. Saknas båda skyddas nyckeln bara '
                       'av mjukvara, och då varnar appen. Keystore-nyckeln kan inte '
-                      'exporteras och fungerar bara när telefonen är upplåst '
-                      '(Android 9 och senare).',
+                      'exporteras och fungerar bara när telefonen är upplåst.',
                   'Nyckelparet skapas från två slumpkällor, Dart och Android, '
                       'som blandas med HKDF-SHA256.',
                 ],

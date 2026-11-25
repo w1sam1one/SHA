@@ -64,12 +64,16 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "se.sha.sha"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // flutter_secure_storage (Android Keystore) requires API 24+.
-        minSdk = maxOf(flutter.minSdkVersion, 24)
+        // The owner's decision 5 in docs/decisions/0014: an id from a domain
+        // the owner controls (w1sam1one.github.io). The Kotlin package and
+        // `namespace` above stay se.sha.sha; only this id is the app's
+        // identity on the phone. A new id is a different app: the old one
+        // and its data stay as they are.
+        applicationId = "io.github.w1sam1one.sha"
+        // Android 9 (API 28): the vault key needs an unlocked phone
+        // (setUnlockedDeviceRequired), and a key rotation (APK Signature
+        // Scheme v3) works on every phone that can install the app (0014).
+        minSdk = maxOf(flutter.minSdkVersion, 28)
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)

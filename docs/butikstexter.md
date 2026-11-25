@@ -3,7 +3,9 @@
 **Utkast. Ägaren godkänner texterna innan de används** (`CLAUDE.md`: det
 användaren får se och lova är ägarens). Texterna gäller appen som den är
 när den släpps, alltså efter grindarna G6, G8 och G9–G11 i
-[`docs/ROADMAP.md`](ROADMAP.md).
+[`docs/ROADMAP.md`](ROADMAP.md). Sedan 0014 används de på hemsidan
+([`hemsida.md`](hemsida.md)) och i releasen, och senare kanske i F-Droid
+eller Google Play. Längderna nedan är Plays och gäller bara där.
 
 ## Reglerna
 

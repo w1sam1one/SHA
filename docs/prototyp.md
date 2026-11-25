@@ -7,9 +7,9 @@ som bara ägaren provar. Kryptot är inte granskat av en kryptoexpert än
 
 Du behöver:
 - en server i EU med en egen domän (grinden G2);
-- två Android-telefoner, Android 7 (API 24) eller senare (grinden G3).
-  Android 9 eller senare rekommenderas: först där fungerar nyckeln bara när
-  telefonen är upplåst, och StrongBox finns bara där;
+- två Android-telefoner med Android 9 (API 28) eller senare (grinden G3).
+  Appen kräver det sedan 0014: nyckeln fungerar bara när telefonen är
+  upplåst;
 - APK:n, som du bygger själv (steg 2).
 
 ## 1. Sätt upp servern (G2)
@@ -100,6 +100,12 @@ kontakt som läggs till på det sättet är inte verifierad i person.
 debugnyckel (`~/.android/debug.keystore`), och appen kan uppdateras utan att
 identiteten och kontakterna försvinner. Byggs den på en annan dator måste
 appen avinstalleras först, och då måste ni skanna varandra igen.
+
+**Byte av app-id (0014, 2026-11-25):** appen heter nu
+`io.github.w1sam1one.sha` för telefonen, i stället för `se.sha.sha`. En APK
+som byggts efter bytet installeras som en ny app bredvid den gamla. Den
+gamla, med sin identitet och sina kontakter, finns kvar tills du tar bort
+den. I den nya måste ni träffas och skanna varandra igen.
 
 ## 4. Prova
 

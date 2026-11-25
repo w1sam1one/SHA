@@ -69,7 +69,7 @@ avinstallation allt.
   `READ_EXTERNAL_STORAGE` och `ACCESS_NETWORK_STATE`) tas bort ur
   manifestet. CI kontrollerar att release-manifestet bara begär `CAMERA`,
   `INTERNET`, `USE_BIOMETRIC` och androidx.core:s interna
-  `se.sha.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`
+  `io.github.w1sam1one.sha.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`
   (`.github/scripts/check-manifest.py`, `docs/release.md`, punkt 0).
 
 ## Annat

@@ -77,8 +77,22 @@ List<String> problems(String markdown, {required bool agpl}) {
   return found;
 }
 
+/// The website's text (docs/hemsida.md, F13): the same banned words and no
+/// open source before G8, in the whole file.
+List<String> websiteProblems(String text, {required bool agpl}) {
+  final lower = text.toLowerCase();
+  return [
+    for (final b in [...banned, ...bannedSwedish, ...bannedEnglish])
+      if (lower.contains(b)) '"$b"',
+    if (!agpl)
+      for (final w in openSource)
+        if (lower.contains(w)) '"$w" before G8',
+  ];
+}
+
 void main() {
   final doc = File('docs/butikstexter.md').readAsStringSync();
+  final website = File('docs/hemsida.md').readAsStringSync();
   final agpl = File('LICENSE')
       .readAsStringSync()
       .contains('GNU AFFERO GENERAL PUBLIC LICENSE');
@@ -87,6 +101,18 @@ void main() {
   test('the store texts keep to 0002 and to the lengths', () {
     expect(texts(doc), hasLength(limits.length));
     expect(check(doc), isEmpty);
+  });
+
+  test('the website text keeps to 0002, and promises no open source yet', () {
+    expect(websiteProblems(website, agpl: agpl), isEmpty);
+    expect(
+      websiteProblems('$website\nHelt anonymt.\n', agpl: agpl),
+      isNotEmpty,
+    );
+    expect(
+      websiteProblems('$website\nKällkoden är öppen.\n', agpl: false),
+      isNotEmpty,
+    );
   });
 
   test('no store text promises open source before LICENSE is AGPL-3.0', () {

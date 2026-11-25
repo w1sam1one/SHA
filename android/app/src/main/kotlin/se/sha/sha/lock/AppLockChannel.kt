@@ -16,7 +16,7 @@ import io.flutter.plugin.common.MethodChannel
  * The phone's own lock for the app lock (F4, step 1 of (B) in 0011): the
  * platform's BiometricPrompt from Android 11, with the phone's PIN, pattern
  * or password as the alternative, and KeyguardManager's PIN screen on
- * Android 7-10. Android 10's BiometricPrompt can cancel at once or fail to
+ * Android 9-10 (minSdk 28, 0014). Android 10's BiometricPrompt can cancel at once or fail to
  * show the PIN on phones without biometric hardware (review of #47, as
  * androidx.biometric works around), so it is not used there. No library and
  * no key: the answer is only "unlocked", "cancelled" or "unavailable", and the

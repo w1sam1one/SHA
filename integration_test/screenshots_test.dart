@@ -9,7 +9,7 @@
 //
 //     flutter test integration_test/screenshots_test.dart -d <emulator>
 //
-// To save the pictures on the computer (docs/release.md, point 5):
+// To save the pictures on the computer (docs/butikstexter.md, "Skärmbilder"):
 //
 //     flutter drive --driver=test_driver/screenshots.dart \
 //       --target=integration_test/screenshots_test.dart -d <emulator>
