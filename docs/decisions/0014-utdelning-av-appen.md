@@ -66,7 +66,8 @@ utvecklarverifiering, signeringsnyckeln och paketen i färdplanen.
   avinstallera appen. SHA har ingen säkerhetskopia (`allowBackup="false"`
   i manifestet), så identiteten, kontakterna och historiken försvinner, och
   alla måste träffas och skanna på nytt.
-- **`applicationId` är `se.sha.sha`.**
+- **`applicationId` är `se.sha.sha`** (beslut 5: byts till
+  `io.github.w1sam1one.sha` i F13).
   - F-Droid råder till ett id från en domän som utvecklaren äger.
   - Google kan kräva en extra granskning av ett paketnamn som redan
     används.
@@ -194,8 +195,8 @@ inte kan uppdateras från hemsidan, eller vänta.
 - **Så går det till:** appen frågar Android (`PackageManager`) vilket
   certifikat den är signerad med, och visar dess SHA-256. Det kräver lite
   Kotlin i `android/`, men inget nytt beroende. Från Android 9 finns
-  `signingInfo`, och före det det äldre `signatures` (SHA stöder Android 7
-  och senare). Det är **ej provat**.
+  `signingInfo`, och med `minSdk` 28 (beslut 5) behövs bara det. Det är
+  **ej provat**.
 - **Debug-byggen** är signerade med en debugnyckel och visar därför ett
   annat fingeravtryck. Appen bör skriva tydligt att det är ett debug-bygge.
 - **Vad det inte bevisar:** en ändrad, falsk app kan skriva vilket
@@ -285,7 +286,7 @@ något. Det är skälet till att länken är fast.
 | Egen hemsida | Hemsidans värd | Ägaren står för servern |
 | Servern (relayn) | Servern, som redan ser IP-adressen | Ingen ny part, men relayn är "bara lämna och hämta" (0002). Den som driver en annan server kan ljuga om versionen |
 
-### Texten i appen (förslag, ägaren godkänner, 0002)
+### Texten i appen (godkänd av ägaren 2026-11-25, 0002)
 
 Under Inställningar, vid valet "Sök efter ny version":
 
@@ -423,36 +424,36 @@ against signing up for this program, now or ever."
   - Android kan byta nyckel med APK Signature Scheme v3, men bara från
     Android 9 (API 28), enligt Androids dokumentation. Den är **ej läst
     här**.
-  - SHA stöder Android 7 och senare (`minSdk` är minst 24), och äldre
-    telefoner godtar då inte den nya nyckeln.
-  - Att höja `minSdk` till 28 före första utdelningen är en fråga för
-    ägaren.
+  - SHA stödde Android 7 och senare (`minSdk` minst 24), och äldre
+    telefoner godtar inte den nya nyckeln.
+  - Beslut 5: `minSdk` höjs till 28 före första utdelningen (F13).
 - **En hårdvarunyckel**, till exempel PKCS#11, är kanske möjlig med
   `apksigner`. Det är **ej kontrollerat**, och kan bli ett senare val.
 
 ## Vilka paket i färdplanen som ändras
 
-Om ägaren väljer det som rekommenderas ovan. Inget av detta görs förrän
-ägaren har beslutat.
+Efter ägarens beslut 2026-11-25.
 
 | Paket | I dag | Efter beslutet |
 | --- | --- | --- |
-| Fas 3, "Klart när" | Publicerad i produktion på Google Play | Version 1.0 publicerad som signerad APK på hemsidan och i GitHub Releases, med fingeravtrycken på alla fyra ställen |
+| Fas 3, "Klart när" | Publicerad i produktion på Google Play | Version 1.0 publicerad som signerad APK på hemsidan och i GitHub Releases, med certifikatets fingeravtryck på alla fyra ställen och APK:ns SHA-256 i releasen och på hemsidan |
 | F9 | Plays krav: målnivå, stängt test, Data safety, integritetspolicy | Krav för utdelning utanför Play: utvecklarverifieringen (läs Googles sidor igen före släppet), Androids installationsflöde och, senare, F-Droids krav. Målnivån behålls |
 | F10 | Integritetspolicy och Data safety (klart) | Data safety behövs inte för Play. Underlaget behålls som en beskrivning av datan. Integritetspolicyn får ett stycke om uppdateringskontrollen om (3b) väljs |
 | F11 | Butikstexter med Plays längder, skärmbilder | Texterna blir hemsidans och releasens texter, och Plays längder gäller inte. Skärmbilderna behålls. Senare: F-Droids metadata |
 | F12 | Version och ändringslogg | Behålls. Ändringsloggen blir releasens text, och versionCode ska fortfarande öka |
 | G9 | Utvecklarkonto i Play och uppladdningsnyckel | Signeringsnyckeln skapas, förvaras och säkerhetskopieras enligt ovan. Ägaren beslutar om utvecklarverifieringen (V1, V2 eller V3) |
 | G10 | Integritetspolicyn på webben | Samma, på hemsidan |
-| G11 | Internt test, stängt test och produktion i Play | Ägaren bygger och signerar, kontrollerar fingeravtrycket, installerar först på egna telefoner, delar ut till testare efter G6 och publicerar sedan releasen med fingeravtrycken |
+| G11 | Internt test, stängt test och produktion i Play | Ägaren bygger och signerar, kontrollerar fingeravtrycket, installerar först på egna telefoner, delar ut till testare efter G6, G8 och allt under "Före första utdelning", och publicerar sedan releasen med fingeravtrycken |
 | `docs/release.md` | Checklista för Play | Skrivs om för hemsidan och GitHub Releases |
 | `CLAUDE.md`, "Ägarens beslut" punkt 3 | Nämner Play-kraven | Ägarens avsnitt; Claude föreslår bara en ändring |
 
 ### Nya paket
 
 - **F13 – Utdelning utan Play.** Nytt `docs/release.md` med stegen för
-  att bygga, signera, kontrollera och publicera. Fingeravtrycken i README
-  och SECURITY.md, och ett test som jämför dem. Ett test som stoppar
+  att bygga, signera, kontrollera och publicera. Plats för certifikatets
+  fingeravtryck i README och SECURITY.md (värdet skrivs in i G9), en länk
+  därifrån till releasen för APK:ns SHA-256, och ett test som jämför
+  fingeravtrycken. Ett test som stoppar
   nyckelfiler i repot. Texter till hemsidan och releasen.
 - **F14 – Appens fingeravtryck i "Teknisk information"** (2c).
 - **F15 – Frivillig uppdateringskontroll** (3b): valet, texterna,

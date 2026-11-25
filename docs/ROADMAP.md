@@ -275,12 +275,14 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
   blir de hemsidans och releasens texter, och Plays längder gäller inte
   (F13).
 - [ ] **F12 – Version och ändringslogg.** Versionsnummer, ändringslogg och
-  `docs/release.md` uppdaterade.
+  `docs/release.md` uppdaterade. Ändringsloggen blir releasens text, och
+  versionCode ska öka för varje version (0014).
 - [ ] **F13 – Utdelning utan Play** (0014 (1a), (2b)):
   - `docs/release.md` skrivs om: bygga, signera, kontrollera och publicera
     på hemsidan och i GitHub Releases;
-  - certifikatets fingeravtryck i README, SECURITY.md och på hemsidan, och
-    ett test som jämför dem;
+  - plats för certifikatets fingeravtryck i README, SECURITY.md och på
+    hemsidan (värdet skrivs in i G9, när nyckeln finns), en länk till
+    releasen för APK:ns SHA-256, och ett test som jämför fingeravtrycken;
   - ett test som stoppar nyckelfiler och `key.properties` i repot;
   - hemsidans och releasens texter, från butikstexterna;
   - `applicationId` byts till `io.github.w1sam1one.sha`, och `minSdk` höjs
@@ -306,12 +308,13 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
   lösenordet för sig, en provad återställning), och skriv in certifikatets
   fingeravtryck. Under testfasen ADB eller ett begränsat konto (V2) för
   utvecklarverifieringen.
-- **G10 – Hemsidan och integritetspolicyn.** Slå på GitHub Pages för repot
-  (hemsidan och versionsfilen i F15), och publicera integritetspolicyn där.
+- **G10 – Hemsidan och integritetspolicyn.** Slå på GitHub Pages för repot,
+  för versionsfilen i F15 och för hemsidan om ägaren bekräftar att den ska
+  ligga där (G12), och publicera integritetspolicyn på hemsidan.
 - **G11 – Släppet.** Bygg och signera på den egna datorn, kontrollera
   fingeravtrycket, installera först på egna telefoner, dela ut till testare
-  efter G6, och publicera sedan releasen med fingeravtrycken enligt
-  `docs/release.md` (F13).
+  efter G6, G8 och allt under "Före första utdelning", och publicera sedan
+  releasen med fingeravtrycken enligt `docs/release.md` (F13).
 
 ## Efter version 1
 
