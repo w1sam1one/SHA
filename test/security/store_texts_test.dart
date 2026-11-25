@@ -6,6 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'wording_test.dart' show banned;
 
+/// More of the same in Swedish, said other ways (review of #49).
+const bannedSwedish = [
+  'spåras', // "kan inte spåras"
+  'ingen ser att',
+  'ser aldrig din ip',
+  'loggar ingenting',
+];
+
 /// The same rules in English (0002, "Formuleringar i appen").
 const bannedEnglish = [
   'anonym', // "anonymous", "anonymity"
@@ -14,6 +22,11 @@ const bannedEnglish = [
   'not see your ip', // "cannot see your IP address", "does not see …"
   "n't see your ip", // "can't see your IP address"
   'nobody can see that you use',
+  'no one can see',
+  'trace', // "untraceable", "leaves no trace", "cannot be traced"
+  'zero logs',
+  'never log',
+  'never sees your ip',
 ];
 
 /// Name, short and full description, in Swedish and then in English.
@@ -28,7 +41,20 @@ List<String> texts(String markdown) => [
     m.group(1)!,
 ];
 
-List<String> problems(String markdown) {
+/// Words that promise open source, which is true only once `LICENSE` is
+/// AGPL-3.0 (G8; review of #49).
+const openSource = [
+  'open-source',
+  'källkod',
+  'source code',
+  'agpl',
+  'öppen källkod',
+  'källkoden är öppen',
+  'open source',
+  'source code is open',
+];
+
+List<String> problems(String markdown, {required bool agpl}) {
   final found = <String>[];
   final all = texts(markdown);
   if (all.length != limits.length) {
@@ -39,8 +65,13 @@ List<String> problems(String markdown) {
       found.add('text ${i + 1}: ${text.length} characters, over ${limits[i]}');
     }
     final lower = text.toLowerCase();
-    for (final b in [...banned, ...bannedEnglish]) {
+    for (final b in [...banned, ...bannedSwedish, ...bannedEnglish]) {
       if (lower.contains(b)) found.add('text ${i + 1}: "$b"');
+    }
+    if (!agpl) {
+      for (final w in openSource) {
+        if (lower.contains(w)) found.add('text ${i + 1}: "$w" before G8');
+      }
     }
   }
   return found;
@@ -48,27 +79,51 @@ List<String> problems(String markdown) {
 
 void main() {
   final doc = File('docs/butikstexter.md').readAsStringSync();
+  final agpl = File('LICENSE')
+      .readAsStringSync()
+      .contains('GNU AFFERO GENERAL PUBLIC LICENSE');
+  List<String> check(String markdown) => problems(markdown, agpl: agpl);
 
   test('the store texts keep to 0002 and to the lengths', () {
     expect(texts(doc), hasLength(limits.length));
-    expect(problems(doc), isEmpty);
+    expect(check(doc), isEmpty);
+  });
+
+  test('no store text promises open source before LICENSE is AGPL-3.0', () {
+    expect(
+      problems(
+        doc.replaceFirst(
+          '• Kameran används bara för att skanna QR-koder.',
+          '• Kameran används bara för att skanna QR-koder.\n'
+              '• Källkoden är öppen under AGPL-3.0.',
+        ),
+        agpl: false,
+      ),
+      isNotEmpty,
+    );
   });
 
   test('the check finds a banned word and a text that is too long', () {
+    for (final (from, to) in [
+      ('Det behövs inget', 'Ingen ser att du använder SHA. Det behövs inget'),
+      ('No phone number', 'It leaves no trace. No phone number'),
+    ]) {
+      expect(check(doc.replaceFirst(from, to)), isNotEmpty, reason: to);
+    }
     expect(
-      problems(
+      check(
         doc.replaceFirst('Det behövs inget', 'Helt anonymt. Det behövs inget'),
       ),
       isNotEmpty,
     );
     expect(
-      problems(
+      check(
         doc.replaceFirst('No phone number', 'Fully anonymous. No phone number'),
       ),
       isNotEmpty,
     );
     expect(
-      problems(
+      check(
         doc.replaceFirst(
           'The server cannot read',
           "The server can't see your IP address and cannot read",
@@ -77,11 +132,9 @@ void main() {
       isNotEmpty,
     );
     expect(
-      problems(
-        doc.replaceFirst('```text\nSHA\n```', '```text\n${'S' * 31}\n```'),
-      ),
+      check(doc.replaceFirst('```text\nSHA\n```', '```text\n${'S' * 31}\n```')),
       isNotEmpty,
     );
-    expect(problems(doc.replaceFirst('```text\nSHA\n```', '')), isNotEmpty);
+    expect(check(doc.replaceFirst('```text\nSHA\n```', '')), isNotEmpty);
   });
 }

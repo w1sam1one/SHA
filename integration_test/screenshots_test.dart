@@ -7,18 +7,22 @@
 // the release app. In CI it runs on the emulator and checks that every
 // picture shows something (the app-android job in .github/workflows/ci.yml):
 //
-//     flutter test integration_test/screenshots_test.dart -d <device>
+//     flutter test integration_test/screenshots_test.dart -d <emulator>
 //
 // To save the pictures on the computer (docs/release.md, point 5):
 //
 //     flutter drive --driver=test_driver/screenshots.dart \
-//       --target=integration_test/screenshots_test.dart -d <device>
+//       --target=integration_test/screenshots_test.dart -d <emulator>
+//
+// Only on an emulator, never on a phone where SHA is used: `flutter test`
+// and `flutter drive` uninstall the app when the test is done (and can
+// before it starts), which erases its identity, contacts and history
+// (review of #49).
 //
 // The app must start as it does for a new user, and the test makes a new
-// identity on the device. If SHA already has an identity there, the test
-// stops before the first picture: the pictures would show it and its
-// contacts. It never deletes anything. Run it on an emulator, or on a test
-// phone where SHA is not installed.
+// identity. If SHA already has an identity on the device, the test stops
+// before the first picture, so that the pictures do not show it and its
+// contacts. That protects the pictures, not the app's data.
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -28,6 +32,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sha/app/app.dart';
 import 'package:sha/app/licenses.dart';
+import 'package:sha/features/chat/chats_screen.dart';
+import 'package:sha/features/contacts/contacts_screen.dart';
+import 'package:sha/features/qr/my_qr_screen.dart';
+import 'package:sha/features/settings/settings_screen.dart';
 
 /// How many different colours a picture has, from a sample of its pixels.
 Future<int> colours(WidgetTester tester, List<int> png) async {
@@ -58,8 +66,12 @@ void main() {
     await binding.convertFlutterSurfaceToImage();
     await tester.pumpAndSettle();
 
-    Future<void> shoot(String name) async {
+    /// A picture of the screen that [shows] finds, and not of the lock
+    /// (review of #49: with a screen lock, the app locks after "Fortsätt").
+    Future<void> shoot(String name, Finder shows) async {
       await tester.pumpAndSettle();
+      expect(find.text('SHA är låst'), findsNothing, reason: '$name: locked');
+      expect(shows, findsOneWidget, reason: '$name: not the right screen');
       final png = await binding.takeScreenshot(name);
       // A black or blank picture has one colour; a screen with text, icons
       // and a QR code has many.
@@ -76,9 +88,9 @@ void main() {
       findsOneWidget,
       reason:
           'SHA already has an identity on this device. Run the screenshots '
-          'on an emulator, or on a test phone where SHA is not installed.',
+          'only on an emulator.',
     );
-    await shoot('1-identitet');
+    await shoot('1-identitet', find.text('Fortsätt'));
     await tester.tap(find.text('Fortsätt'));
     await tester.pumpAndSettle();
     Future<void> tab(String label) => tester.tap(
@@ -87,12 +99,16 @@ void main() {
         matching: find.text(label),
       ),
     );
-    await shoot('2-chattar');
-    await tab('Min QR');
-    await shoot('3-min-qr');
-    await tab('Kontakter');
-    await shoot('4-kontakter');
-    await tab('Inställningar');
-    await shoot('5-installningar');
+    // Each tab by its screen: only the shown one is on stage in the
+    // IndexedStack. The app opens on Kontakter, so every tab is tapped.
+    for (final (name, label, screen) in [
+      ('2-chattar', 'Chattar', ChatsScreen),
+      ('3-min-qr', 'Min QR', MyQrScreen),
+      ('4-kontakter', 'Kontakter', ContactsScreen),
+      ('5-installningar', 'Inställningar', SettingsScreen),
+    ]) {
+      await tab(label);
+      await shoot(name, find.byType(screen));
+    }
   });
 }

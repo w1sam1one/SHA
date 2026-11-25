@@ -242,48 +242,76 @@ någon annan än ägaren (0003, 0004 §13):
   dag bygger cargokit med CI-maskinens `stable`, och att ändra det kräver
   ett ändrat plugin.
 
-## Fas 3 – Version 1.0 på Google Play
+## Fas 3 – Version 1.0 som APK
 
 ### Klart när
 
-Version 1.0 är publicerad i produktion på Google Play.
+Version 1.0 är publicerad som signerad APK på hemsidan och i GitHub
+Releases. Certifikatets fingeravtryck står i README, SECURITY.md, releasen
+och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
+ägarens beslut 2026-11-25). Google Play är uppskjutet.
 
 ### Paket
 
-- [ ] **F9 – Play-kraven.** Kontrollera kraven mot Googles egna sidor, med
-  datum:
-  - målnivån (target SDK);
-  - testkraven för nya konton;
-  - Data safety och integritetspolicyn.
+- [ ] **F9 – Krav för utdelning utanför Play** (ändrat efter 0014).
+  Kontrollera mot Googles egna sidor, med datum, strax före släppet:
+  - utvecklarverifieringen: ADB eller ett begränsat konto (V2) under
+    testfasen; fullt konto (V1) eller ingen registrering (V3) beslutas 2027;
+  - Androids installationsflöde för APK:er från en hemsida;
+  - målnivån (target SDK), som behålls;
+  - F-Droids krav, när det blir aktuellt efter G8.
 
+  `docs/play-krav.md` om Play behålls som underlag om Play blir aktuellt.
   Höj Flutter-versionen i en egen PR om det behövs.
 - [x] **F10 – Integritetspolicy och Data safety.** Ett utkast till
   integritetspolicy på svenska och engelska, och svaren till Data safety.
-  Bara det koden faktiskt gör, med fil som källa.
+  Bara det koden faktiskt gör, med fil som källa. Efter 0014 behövs Data
+  safety inte för Play, men underlaget beskriver datan. Integritetspolicyn
+  får ett stycke om uppdateringskontrollen i F15.
 - [x] **F11 – Butikstexter och skärmbilder.** Butikstexter som inte lovar mer
   än appen gör. Ett sätt att ta skärmbilder som bara finns i debug och aldrig
   i release, där `FLAG_SECURE` alltid gäller. Texterna i
-  [`docs/butikstexter.md`](butikstexter.md) godkänns av ägaren.
+  [`docs/butikstexter.md`](butikstexter.md) godkänns av ägaren. Efter 0014
+  blir de hemsidans och releasens texter, och Plays längder gäller inte
+  (F13).
 - [ ] **F12 – Version och ändringslogg.** Versionsnummer, ändringslogg och
   `docs/release.md` uppdaterade.
+- [ ] **F13 – Utdelning utan Play** (0014 (1a), (2b)):
+  - `docs/release.md` skrivs om: bygga, signera, kontrollera och publicera
+    på hemsidan och i GitHub Releases;
+  - certifikatets fingeravtryck i README, SECURITY.md och på hemsidan, och
+    ett test som jämför dem;
+  - ett test som stoppar nyckelfiler och `key.properties` i repot;
+  - hemsidans och releasens texter, från butikstexterna;
+  - `applicationId` byts till `io.github.w1sam1one.sha`, och `minSdk` höjs
+    till 28.
+- [ ] **F14 – Appens fingeravtryck i "Teknisk information"** (0014 (2c)),
+  med texten om vad det inte bevisar.
+- [ ] **F15 – Frivillig uppdateringskontroll** (0014 (3b)): avstängd från
+  början, versionsfilen på GitHub Pages, högst en gång om dagen när appen
+  är öppen, samma anrop för alla, och bara "ny version finns" med en fast
+  länk. Texterna i 0014 är godkända. Data safety-underlaget och
+  integritetspolicyn uppdateras.
 
 ### Grindar (bara ägaren)
 
-- **G12 – Hur appen delas ut** ([0014](decisions/0014-utdelning-av-appen.md),
-  "Proposed – owner decides"). Ägaren vill dela ut samma signerade APK på
-  hemsidan och i GitHub Releases, F-Droid när koden är AGPL, och skjuta upp
-  Google Play. Fingeravtrycken publiceras på flera ställen, appen visar sitt
-  eget, och en frivillig uppdateringskontroll är föreslagen. 0014 jämför
-  alternativen för varje punkt, med Googles utvecklarverifiering 2027 och
-  signeringsnyckeln. Tills ägaren har beslutat byggs inget av det, och F9,
-  F11, G9, G10, G11, `docs/release.md` och "Klart när" ovan står kvar som
-  de är. 0014 visar hur de ändras, och föreslår paketen F13–F15.
-- **G9 – Utvecklarkonto och nyckel.** Skapa utvecklarkontot,
-  uppladdningsnyckeln och `key.properties`.
-- **G10 – Integritetspolicyn på webben.** Publicera integritetspolicyn på en
-  webbadress.
-- **G11 – Släppet.** Internt test, sedan stängt test (med kraven från F9),
-  sedan ansökan om produktion och släpp.
+- **G12 – Hur appen delas ut. Klar 2026-11-25.** Ägaren valde i
+  [0014](decisions/0014-utdelning-av-appen.md): (1a) hemsidan och GitHub
+  Releases, F-Droid efter G8, Google Play uppskjutet; (2b) och (2c) för
+  fingeravtrycken; (3b) med versionsfilen på GitHub Pages; ADB eller (V2)
+  under testfasen; `applicationId` `io.github.w1sam1one.sha` och `minSdk`
+  28. Öppen fråga: hemsidans adress, som blir den fasta länken i F15.
+- **G9 – Signeringsnyckeln.** Skapa nyckeln på den egna datorn, förvara och
+  säkerhetskopiera den enligt 0014 (två krypterade kopior offline,
+  lösenordet för sig, en provad återställning), och skriv in certifikatets
+  fingeravtryck. Under testfasen ADB eller ett begränsat konto (V2) för
+  utvecklarverifieringen.
+- **G10 – Hemsidan och integritetspolicyn.** Slå på GitHub Pages för repot
+  (hemsidan och versionsfilen i F15), och publicera integritetspolicyn där.
+- **G11 – Släppet.** Bygg och signera på den egna datorn, kontrollera
+  fingeravtrycket, installera först på egna telefoner, dela ut till testare
+  efter G6, och publicera sedan releasen med fingeravtrycken enligt
+  `docs/release.md` (F13).
 
 ## Efter version 1
 
@@ -296,6 +324,16 @@ Version 1.0 är publicerad i produktion på Google Play.
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-25 – Ägarens beslut om 0014 inskrivna: (1a) hemsidan och GitHub
+  Releases, F-Droid efter G8 med ägarens nyckel om det går, Google Play
+  uppskjutet; (2b) certifikatets fingeravtryck på alla fyra ställen och
+  APK:ns SHA-256 i releasen och på hemsidan; (2c) appen visar sitt
+  fingeravtryck; `SHA256SUMS` signeras inte nu; (3b) med versionsfilen på
+  GitHub Pages och texterna i 0014; ADB eller (V2) under testfasen, (V1)
+  eller (V3) beslutas 2027; `applicationId` `io.github.w1sam1one.sha` och
+  `minSdk` 28. Fas 3 heter nu "Version 1.0 som APK", F9, F10, F11, G9,
+  G10 och G11 är ändrade, och F13–F15 är nya. Öppen fråga: hemsidans
+  adress.
 - 2026-11-23 – Beslutsunderlaget 0014 om hur appen delas ut, efter
   ägarens önskemål: samma APK på hemsidan och i GitHub Releases, F-Droid
   efter G8, Google Play senare; fingeravtrycken i README, SECURITY.md,
@@ -305,6 +343,20 @@ Nyast först. En rad per paket eller körning som ändrar något.
   och andra butiker omfattas inte än), skydd och säkerhetskopia av
   signeringsnyckeln, och vilka paket som ändras. Ny grind G12. Inget är
   byggt.
+- 2026-11-23 – Rättningar efter den oberoende granskningen av F11 (#49),
+  som ägaren mergade innan granskningen var klar. Allvarligt: dokumentet
+  sade att skärmbildstestet aldrig raderar något, men `flutter test` och
+  `flutter drive` avinstallerar SHA efteråt, och ibland före. Det raderar
+  identiteten, kontakterna och historiken. Nu står det överst: bara på en
+  emulator, aldrig på en telefon där SHA används. Övrigt: testet för
+  `FLAG_SECURE` fångar nu också en tidig `return`, ett andra `setFlags`,
+  `.attributes` och andra aktiviteter i kod och manifest; varje skärmbild
+  kontrollerar att den visar rätt skärm och inte låset (det visade att
+  bilden "2-chattar" i #49 var fliken Kontakter, som appen öppnar på; nu
+  trycks varje flik fram); butikstexterna säger
+  att låset kräver ett skärmlås, att rundorna kan ta längre tid, och det om
+  brevlåde-id som integritetspolicyn säger; raden om AGPL-3.0 står utanför
+  texterna tills G8, och ett test stoppar den; fler förbjudna fraser.
 - 2026-11-19 – F11. Butikstexterna på svenska och engelska står som utkast i
   `docs/butikstexter.md`, för ägaren att godkänna: namn, kort och
   fullständig beskrivning, med det appen gör och det servern ser, och utan

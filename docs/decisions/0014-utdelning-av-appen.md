@@ -1,8 +1,31 @@
 # 0014 – Utdelning utan Google Play: hemsida, GitHub Releases, fingeravtryck och uppdateringskontroll
 
-Status: **Proposed – owner decides.** Skrivet 2026-11-23, omskrivet samma
-dag efter ägarens önskemål nedan. **Inget byggs förrän ägaren har
-beslutat.** Det här är inte juridisk rådgivning.
+Status: **Beslutat av ägaren 2026-11-25** (se "Ägarens beslut" nedan).
+Skrivet 2026-11-23, omskrivet samma dag efter ägarens önskemål. Det här är
+inte juridisk rådgivning.
+
+## Ägarens beslut (2026-11-25)
+
+1. **Utdelning: (1a)**, hemsidan och GitHub Releases, samma signerade APK.
+   F-Droid efter G8, med ägarens nyckel om det går. Google Play skjuts upp.
+2. **Fingeravtryck: (2b)**: certifikatets fingeravtryck på alla fyra
+   ställen, och APK:ns SHA-256 bara i releasen och på hemsidan. **(2c)**:
+   appen visar sitt fingeravtryck, med texten om vad det inte bevisar.
+   `SHA256SUMS` signeras inte nu.
+3. **Uppdateringskontroll: (3b)**, med versionsfilen på GitHub Pages.
+   Texterna i appen är godkända som de står i avsnittet "Texten i appen"
+   nedan.
+4. **Utvecklarverifiering:** ADB eller (V2), ett begränsat konto, under
+   testfasen. Beslut om (V1) eller (V3) tas 2027.
+5. **`applicationId`** byts till `io.github.w1sam1one.sha` före första
+   utdelningen. **`minSdk`** höjs till 28 (Android 9).
+
+Paketen F13–F15 nedan byggs i den ordningen, efter F12.
+
+**Öppen fråga till ägaren:** hemsidans adress, som också blir den fasta
+länken i appen (punkt 3). Förslaget är GitHub Pages,
+`https://w1sam1one.github.io/SHA/`, samma värd som versionsfilen. Det
+behöver bekräftas före F15.
 
 Källorna lästes 2026-11-23 och står sist med adress. Det som inte gick att
 läsa eller pröva är märkt **ej läst** eller **ej provat**.
@@ -442,31 +465,27 @@ Ordningen blir F12, F13, F14, F15, och sedan G9–G11.
 ## Ägaren beslutar
 
 1. **Utdelning:**
-   - [ ] (1a) hemsidan och GitHub Releases;
+   - [x] (1a) hemsidan och GitHub Releases;
    - [ ] (1b) bara GitHub;
    - [ ] (1c) bara en egen hemsida.
 
    F-Droid efter G8, med ägarens nyckel om det går. Google Play skjuts
    upp.
 2. **Fingeravtryck:**
-   - [ ] (2a) båda värdena på alla fyra ställen, eller (2b) APK:ns SHA-256
-     bara i releasen och på hemsidan;
-   - [ ] (2c) appen visar sitt eget fingeravtryck, med texten om vad det
-     inte bevisar, eller (2d) inte;
-   - [ ] signera `SHA256SUMS` med `ssh-keygen -Y sign`, eller inte.
+   - [x] (2b): APK:ns SHA-256 bara i releasen och på hemsidan;
+   - [x] (2c): appen visar sitt eget fingeravtryck, med texten om vad det
+     inte bevisar;
+   - [x] `SHA256SUMS` signeras inte nu.
 3. **Uppdateringskontroll:**
-   - [ ] (3a) ingen, (3b) frivillig enligt ovan, eller (3c) bara Obtainium;
-   - [ ] om (3b): var versionsfilen ligger (GitHub Pages, egen hemsida eller
-     servern);
-   - [ ] om (3b): texterna i appen enligt förslaget ovan.
+   - [x] (3b) frivillig enligt ovan;
+   - [x] versionsfilen ligger på GitHub Pages;
+   - [x] texterna i appen enligt förslaget ovan.
 4. **Utvecklarverifiering:**
-   - [ ] (V1) fullt konto, (V2) begränsat konto eller (V3) ingen
-     registrering.
+   - [x] ADB eller (V2) under testfasen; (V1) eller (V3) beslutas 2027.
 5. **Övrigt:**
-   - [ ] `applicationId`: behåll `se.sha.sha`, eller byt före första
+   - [x] `applicationId` byts till `io.github.w1sam1one.sha` före första
      utdelningen;
-   - [ ] `minSdk`: behåll 24, eller höj till 28 så att ett nyckelbyte
-     fungerar på alla telefoner.
+   - [x] `minSdk` höjs till 28.
 
 ## Ej läst eller ej provat
 

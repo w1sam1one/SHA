@@ -167,7 +167,8 @@ Uppgifterna i punkt 4 och 5 har inte kontrollerats mot Googles hjälpsidor
   (`android/app/src/main/kotlin/se/sha/sha/MainActivity.kt`), så
   skärmdumpar blockeras eller blir svarta (ej verifierat på telefon). Ta
   bilderna med testet i [`docs/butikstexter.md`](butikstexter.md),
-  "Skärmbilder", på en emulator. De visar den riktiga appen, genom Flutters
+  "Skärmbilder", **bara på en emulator** (testet avinstallerar SHA och
+  raderar dess data). De visar den riktiga appen, genom Flutters
   egen ritning, och flaggan stängs aldrig av.
 - **Butikstexterna:** utkastet i [`docs/butikstexter.md`](butikstexter.md),
   som ägaren godkänner.
@@ -190,5 +191,7 @@ forward secrecy (0010 (B), F4, 0002; brevlåde-ID:n har ingen forward
 secrecy enligt 0004 §3 (A), och kryptot är ogranskat till G6). Det som
 saknas står i appens "Teknisk information" (`lib/ui/technical_info_sheet.dart`)
 och i `docs/granskning/`. Orden i 0002, "Formuleringar i appen", gäller
-också butikssidan. `test/security/wording_test.dart` kontrollerar bara
-appens egna texter, inte butikssidan.
+också butikssidan. `test/security/wording_test.dart` kontrollerar appens
+egna texter, och `test/security/store_texts_test.dart` butikstexterna i
+[`docs/butikstexter.md`](butikstexter.md): förbjudna ord, längder och
+inget löfte om öppen källkod före G8, men inte om innehållet stämmer.
