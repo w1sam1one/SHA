@@ -39,8 +39,10 @@ låsta.
   Rust 1.97.0 och `--locked`. 0004 §13 punkt 10: antingen låses det, eller
   så godtar ägaren det efter den här granskningen.
 - **Actions är låsta till fulla SHA:er.** `permissions: contents: read`.
-- **Dependabot** finns för versioner (`.github/dependabot.yml`). Alerts och
-  security updates väntar på G7.
+- **Dependabot** följer Actions och relayns Go-moduler
+  (`.github/dependabot.yml`). Dart-paketen uppdateras för hand med Flutter
+  3.47.7, eftersom Dependabot räknar fram låsfilen med en annan Flutter
+  (0004 §12). Alerts och security updates väntar på G7.
 - **Debug och release:** debug-bygget har utvecklarhjälp (kopiera koden,
   ange koden för hand: `kDebugMode`) och går att felsöka. Hur appen delas
   ut till testare och på Google Play bestäms i fas 2 och 3.

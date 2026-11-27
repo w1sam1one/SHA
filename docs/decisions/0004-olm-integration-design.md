@@ -909,7 +909,8 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
 
 **Så följs beroendena:**
 1. **Dependabot** (`.github/dependabot.yml`): versionsuppdateringar varje
-   vecka. Varningar och säkerhetsuppdateringar slås på i repots
+   vecka för Actions och relayns Go-moduler, men inte för Dart-paketen
+   (punkt 4). Varningar och säkerhetsuppdateringar slås på i repots
    inställningar: Settings → Advanced Security → Dependency graph,
    Dependabot alerts och Dependabot security updates
    (<https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-dependabot-alerts>,
@@ -923,6 +924,37 @@ Det här måste finnas och vara grönt i CI innan inkopplingen får mergas:
      verktyget är inte provat här.
 3. **Verktygen:** en gång i månaden kontrolleras om Flutter, Go eller Rust
    har nya versioner med säkerhetsrättelser.
+4. **Dart-paketen för hand, med Flutter 3.47.7.** Ändrat 2026-11-27 på
+   ägarens begäran. Det som står här är ett förslag, som ägaren godkänner
+   med resten av planen i G7.
+   - **Varför:** Dependabot räknar fram `pubspec.lock` med en nyare Flutter
+     än den som CI och ägaren bygger med. Då ändras också paketen som
+     Flutter själv låser, och `flutter pub get --enforce-lockfile` stoppar
+     PR:en (#19, #51). Inget val i `dependabot.yml` bestämmer
+     Flutter-versionen (Dependabots options reference, läst 2026-11-27).
+     Versionsuppdateringarna för `pub` är därför avstängda
+     (`open-pull-requests-limit: 0`), för appen och för spiken.
+   - **En gång i månaden**, tillsammans med verktygen i punkt 3, körs
+     `flutter pub outdated` med Flutter 3.47.7. Ett paket uppdateras i en
+     egen PR, med låsfilen från 3.47.7, när det har en säkerhetsrättelse
+     eller en rättelse som appen behöver. Annars väntar det.
+   - **Ändringsloggen läses** före varje uppdatering. Drar uppdateringen in
+     ett nytt paket, även indirekt, krävs ett beslutsunderlag (`CLAUDE.md`,
+     "Aldrig"). Så var det med `flutter_riverpod` 3.5.0, som drar in
+     `material_ui`, `cupertino_ui`, `intl` och `flutter_localizations`. Den
+     uppdateringen är inte gjord (#51).
+   - **Paketen som Flutter låser** (`test_api`, `meta`, `vector_math` med
+     flera) flyttas bara när Flutter byts, i samma PR.
+   - **Säkerhetsuppdateringar:** Dependabot alerts och security updates slås
+     på som i punkt 1 (G7). GitHub Advisory Database omfattar Pub. En
+     säkerhets-PR från Dependabot för ett Dart-paket faller troligen i CI av
+     samma skäl, men den är signalen. Claude gör samma uppdatering med
+     Flutter 3.47.7 i en egen PR, inom tiderna under "Hur snabbt", och
+     stänger Dependabots PR med en länk. Kräver rättelsen en nyare Flutter,
+     byts Flutter i samma PR.
+   - **Inte valt:** ett jobb som räknar om låsfilen på Dependabots grenar.
+     Det behöver skrivrätt i `permissions:`, som är ägarens, och det kör kod
+     från en gren med en token som kan skriva.
 
 **Hur snabbt** (förslag, ägaren bestämmer):
 - **Kritisk eller hög allvarlighetsgrad** i krypto- eller lagringskedjan
