@@ -3,6 +3,15 @@
 # switched on in the repository settings, not in this file (see
 # docs/decisions/0004-olm-integration-design.md, point 12).
 #
+# Version updates for the Dart packages are off (open-pull-requests-limit: 0,
+# the owner's request 2026-11-27). Dependabot resolves pubspec.lock with a
+# newer Flutter than the 3.47.7 that CI and the owner build with, so the
+# packages Flutter itself pins (test_api, meta, vector_math) change too, and
+# `flutter pub get --enforce-lockfile` stops every such pull request (#19,
+# #51). No option here sets the Flutter version. The Dart packages are
+# updated by hand with Flutter 3.47.7 instead (0004 §12). The entries stay
+# so that the setting is easy to find and to turn back on.
+#
 # Keys checked against the Dependabot options reference on docs.github.com,
 # 2026-11-13:
 # https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
@@ -20,7 +29,8 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 3
+    # Off: see the top of this file.
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "deps(app)"
     groups:
@@ -49,7 +59,8 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Stockholm"
-    open-pull-requests-limit: 2
+    # Off: see the top of this file.
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "deps(spike)"
     groups:

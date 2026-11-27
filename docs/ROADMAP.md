@@ -328,6 +328,14 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-27 – Dependabot, helhetsgranskningen och ägarens begäran:
+  versionsuppdateringarna för Dart-paketen är avstängda i
+  `.github/dependabot.yml`, eftersom Dependabot räknar fram låsfilen med en
+  annan Flutter än 3.47.7 och varje sådan PR faller i CI (#19, #51). #51
+  (flutter_riverpod 3.5.0) är stängd utan uppdatering: den drar in fyra nya
+  paket som inte står i något beslutsunderlag. Förslaget till hur
+  Dart-paketen och deras säkerhetsuppdateringar sköts i stället står i 0004
+  §12, punkt 4, och godkänns i G7.
 - 2026-11-25 – F14, appens fingeravtryck (0014 (2c)). "Teknisk information"
   har avsnittet "Appens signatur": SHA-256-fingeravtrycket för certifikatet
   som appen är signerad med, i keytools form, med texten att en falsk app
