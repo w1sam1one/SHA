@@ -7,6 +7,10 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
   `tool/build_relay.sh`.
 - **`app-android`-jobbet:** testerna i `integration_test/` på en emulator
   (API 35, x86_64).
+- **`app-arm64`-jobbet:** bygger debug-APK:n för riktiga telefoner
+  (arm64-v8a), som `docs/prototyp.md` beskriver, och kontrollerar att
+  Flutter, Olm och alla andra inbyggda bibliotek finns med för arm64. APK:n
+  laddas inte upp och körs inte.
 - **`relay`-jobbet:** `go vet` och `go test -race`.
 - **`spike-vodozemac`-jobbet:** spikens egna tester (0003).
 
@@ -55,6 +59,7 @@ Alla tester körs i CI på varje PR (`.github/workflows/ci.yml`):
 | Serverns adress, intervallet och historikens längd | 5 | `test/features/transport_settings_test.dart` | Datorn |
 | "Verifierad i person" | 3 | `test/security/trust_display_test.dart` | Datorn |
 | Olm i appbygget: biblioteket laddas och en session går åt båda hållen | 2 | `integration_test/olm_build_test.dart` | Emulatorn |
+| Debug-APK:n för arm64: bygget går igenom, och Flutter, Olm och varje inbyggt bibliotek som APK:n har för något annat ABI finns för arm64-v8a | – | `.github/scripts/check-apk-abi.py`, provat med `test-ci-scripts.sh` | CI (`app-arm64`) |
 
 ## Mutationer
 
@@ -80,7 +85,10 @@ faller (`CLAUDE.md`). De står i respektive PR:
 
 ## Inte testat
 
-- En riktig telefon (arm64): G3 och villkor 1 i 0003.
+- En riktig telefon (arm64): G3 och villkor 1 i 0003. CI bygger APK:n för
+  arm64 men kör den inte.
+- Bygget för 32-bitars arm (armeabi-v7a), som `flutter build apk --debug`
+  också gör.
 - Ett fsync som misslyckas, och ett strömavbrott mitt i en skrivning.
 - StrongBox och farten på en riktig telefon (F6).
 - Kedjeindex från 2 097 152 (4 byte).

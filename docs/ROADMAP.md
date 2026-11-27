@@ -328,6 +328,12 @@ och på hemsidan, och APK:ns SHA-256 i releasen och på hemsidan (0014,
 
 Nyast först. En rad per paket eller körning som ändrar något.
 
+- 2026-11-27 – CI, helhetsgranskningen: ett nytt jobb, `app-arm64`, bygger
+  debug-APK:n för riktiga telefoner (arm64) och kontrollerar att Flutter,
+  Olm och alla andra inbyggda bibliotek finns med för arm64
+  (`.github/scripts/check-apk-abi.py`). Inget laddas upp, och appen körs
+  inte på någon telefon (G3). `docs/prototyp.md` säger hur ägaren bygger
+  samma APK.
 - 2026-11-25 – F14, appens fingeravtryck (0014 (2c)). "Teknisk information"
   har avsnittet "Appens signatur": SHA-256-fingeravtrycket för certifikatet
   som appen är signerad med, i keytools form, med texten att en falsk app
