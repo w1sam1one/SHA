@@ -359,6 +359,56 @@ printf 'releaseRuntimeClasspath\n\\--- org.foo:plugin-license:1.0\n' > "$tmp/dep
 licenses_fail "$tmp/deps5.txt" "a license only in a plugin's configuration" \
   "no license found in the POM: org.foo:plugin-license 1.0"
 
+# check-apk-abi.py: an APK for arm64 must have Flutter, Olm and every other
+# native library for arm64-v8a.
+# apk name entry...: a zip with these entries.
+apk() {
+  local name="$1"
+  shift
+  python3 -I -c '
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1], "w") as z:
+    z.writestr("AndroidManifest.xml", "")
+    for entry in sys.argv[2:]:
+        z.writestr(entry, "")
+' "$tmp/$name.apk" "$@"
+}
+# abi_pass name / abi_fail name what message: the check's result.
+abi_pass() {
+  if ! python3 -I "$here/check-apk-abi.py" "$tmp/$1.apk" arm64-v8a > "$tmp/abi.txt"; then
+    echo "FAIL check-apk-abi: $1 should pass"
+    cat "$tmp/abi.txt"
+    failed=1
+  fi
+}
+abi_fail() {
+  if python3 -I "$here/check-apk-abi.py" "$tmp/$1.apk" arm64-v8a > "$tmp/abi.txt" 2>&1; then
+    echo "FAIL check-apk-abi: $2 should fail"
+    failed=1
+  elif ! grep -qF -- "$3" "$tmp/abi.txt"; then
+    echo "FAIL check-apk-abi: $2 should say: $3"
+    cat "$tmp/abi.txt"
+    failed=1
+  fi
+}
+good=(lib/arm64-v8a/libflutter.so lib/arm64-v8a/libflutter_vodozemac.so
+  lib/x86_64/libflutter.so lib/x86_64/libflutter_vodozemac.so)
+apk good "${good[@]}"
+abi_pass good
+apk no-olm lib/arm64-v8a/libflutter.so lib/x86_64/libflutter_vodozemac.so
+abi_fail no-olm "Olm missing for arm64" \
+  "missing for arm64-v8a: libflutter_vodozemac.so"
+apk no-flutter lib/arm64-v8a/libflutter_vodozemac.so
+abi_fail no-flutter "Flutter missing for arm64" \
+  "missing for arm64-v8a: libflutter.so"
+apk only-x86 "${good[@]}" lib/x86_64/libimage_processing_util_jni.so
+abi_fail only-x86 "a library only for another ABI" \
+  "only for x86_64, not for arm64-v8a: libimage_processing_util_jni.so"
+apk no-arm64 lib/x86_64/libflutter.so lib/x86_64/libflutter_vodozemac.so
+abi_fail no-arm64 "no arm64 libraries" "no native libraries for arm64-v8a"
+printf 'not a zip' > "$tmp/broken.apk"
+abi_fail broken "a file that is not an APK" "cannot read"
+
 if [ "$failed" -ne 0 ]; then
   exit 1
 fi

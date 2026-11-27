@@ -44,10 +44,14 @@ inga lösenord åt dig.
 ## 2. Bygg APK:n
 
 Du bygger APK:n själv på din dator (0007 (b)). CI laddar inte upp någon
-APK. CI bygger bara en test-APK för emulatorn (x86_64), inte appen.
+APK. CI bygger en test-APK för emulatorn (x86_64), och samma debug-APK som
+du bygger i steg 3, men bara för arm64 (jobbet "Debug APK for real phones
+(arm64)" i `.github/workflows/ci.yml`). Jobbet kontrollerar att Flutter,
+Olm och alla andra inbyggda bibliotek finns med för arm64.
 
-**Ej provat:** ingen har följt stegen nedan än, och appen har aldrig byggts
-för en riktig telefon (arm och arm64). Skriv ner det som inte stämmer, så
+**Ej provat:** ingen har följt stegen nedan än, och appen har aldrig körts
+på en riktig telefon. Bygget för 32-bitars arm, som `flutter build apk
+--debug` också gör, provas inte i CI. Skriv ner det som inte stämmer, så
 rättar jag texten.
 
 1. Installera:
@@ -78,6 +82,12 @@ rättar jag texten.
    ```
    APK:n hamnar i `build/app/outputs/flutter-apk/app-debug.apk`. Första
    bygget tar en stund, eftersom Olm-biblioteket byggs från källkod.
+
+   Vill du bygga exakt det som CI provar, och lite snabbare:
+   ```sh
+   flutter build apk --debug --target-platform android-arm64
+   ```
+   Den APK:n fungerar bara på telefoner med 64-bitars arm (arm64).
 
 Bygg bara debug, och ge inte APK:n till någon annan: ingen utdelning före
 kryptoexpertens granskning (`CLAUDE.md`, "Ägarens beslut" 1). Ett

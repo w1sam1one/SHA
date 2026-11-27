@@ -55,6 +55,8 @@ och efter, står i en kommentar på PR #39.
     därifrån.
   - Spikens egen emulatorkörning (`spike-android.yml`) har redan ett
     filter på `spike/`.
+  - Jobbet `app-arm64` (2026-11-27, helhetsgranskningen) bygger
+    debug-APK:n för arm64 och körs när emulatorjobbet körs.
   - `LICENSE` räknas inte som ett dokument: Flutter lägger den i appens
     licenstexter (NOTICES), så Flutter-jobbet körs.
   - En PR som ändrar `ci.yml` eller `.github/scripts/` kör alla jobb. En
